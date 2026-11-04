@@ -48,3 +48,9 @@ export const STATUS_BADGE_STYLES: Record<string, { bg: string; text: string; bor
   DRAFT: { bg: 'bg-zinc-50 dark:bg-zinc-900', text: 'text-zinc-600 dark:text-zinc-400', border: 'border-zinc-200 dark:border-zinc-800' }
 };
 
+export function getStatusBadgeClass(status: string): string {
+  const style = STATUS_BADGE_STYLES[status] || STATUS_BADGE_STYLES.DRAFT;
+  return `${style.bg} ${style.text} ${style.border}`;
+}
+
+
