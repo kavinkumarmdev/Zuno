@@ -103,6 +103,16 @@ describe('Zuno ERP End-to-End API Integration Suite (e2e)', () => {
       expect(response.body.success).toBe(false);
     });
 
+    it('POST /api/v1/subscriptions/webhook should reject payload missing payment ID with 400 Bad Request', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/subscriptions/webhook')
+        .send({ event: 'payment.captured' })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('missing payment transaction ID');
+    });
+
     it('POST /api/v1/subscriptions/webhook should return 404 when payment transaction does not exist', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/v1/subscriptions/webhook')

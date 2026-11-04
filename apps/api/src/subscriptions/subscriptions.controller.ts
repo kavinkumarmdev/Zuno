@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Headers, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Headers, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -63,8 +63,14 @@ export class SubscriptionsController {
     @Headers('x-razorpay-signature') signature: string,
     @Body() body: any
   ) {
-    const eventId = body.event_id || body.id || 'evt_' + Date.now();
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('Webhook payload is required');
+    }
     const paymentId = body.payload?.payment?.entity?.id || body.paymentId;
+    if (!paymentId) {
+      throw new BadRequestException('Webhook payload missing payment transaction ID');
+    }
+    const eventId = body.event_id || body.id || 'evt_' + Date.now();
     const status = body.event === 'payment.captured' ? 'captured' : body.status || 'success';
     return this.subscriptionsService.processPaymentWebhook(eventId, paymentId, status, signature || 'mock_sig');
   }

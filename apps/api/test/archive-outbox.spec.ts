@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { OutboxService } from '../src/database/outbox.service';
 import { NeonPrismaService } from '../src/database/neon-prisma.service';
 import { HistoryPrismaService } from '../src/database/history-prisma.service';
@@ -57,6 +58,7 @@ describe('Two-Database Outbox Pattern & Sync Suite', () => {
   });
 
   it('RULE 6: Failed archive synchronization triggers exponential backoff retry and preserves operational record', async () => {
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
     mockNeonPrisma.tbArchiveOutbox.findMany.mockResolvedValue([
       {
         id: 'outbox-uuid-1',
