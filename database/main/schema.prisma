@@ -1,0 +1,4409 @@
+// ==============================================================================
+// ZUNO ERP — PRISMA ORM SCHEMA (ALL 243 OPERATIONAL TABLES)
+// Provider: PostgreSQL (Neon Operational Database)
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NEON_DATABASE_URL")
+}
+
+/// Table: tb_tenant (Phase 1 - Company Management)
+/// A customer account boundary that owns one or more companies in Zuno.
+model TbTenant {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_code String? @db.VarChar(30)
+  tenant_name String? @db.VarChar(200)
+  account_status String? @db.VarChar(30) @default("ACTIVE")
+  registration_source String? @db.VarChar(30)
+  registered_time DateTime? @db.Timestamptz(6)
+  activated_time DateTime? @db.Timestamptz(6)
+  suspended_time DateTime? @db.Timestamptz(6)
+  suspension_reason String? @db.Text
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  @@map("tb_tenant")
+}
+
+/// Table: tb_tenant_owner (Phase 1 - Company Management)
+/// Owner and primary contact details for a tenant account.
+model TbTenantOwner {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  owner_name String? @db.VarChar(150)
+  email String? @db.VarChar(150)
+  mobile String? @db.VarChar(20)
+  designation String? @db.VarChar(100)
+  is_primary Boolean? @default(false)
+  is_verified Boolean? @default(false)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  @@map("tb_tenant_owner")
+}
+
+/// Table: tb_company (Phase 1 - Company Management)
+/// Legal/business entity registered under a tenant.
+model TbCompany {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_code String? @db.VarChar(30)
+  company_name String? @db.VarChar(200)
+  legal_name String? @db.VarChar(200)
+  business_type String? @db.VarChar(50)
+  ownership_type String? @db.VarChar(50)
+  industry_type String? @db.VarChar(100)
+  pan_number String? @db.VarChar(20)
+  tan_number String? @db.VarChar(20)
+  gstin String? @db.VarChar(20)
+  cin_number String? @db.VarChar(30)
+  udyam_number String? @db.VarChar(30)
+  incorporation_date DateTime? @db.Date
+  financial_year_start DateTime? @db.Date
+  currency_code String? @db.VarChar(3)
+  country_code String? @db.VarChar(2)
+  company_status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  @@map("tb_company")
+}
+
+/// Table: tb_company_address (Phase 1 - Company Management)
+/// Registered, billing, office or other company addresses.
+model TbCompanyAddress {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_address")
+}
+
+/// Table: tb_company_contact (Phase 1 - Company Management)
+/// Named company contacts and their communication details.
+model TbCompanyContact {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_contact")
+}
+
+/// Table: tb_company_registration (Phase 1 - Company Management)
+/// Government and statutory registration identifiers for a company.
+model TbCompanyRegistration {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_registration")
+}
+
+/// Table: tb_company_branch (Phase 1 - Company Management)
+/// A shop, office, factory, warehouse or other operating branch.
+model TbCompanyBranch {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_branch")
+}
+
+/// Table: tb_company_document (Phase 1 - Company Management)
+/// Secure metadata for company certificates and uploaded documents.
+model TbCompanyDocument {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_document")
+}
+
+/// Table: tb_company_financial_year (Phase 1 - Company Management)
+/// Financial-year periods configured for a company.
+model TbCompanyFinancialYear {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_financial_year")
+}
+
+/// Table: tb_company_settings (Phase 1 - Company Management)
+/// Company-level regional, currency, date and application settings.
+model TbCompanySettings {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_settings")
+}
+
+/// Table: tb_module_category (Phase 1 - SaaS Platform & Subscription)
+/// Shared catalogue grouping for Zuno modules.
+model TbModuleCategory {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_module_category")
+}
+
+/// Table: tb_module (Phase 1 - SaaS Platform & Subscription)
+/// Shared catalogue of purchasable Zuno modules.
+model TbModule {
+  id String @id @default(uuid()) @db.Uuid
+  category_id String? @db.Uuid
+  module_code String? @db.VarChar(40)
+  module_name String? @db.VarChar(150)
+  description String? @db.Text
+  icon_name String? @db.VarChar(80)
+  display_order Int?
+  is_selectable Boolean? @default(false)
+  is_active Boolean @default(true)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  @@map("tb_module")
+}
+
+/// Table: tb_submodule (Phase 1 - SaaS Platform & Subscription)
+/// Functional sections within a main module.
+model TbSubmodule {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_submodule")
+}
+
+/// Table: tb_module_feature (Phase 1 - SaaS Platform & Subscription)
+/// Individual application features within a submodule.
+model TbModuleFeature {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_module_feature")
+}
+
+/// Table: tb_module_dependency (Phase 1 - SaaS Platform & Subscription)
+/// Rules describing modules required by other modules.
+model TbModuleDependency {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_module_dependency")
+}
+
+/// Table: tb_module_price (Phase 1 - SaaS Platform & Subscription)
+/// Versioned fixed prices for modules by currency and billing cycle.
+model TbModulePrice {
+  id String @id @default(uuid()) @db.Uuid
+  module_id String? @db.Uuid
+  price_name String? @db.VarChar(100)
+  billing_cycle String? @db.VarChar(20)
+  currency_code String? @db.VarChar(3)
+  fixed_amount Decimal? @db.Decimal(12, 2)
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  price_version Int?
+  is_active Boolean @default(true)
+  @@map("tb_module_price")
+}
+
+/// Table: tb_tax_rate (Phase 1 - SaaS Platform & Subscription)
+/// Tax rates and effective dates used for subscription billing.
+model TbTaxRate {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_tax_rate")
+}
+
+/// Table: tb_discount_coupon (Phase 1 - SaaS Platform & Subscription)
+/// Promotional discount codes and their validity rules.
+model TbDiscountCoupon {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_discount_coupon")
+}
+
+/// Table: tb_subscription (Phase 1 - SaaS Platform & Subscription)
+/// A tenant or company subscription contract and billing period.
+model TbSubscription {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_id String? @db.Uuid
+  subscription_number String? @db.VarChar(50)
+  billing_cycle String? @db.VarChar(20)
+  currency_code String? @db.VarChar(3)
+  start_date DateTime? @db.Date
+  end_date DateTime? @db.Date
+  next_billing_date DateTime? @db.Date
+  subtotal_amount Decimal? @db.Decimal(12, 2)
+  discount_amount Decimal? @db.Decimal(12, 2)
+  tax_amount Decimal? @db.Decimal(12, 2)
+  total_amount Decimal? @db.Decimal(12, 2)
+  subscription_status String? @db.VarChar(30)
+  auto_renew Boolean? @default(false)
+  trial_end_date DateTime? @db.Date
+  grace_period_end DateTime? @db.Date
+  cancelled_time DateTime? @db.Timestamptz(6)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  @@map("tb_subscription")
+}
+
+/// Table: tb_subscription_item (Phase 1 - SaaS Platform & Subscription)
+/// A purchased module line and its agreed price snapshot.
+model TbSubscriptionItem {
+  id String @id @default(uuid()) @db.Uuid
+  subscription_id String? @db.Uuid
+  module_id String? @db.Uuid
+  module_price_id String? @db.Uuid
+  module_name_snapshot String? @db.VarChar(150)
+  billing_cycle String? @db.VarChar(20)
+  unit_price Decimal? @db.Decimal(12, 2)
+  discount_amount Decimal? @db.Decimal(12, 2)
+  tax_amount Decimal? @db.Decimal(12, 2)
+  final_amount Decimal? @db.Decimal(12, 2)
+  item_status String? @db.VarChar(30)
+  activation_time DateTime? @db.Timestamptz(6)
+  expiry_time DateTime? @db.Timestamptz(6)
+  tenant_id String? @db.Uuid
+  @@map("tb_subscription_item")
+}
+
+/// Table: tb_subscription_entitlement (Phase 1 - SaaS Platform & Subscription)
+/// Effective permission to access a subscribed module.
+model TbSubscriptionEntitlement {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_id String? @db.Uuid
+  subscription_id String? @db.Uuid
+  subscription_item_id String? @db.Uuid
+  module_id String? @db.Uuid
+  entitlement_status String? @db.VarChar(30)
+  valid_from DateTime? @db.Timestamptz(6)
+  valid_until DateTime? @db.Timestamptz(6)
+  activation_source String? @db.VarChar(30)
+  activated_by String? @db.Uuid
+  activated_time DateTime? @db.Timestamptz(6)
+  @@map("tb_subscription_entitlement")
+}
+
+/// Table: tb_subscription_feature (Phase 1 - SaaS Platform & Subscription)
+/// Feature-level entitlements within an activated module.
+model TbSubscriptionFeature {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_feature")
+}
+
+/// Table: tb_subscription_history (Phase 1 - SaaS Platform & Subscription)
+/// Audit trail of subscription status and commercial changes.
+model TbSubscriptionHistory {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_history")
+}
+
+/// Table: tb_invoice (Phase 1 - SaaS Platform & Subscription)
+/// Zuno sales invoice issued to a subscribing customer.
+model TbInvoice {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_invoice")
+}
+
+/// Table: tb_invoice_detail (Phase 1 - SaaS Platform & Subscription)
+/// Individual module or service lines on a subscription invoice.
+model TbInvoiceDetail {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_invoice_detail")
+}
+
+/// Table: tb_payment (Phase 1 - SaaS Platform & Subscription)
+/// Payment transaction against a Zuno invoice.
+model TbPayment {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_payment")
+}
+
+/// Table: tb_payment_attempt (Phase 1 - SaaS Platform & Subscription)
+/// Individual checkout/payment attempts, including retries.
+model TbPaymentAttempt {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_payment_attempt")
+}
+
+/// Table: tb_payment_webhook (Phase 1 - SaaS Platform & Subscription)
+/// Verified gateway event inbox for idempotent payment processing.
+model TbPaymentWebhook {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_payment_webhook")
+}
+
+/// Table: tb_refund (Phase 1 - SaaS Platform & Subscription)
+/// Refund request and gateway refund result.
+model TbRefund {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_refund")
+}
+
+/// Table: tb_subscription_change_request (Phase 1 - SaaS Platform & Subscription)
+/// Customer request to add, remove or change subscribed modules.
+model TbSubscriptionChangeRequest {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_change_request")
+}
+
+/// Table: tb_subscription_change_detail (Phase 1 - SaaS Platform & Subscription)
+/// Module-level changes within a subscription change request.
+model TbSubscriptionChangeDetail {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_change_detail")
+}
+
+/// Table: tb_subscription_renewal (Phase 1 - SaaS Platform & Subscription)
+/// Renewal periods and renewal processing status.
+model TbSubscriptionRenewal {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_renewal")
+}
+
+/// Table: tb_subscription_limit (Phase 1 - SaaS Platform & Subscription)
+/// Quantitative limits included in a subscription.
+model TbSubscriptionLimit {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_limit")
+}
+
+/// Table: tb_subscription_module_usage (Phase 1 - SaaS Platform & Subscription)
+/// Measured module usage against subscription limits.
+model TbSubscriptionModuleUsage {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_subscription_module_usage")
+}
+
+/// Table: tb_user (Phase 1 - Administration & Management)
+/// Customer-side user identity within a tenant.
+model TbUser {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  username String? @db.VarChar(100)
+  full_name String? @db.VarChar(150)
+  email String? @db.VarChar(150)
+  mobile String? @db.VarChar(20)
+  user_type String? @db.VarChar(30)
+  user_status String? @db.VarChar(30) @default("ACTIVE")
+  email_verified Boolean? @default(false)
+  mobile_verified Boolean? @default(false)
+  last_login_time DateTime? @db.Timestamptz(6)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  @@map("tb_user")
+}
+
+/// Table: tb_user_credential (Phase 1 - Administration & Management)
+/// Password hash and credential security state for a user.
+model TbUserCredential {
+  id String @id @default(uuid()) @db.Uuid
+  user_id String? @db.Uuid
+  password_hash String? @db.Text
+  password_changed_time DateTime? @db.Timestamptz(6)
+  failed_attempts Int?
+  locked_until DateTime? @db.Timestamptz(6)
+  force_password_change Boolean? @default(false)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  tenant_id String? @db.Uuid
+  @@map("tb_user_credential")
+}
+
+/// Table: tb_user_otp (Phase 1 - Administration & Management)
+/// Hashed one-time verification codes and expiry details.
+model TbUserOtp {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_user_otp")
+}
+
+/// Table: tb_user_session (Phase 1 - Administration & Management)
+/// Refresh-token session and device login information.
+model TbUserSession {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_user_session")
+}
+
+/// Table: tb_login_history (Phase 1 - Administration & Management)
+/// Successful and failed customer login activity.
+model TbLoginHistory {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_login_history")
+}
+
+/// Table: tb_role (Phase 1 - Administration & Management)
+/// Tenant-defined role such as HR Manager or Accountant.
+model TbRole {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_role")
+}
+
+/// Table: tb_permission (Phase 1 - Administration & Management)
+/// Permission catalogue for module actions.
+model TbPermission {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_permission")
+}
+
+/// Table: tb_role_permission (Phase 1 - Administration & Management)
+/// Permissions granted or denied to a role.
+model TbRolePermission {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_role_permission")
+}
+
+/// Table: tb_user_role (Phase 1 - Administration & Management)
+/// Role assignments for users and optional company scope.
+model TbUserRole {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_user_role")
+}
+
+/// Table: tb_user_company_access (Phase 1 - Administration & Management)
+/// Company-level access granted to a user.
+model TbUserCompanyAccess {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_user_company_access")
+}
+
+/// Table: tb_user_branch_access (Phase 1 - Administration & Management)
+/// Branch-level access granted to a user.
+model TbUserBranchAccess {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_user_branch_access")
+}
+
+/// Table: tb_approval_workflow (Phase 1 - Administration & Management)
+/// Configurable approval process for a business activity.
+model TbApprovalWorkflow {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_approval_workflow")
+}
+
+/// Table: tb_approval_workflow_step (Phase 1 - Administration & Management)
+/// Ordered approval steps and approver rules.
+model TbApprovalWorkflowStep {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_approval_workflow_step")
+}
+
+/// Table: tb_platform_admin (Phase 1 - Administration & Management)
+/// Separate internal Zuno administrator identity.
+model TbPlatformAdmin {
+  id String @id @default(uuid()) @db.Uuid
+  admin_code String? @db.VarChar(30)
+  admin_name String? @db.VarChar(150)
+  email String? @db.VarChar(150)
+  mobile String? @db.VarChar(20)
+  password_hash String? @db.Text
+  admin_role String? @db.VarChar(50)
+  admin_status String? @db.VarChar(30)
+  last_login_time DateTime? @db.Timestamptz(6)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  @@map("tb_platform_admin")
+}
+
+/// Table: tb_product_category (Phase 2 - Product & Material Management)
+/// Stores product category information for the related Zuno ERP business process.
+model TbProductCategory {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_category")
+}
+
+/// Table: tb_product_subcategory (Phase 2 - Product & Material Management)
+/// Stores product subcategory information for the related Zuno ERP business process.
+model TbProductSubcategory {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_subcategory")
+}
+
+/// Table: tb_product_master (Phase 2 - Product & Material Management)
+/// Stores product master information for the related Zuno ERP business process.
+model TbProductMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_master")
+}
+
+/// Table: tb_product_variant (Phase 2 - Product & Material Management)
+/// Stores product variant information for the related Zuno ERP business process.
+model TbProductVariant {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_variant")
+}
+
+/// Table: tb_product_unit (Phase 2 - Product & Material Management)
+/// Stores product unit information for the related Zuno ERP business process.
+model TbProductUnit {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_unit")
+}
+
+/// Table: tb_product_unit_conversion (Phase 2 - Product & Material Management)
+/// Stores product unit conversion information for the related Zuno ERP business process.
+model TbProductUnitConversion {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_unit_conversion")
+}
+
+/// Table: tb_product_barcode (Phase 2 - Product & Material Management)
+/// Stores product barcode information for the related Zuno ERP business process.
+model TbProductBarcode {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_barcode")
+}
+
+/// Table: tb_product_price (Phase 2 - Product & Material Management)
+/// Stores product price information for the related Zuno ERP business process.
+model TbProductPrice {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_price")
+}
+
+/// Table: tb_product_tax (Phase 2 - Product & Material Management)
+/// Stores product tax information for the related Zuno ERP business process.
+model TbProductTax {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_tax")
+}
+
+/// Table: tb_product_batch (Phase 2 - Product & Material Management)
+/// Stores product batch information for the related Zuno ERP business process.
+model TbProductBatch {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_batch")
+}
+
+/// Table: tb_product_brand (Phase 2 - Product & Material Management)
+/// Stores product brand information for the related Zuno ERP business process.
+model TbProductBrand {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_brand")
+}
+
+/// Table: tb_product_document (Phase 2 - Product & Material Management)
+/// Stores product document information for the related Zuno ERP business process.
+model TbProductDocument {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_product_document")
+}
+
+/// Table: tb_department (Phase 2 - HR & Employee Management)
+/// Stores department information for the related Zuno ERP business process.
+model TbDepartment {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_department")
+}
+
+/// Table: tb_designation (Phase 2 - HR & Employee Management)
+/// Stores designation information for the related Zuno ERP business process.
+model TbDesignation {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_designation")
+}
+
+/// Table: tb_employee_master (Phase 2 - HR & Employee Management)
+/// Stores employee master information for the related Zuno ERP business process.
+model TbEmployeeMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_master")
+}
+
+/// Table: tb_employee_personal (Phase 2 - HR & Employee Management)
+/// Stores employee personal information for the related Zuno ERP business process.
+model TbEmployeePersonal {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_personal")
+}
+
+/// Table: tb_employee_address (Phase 2 - HR & Employee Management)
+/// Stores employee address information for the related Zuno ERP business process.
+model TbEmployeeAddress {
+  id String @id @default(uuid()) @db.Uuid
+  employee_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_address")
+}
+
+/// Table: tb_employee_contact (Phase 2 - HR & Employee Management)
+/// Stores employee contact information for the related Zuno ERP business process.
+model TbEmployeeContact {
+  id String @id @default(uuid()) @db.Uuid
+  employee_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_contact")
+}
+
+/// Table: tb_employee_bank (Phase 2 - HR & Employee Management)
+/// Stores employee bank information for the related Zuno ERP business process.
+model TbEmployeeBank {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_bank")
+}
+
+/// Table: tb_employee_document (Phase 2 - HR & Employee Management)
+/// Stores employee document information for the related Zuno ERP business process.
+model TbEmployeeDocument {
+  id String @id @default(uuid()) @db.Uuid
+  employee_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_document")
+}
+
+/// Table: tb_employee_education (Phase 2 - HR & Employee Management)
+/// Stores employee education information for the related Zuno ERP business process.
+model TbEmployeeEducation {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_education")
+}
+
+/// Table: tb_employee_experience (Phase 2 - HR & Employee Management)
+/// Stores employee experience information for the related Zuno ERP business process.
+model TbEmployeeExperience {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_experience")
+}
+
+/// Table: tb_employee_family (Phase 2 - HR & Employee Management)
+/// Stores employee family information for the related Zuno ERP business process.
+model TbEmployeeFamily {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_family")
+}
+
+/// Table: tb_employee_job_history (Phase 2 - HR & Employee Management)
+/// Stores employee job history information for the related Zuno ERP business process.
+model TbEmployeeJobHistory {
+  id String @id @default(uuid()) @db.Uuid
+  employee_id String? @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_job_history")
+}
+
+/// Table: tb_employee_salary_history (Phase 2 - HR & Employee Management)
+/// Stores employee salary history information for the related Zuno ERP business process.
+model TbEmployeeSalaryHistory {
+  id String @id @default(uuid()) @db.Uuid
+  employee_id String? @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_salary_history")
+}
+
+/// Table: tb_employee_bgv (Phase 2 - HR & Employee Management)
+/// Stores employee bgv information for the related Zuno ERP business process.
+model TbEmployeeBgv {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_bgv")
+}
+
+/// Table: tb_employee_nominee (Phase 2 - HR & Employee Management)
+/// Stores employee nominee information for the related Zuno ERP business process.
+model TbEmployeeNominee {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_nominee")
+}
+
+/// Table: tb_employee_status_history (Phase 2 - HR & Employee Management)
+/// Stores employee status history information for the related Zuno ERP business process.
+model TbEmployeeStatusHistory {
+  id String @id @default(uuid()) @db.Uuid
+  employee_id String? @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_status_history")
+}
+
+/// Table: tb_customer_master (Phase 2 - Customer & Supplier Master)
+/// Stores customer master information for the related Zuno ERP business process.
+model TbCustomerMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_customer_master")
+}
+
+/// Table: tb_customer_address (Phase 2 - Customer & Supplier Master)
+/// Stores customer address information for the related Zuno ERP business process.
+model TbCustomerAddress {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_customer_address")
+}
+
+/// Table: tb_customer_contact (Phase 2 - Customer & Supplier Master)
+/// Stores customer contact information for the related Zuno ERP business process.
+model TbCustomerContact {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_customer_contact")
+}
+
+/// Table: tb_customer_document (Phase 2 - Customer & Supplier Master)
+/// Stores customer document information for the related Zuno ERP business process.
+model TbCustomerDocument {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_customer_document")
+}
+
+/// Table: tb_supplier_master (Phase 2 - Customer & Supplier Master)
+/// Stores supplier master information for the related Zuno ERP business process.
+model TbSupplierMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_master")
+}
+
+/// Table: tb_supplier_address (Phase 2 - Customer & Supplier Master)
+/// Stores supplier address information for the related Zuno ERP business process.
+model TbSupplierAddress {
+  id String @id @default(uuid()) @db.Uuid
+  supplier_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_address")
+}
+
+/// Table: tb_supplier_contact (Phase 2 - Customer & Supplier Master)
+/// Stores supplier contact information for the related Zuno ERP business process.
+model TbSupplierContact {
+  id String @id @default(uuid()) @db.Uuid
+  supplier_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_contact")
+}
+
+/// Table: tb_supplier_document (Phase 2 - Customer & Supplier Master)
+/// Stores supplier document information for the related Zuno ERP business process.
+model TbSupplierDocument {
+  id String @id @default(uuid()) @db.Uuid
+  supplier_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_document")
+}
+
+/// Table: tb_property_master (Phase 2 - Land & Building Management)
+/// Stores property master information for the related Zuno ERP business process.
+model TbPropertyMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_property_master")
+}
+
+/// Table: tb_property_owner (Phase 2 - Land & Building Management)
+/// Stores property owner information for the related Zuno ERP business process.
+model TbPropertyOwner {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_property_owner")
+}
+
+/// Table: tb_property_address (Phase 2 - Land & Building Management)
+/// Stores property address information for the related Zuno ERP business process.
+model TbPropertyAddress {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_property_address")
+}
+
+/// Table: tb_property_document (Phase 2 - Land & Building Management)
+/// Stores property document information for the related Zuno ERP business process.
+model TbPropertyDocument {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_property_document")
+}
+
+/// Table: tb_property_legal_verification (Phase 2 - Land & Building Management)
+/// Stores property legal verification information for the related Zuno ERP business process.
+model TbPropertyLegalVerification {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_property_legal_verification")
+}
+
+/// Table: tb_property_approval (Phase 2 - Land & Building Management)
+/// Stores property approval information for the related Zuno ERP business process.
+model TbPropertyApproval {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_property_approval")
+}
+
+/// Table: tb_construction_project (Phase 2 - Land & Building Management)
+/// Stores construction project information for the related Zuno ERP business process.
+model TbConstructionProject {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_construction_project")
+}
+
+/// Table: tb_construction_phase (Phase 2 - Land & Building Management)
+/// Stores construction phase information for the related Zuno ERP business process.
+model TbConstructionPhase {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_construction_phase")
+}
+
+/// Table: tb_construction_contractor (Phase 2 - Land & Building Management)
+/// Stores construction contractor information for the related Zuno ERP business process.
+model TbConstructionContractor {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_construction_contractor")
+}
+
+/// Table: tb_construction_material (Phase 2 - Land & Building Management)
+/// Stores construction material information for the related Zuno ERP business process.
+model TbConstructionMaterial {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_construction_material")
+}
+
+/// Table: tb_construction_expense (Phase 2 - Land & Building Management)
+/// Stores construction expense information for the related Zuno ERP business process.
+model TbConstructionExpense {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_construction_expense")
+}
+
+/// Table: tb_construction_progress (Phase 2 - Land & Building Management)
+/// Stores construction progress information for the related Zuno ERP business process.
+model TbConstructionProgress {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_construction_progress")
+}
+
+/// Table: tb_asset_category (Phase 2 - Assets & Maintenance Master)
+/// Stores asset category information for the related Zuno ERP business process.
+model TbAssetCategory {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_category")
+}
+
+/// Table: tb_asset_master (Phase 2 - Assets & Maintenance Master)
+/// Stores asset master information for the related Zuno ERP business process.
+model TbAssetMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_master")
+}
+
+/// Table: tb_asset_location (Phase 2 - Assets & Maintenance Master)
+/// Stores asset location information for the related Zuno ERP business process.
+model TbAssetLocation {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_location")
+}
+
+/// Table: tb_asset_allocation (Phase 2 - Assets & Maintenance Master)
+/// Stores asset allocation information for the related Zuno ERP business process.
+model TbAssetAllocation {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_allocation")
+}
+
+/// Table: tb_asset_document (Phase 2 - Assets & Maintenance Master)
+/// Stores asset document information for the related Zuno ERP business process.
+model TbAssetDocument {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_document")
+}
+
+/// Table: tb_asset_warranty (Phase 2 - Assets & Maintenance Master)
+/// Stores asset warranty information for the related Zuno ERP business process.
+model TbAssetWarranty {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_warranty")
+}
+
+/// Table: tb_asset_vendor (Phase 2 - Assets & Maintenance Master)
+/// Stores asset vendor information for the related Zuno ERP business process.
+model TbAssetVendor {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_vendor")
+}
+
+/// Table: tb_asset_depreciation_setup (Phase 2 - Assets & Maintenance Master)
+/// Stores asset depreciation setup information for the related Zuno ERP business process.
+model TbAssetDepreciationSetup {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_asset_depreciation_setup")
+}
+
+/// Table: tb_purchase_request (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase request information for the related Zuno ERP business process.
+model TbPurchaseRequest {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_request")
+}
+
+/// Table: tb_purchase_request_detail (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase request detail information for the related Zuno ERP business process.
+model TbPurchaseRequestDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_request_detail")
+}
+
+/// Table: tb_purchase_order (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase order information for the related Zuno ERP business process.
+model TbPurchaseOrder {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_order")
+}
+
+/// Table: tb_purchase_order_detail (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase order detail information for the related Zuno ERP business process.
+model TbPurchaseOrderDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_order_detail")
+}
+
+/// Table: tb_goods_receipt (Phase 3 - Purchase & Supplier Operations)
+/// Stores goods receipt information for the related Zuno ERP business process.
+model TbGoodsReceipt {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_goods_receipt")
+}
+
+/// Table: tb_goods_receipt_detail (Phase 3 - Purchase & Supplier Operations)
+/// Stores goods receipt detail information for the related Zuno ERP business process.
+model TbGoodsReceiptDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_goods_receipt_detail")
+}
+
+/// Table: tb_supplier_invoice (Phase 3 - Purchase & Supplier Operations)
+/// Stores supplier invoice information for the related Zuno ERP business process.
+model TbSupplierInvoice {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_invoice")
+}
+
+/// Table: tb_supplier_invoice_detail (Phase 3 - Purchase & Supplier Operations)
+/// Stores supplier invoice detail information for the related Zuno ERP business process.
+model TbSupplierInvoiceDetail {
+  id String @id @default(uuid()) @db.Uuid
+  supplier_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_invoice_detail")
+}
+
+/// Table: tb_purchase_return (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase return information for the related Zuno ERP business process.
+model TbPurchaseReturn {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_return")
+}
+
+/// Table: tb_purchase_return_detail (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase return detail information for the related Zuno ERP business process.
+model TbPurchaseReturnDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_return_detail")
+}
+
+/// Table: tb_supplier_payment_allocation (Phase 3 - Purchase & Supplier Operations)
+/// Stores supplier payment allocation information for the related Zuno ERP business process.
+model TbSupplierPaymentAllocation {
+  id String @id @default(uuid()) @db.Uuid
+  supplier_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_supplier_payment_allocation")
+}
+
+/// Table: tb_purchase_approval_history (Phase 3 - Purchase & Supplier Operations)
+/// Stores purchase approval history information for the related Zuno ERP business process.
+model TbPurchaseApprovalHistory {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_purchase_approval_history")
+}
+
+/// Table: tb_warehouse_master (Phase 3 - Inventory & Warehouse)
+/// Stores warehouse master information for the related Zuno ERP business process.
+model TbWarehouseMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_warehouse_master")
+}
+
+/// Table: tb_warehouse_location (Phase 3 - Inventory & Warehouse)
+/// Stores warehouse location information for the related Zuno ERP business process.
+model TbWarehouseLocation {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_warehouse_location")
+}
+
+/// Table: tb_stock_balance (Phase 3 - Inventory & Warehouse)
+/// Stores stock balance information for the related Zuno ERP business process.
+model TbStockBalance {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_balance")
+}
+
+/// Table: tb_stock_ledger (Phase 3 - Inventory & Warehouse)
+/// Stores stock ledger information for the related Zuno ERP business process.
+model TbStockLedger {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_ledger")
+}
+
+/// Table: tb_stock_inward (Phase 3 - Inventory & Warehouse)
+/// Stores stock inward information for the related Zuno ERP business process.
+model TbStockInward {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_inward")
+}
+
+/// Table: tb_stock_inward_detail (Phase 3 - Inventory & Warehouse)
+/// Stores stock inward detail information for the related Zuno ERP business process.
+model TbStockInwardDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_inward_detail")
+}
+
+/// Table: tb_stock_outward (Phase 3 - Inventory & Warehouse)
+/// Stores stock outward information for the related Zuno ERP business process.
+model TbStockOutward {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_outward")
+}
+
+/// Table: tb_stock_outward_detail (Phase 3 - Inventory & Warehouse)
+/// Stores stock outward detail information for the related Zuno ERP business process.
+model TbStockOutwardDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_outward_detail")
+}
+
+/// Table: tb_stock_transfer (Phase 3 - Inventory & Warehouse)
+/// Stores stock transfer information for the related Zuno ERP business process.
+model TbStockTransfer {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_transfer")
+}
+
+/// Table: tb_stock_transfer_detail (Phase 3 - Inventory & Warehouse)
+/// Stores stock transfer detail information for the related Zuno ERP business process.
+model TbStockTransferDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_transfer_detail")
+}
+
+/// Table: tb_stock_adjustment (Phase 3 - Inventory & Warehouse)
+/// Stores stock adjustment information for the related Zuno ERP business process.
+model TbStockAdjustment {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_adjustment")
+}
+
+/// Table: tb_stock_adjustment_detail (Phase 3 - Inventory & Warehouse)
+/// Stores stock adjustment detail information for the related Zuno ERP business process.
+model TbStockAdjustmentDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_adjustment_detail")
+}
+
+/// Table: tb_stock_audit (Phase 3 - Inventory & Warehouse)
+/// Stores stock audit information for the related Zuno ERP business process.
+model TbStockAudit {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_audit")
+}
+
+/// Table: tb_stock_audit_detail (Phase 3 - Inventory & Warehouse)
+/// Stores stock audit detail information for the related Zuno ERP business process.
+model TbStockAuditDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_stock_audit_detail")
+}
+
+/// Table: tb_sales_enquiry (Phase 3 - Sales & Customer Operations)
+/// Stores sales enquiry information for the related Zuno ERP business process.
+model TbSalesEnquiry {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_enquiry")
+}
+
+/// Table: tb_sales_quotation (Phase 3 - Sales & Customer Operations)
+/// Stores sales quotation information for the related Zuno ERP business process.
+model TbSalesQuotation {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_quotation")
+}
+
+/// Table: tb_sales_quotation_detail (Phase 3 - Sales & Customer Operations)
+/// Stores sales quotation detail information for the related Zuno ERP business process.
+model TbSalesQuotationDetail {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_quotation_detail")
+}
+
+/// Table: tb_sales_order (Phase 3 - Sales & Customer Operations)
+/// Stores sales order information for the related Zuno ERP business process.
+model TbSalesOrder {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_order")
+}
+
+/// Table: tb_sales_order_detail (Phase 3 - Sales & Customer Operations)
+/// Stores sales order detail information for the related Zuno ERP business process.
+model TbSalesOrderDetail {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_order_detail")
+}
+
+/// Table: tb_sales_invoice (Phase 3 - Sales & Customer Operations)
+/// Stores sales invoice information for the related Zuno ERP business process.
+model TbSalesInvoice {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_invoice")
+}
+
+/// Table: tb_sales_invoice_detail (Phase 3 - Sales & Customer Operations)
+/// Stores sales invoice detail information for the related Zuno ERP business process.
+model TbSalesInvoiceDetail {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_invoice_detail")
+}
+
+/// Table: tb_sales_return (Phase 3 - Sales & Customer Operations)
+/// Stores sales return information for the related Zuno ERP business process.
+model TbSalesReturn {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_return")
+}
+
+/// Table: tb_sales_return_detail (Phase 3 - Sales & Customer Operations)
+/// Stores sales return detail information for the related Zuno ERP business process.
+model TbSalesReturnDetail {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_return_detail")
+}
+
+/// Table: tb_customer_receipt (Phase 3 - Sales & Customer Operations)
+/// Stores customer receipt information for the related Zuno ERP business process.
+model TbCustomerReceipt {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_customer_receipt")
+}
+
+/// Table: tb_customer_receipt_allocation (Phase 3 - Sales & Customer Operations)
+/// Stores customer receipt allocation information for the related Zuno ERP business process.
+model TbCustomerReceiptAllocation {
+  id String @id @default(uuid()) @db.Uuid
+  customer_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_customer_receipt_allocation")
+}
+
+/// Table: tb_sales_delivery (Phase 3 - Sales & Customer Operations)
+/// Stores sales delivery information for the related Zuno ERP business process.
+model TbSalesDelivery {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_sales_delivery")
+}
+
+/// Table: tb_shift_master (Phase 3 - Attendance & Leave Management)
+/// Stores shift master information for the related Zuno ERP business process.
+model TbShiftMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_shift_master")
+}
+
+/// Table: tb_employee_shift (Phase 3 - Attendance & Leave Management)
+/// Stores employee shift information for the related Zuno ERP business process.
+model TbEmployeeShift {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_shift")
+}
+
+/// Table: tb_shift_roster (Phase 3 - Attendance & Leave Management)
+/// Stores shift roster information for the related Zuno ERP business process.
+model TbShiftRoster {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_shift_roster")
+}
+
+/// Table: tb_attendance (Phase 3 - Attendance & Leave Management)
+/// Stores attendance information for the related Zuno ERP business process.
+model TbAttendance {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_attendance")
+}
+
+/// Table: tb_attendance_punch (Phase 3 - Attendance & Leave Management)
+/// Stores attendance punch information for the related Zuno ERP business process.
+model TbAttendancePunch {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_attendance_punch")
+}
+
+/// Table: tb_attendance_device (Phase 3 - Attendance & Leave Management)
+/// Stores attendance device information for the related Zuno ERP business process.
+model TbAttendanceDevice {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_attendance_device")
+}
+
+/// Table: tb_attendance_location (Phase 3 - Attendance & Leave Management)
+/// Stores attendance location information for the related Zuno ERP business process.
+model TbAttendanceLocation {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_attendance_location")
+}
+
+/// Table: tb_attendance_correction (Phase 3 - Attendance & Leave Management)
+/// Stores attendance correction information for the related Zuno ERP business process.
+model TbAttendanceCorrection {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_attendance_correction")
+}
+
+/// Table: tb_leave_type (Phase 3 - Attendance & Leave Management)
+/// Stores leave type information for the related Zuno ERP business process.
+model TbLeaveType {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_leave_type")
+}
+
+/// Table: tb_leave_balance (Phase 3 - Attendance & Leave Management)
+/// Stores leave balance information for the related Zuno ERP business process.
+model TbLeaveBalance {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_leave_balance")
+}
+
+/// Table: tb_leave_request (Phase 3 - Attendance & Leave Management)
+/// Stores leave request information for the related Zuno ERP business process.
+model TbLeaveRequest {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_leave_request")
+}
+
+/// Table: tb_leave_approval (Phase 3 - Attendance & Leave Management)
+/// Stores leave approval information for the related Zuno ERP business process.
+model TbLeaveApproval {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_leave_approval")
+}
+
+/// Table: tb_employee_permission_request (Phase 3 - Attendance & Leave Management)
+/// Stores employee permission request information for the related Zuno ERP business process.
+model TbEmployeePermissionRequest {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_permission_request")
+}
+
+/// Table: tb_employee_on_duty (Phase 3 - Attendance & Leave Management)
+/// Stores employee on duty information for the related Zuno ERP business process.
+model TbEmployeeOnDuty {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_on_duty")
+}
+
+/// Table: tb_overtime (Phase 3 - Attendance & Leave Management)
+/// Stores overtime information for the related Zuno ERP business process.
+model TbOvertime {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_overtime")
+}
+
+/// Table: tb_bom_master (Phase 3 - Production & Manufacturing)
+/// Stores bom master information for the related Zuno ERP business process.
+model TbBomMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_bom_master")
+}
+
+/// Table: tb_bom_detail (Phase 3 - Production & Manufacturing)
+/// Stores bom detail information for the related Zuno ERP business process.
+model TbBomDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_bom_detail")
+}
+
+/// Table: tb_production_plan (Phase 3 - Production & Manufacturing)
+/// Stores production plan information for the related Zuno ERP business process.
+model TbProductionPlan {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_plan")
+}
+
+/// Table: tb_production_plan_detail (Phase 3 - Production & Manufacturing)
+/// Stores production plan detail information for the related Zuno ERP business process.
+model TbProductionPlanDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_plan_detail")
+}
+
+/// Table: tb_work_order (Phase 3 - Production & Manufacturing)
+/// Stores work order information for the related Zuno ERP business process.
+model TbWorkOrder {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_work_order")
+}
+
+/// Table: tb_work_order_detail (Phase 3 - Production & Manufacturing)
+/// Stores work order detail information for the related Zuno ERP business process.
+model TbWorkOrderDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_work_order_detail")
+}
+
+/// Table: tb_material_issue (Phase 3 - Production & Manufacturing)
+/// Stores material issue information for the related Zuno ERP business process.
+model TbMaterialIssue {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_material_issue")
+}
+
+/// Table: tb_material_issue_detail (Phase 3 - Production & Manufacturing)
+/// Stores material issue detail information for the related Zuno ERP business process.
+model TbMaterialIssueDetail {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_material_issue_detail")
+}
+
+/// Table: tb_material_return (Phase 3 - Production & Manufacturing)
+/// Stores material return information for the related Zuno ERP business process.
+model TbMaterialReturn {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  product_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_material_return")
+}
+
+/// Table: tb_material_return_detail (Phase 3 - Production & Manufacturing)
+/// Stores material return detail information for the related Zuno ERP business process.
+model TbMaterialReturnDetail {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_material_return_detail")
+}
+
+/// Table: tb_production_entry (Phase 3 - Production & Manufacturing)
+/// Stores production entry information for the related Zuno ERP business process.
+model TbProductionEntry {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_entry")
+}
+
+/// Table: tb_production_entry_detail (Phase 3 - Production & Manufacturing)
+/// Stores production entry detail information for the related Zuno ERP business process.
+model TbProductionEntryDetail {
+  id String @id @default(uuid()) @db.Uuid
+  product_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_entry_detail")
+}
+
+/// Table: tb_work_in_progress (Phase 3 - Production & Manufacturing)
+/// Stores work in progress information for the related Zuno ERP business process.
+model TbWorkInProgress {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_work_in_progress")
+}
+
+/// Table: tb_production_quality_check (Phase 3 - Production & Manufacturing)
+/// Stores production quality check information for the related Zuno ERP business process.
+model TbProductionQualityCheck {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_quality_check")
+}
+
+/// Table: tb_production_rejection (Phase 3 - Production & Manufacturing)
+/// Stores production rejection information for the related Zuno ERP business process.
+model TbProductionRejection {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_rejection")
+}
+
+/// Table: tb_production_wastage (Phase 3 - Production & Manufacturing)
+/// Stores production wastage information for the related Zuno ERP business process.
+model TbProductionWastage {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_production_wastage")
+}
+
+/// Table: tb_account_group (Phase 4 - Banking & Accounting)
+/// Stores account group information for the related Zuno ERP business process.
+model TbAccountGroup {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_account_group")
+}
+
+/// Table: tb_account_ledger (Phase 4 - Banking & Accounting)
+/// Stores account ledger information for the related Zuno ERP business process.
+model TbAccountLedger {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_account_ledger")
+}
+
+/// Table: tb_accounting_voucher (Phase 4 - Banking & Accounting)
+/// Stores accounting voucher information for the related Zuno ERP business process.
+model TbAccountingVoucher {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_accounting_voucher")
+}
+
+/// Table: tb_accounting_voucher_detail (Phase 4 - Banking & Accounting)
+/// Stores accounting voucher detail information for the related Zuno ERP business process.
+model TbAccountingVoucherDetail {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_accounting_voucher_detail")
+}
+
+/// Table: tb_voucher_type (Phase 4 - Banking & Accounting)
+/// Stores voucher type information for the related Zuno ERP business process.
+model TbVoucherType {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_voucher_type")
+}
+
+/// Table: tb_fiscal_period (Phase 4 - Banking & Accounting)
+/// Stores fiscal period information for the related Zuno ERP business process.
+model TbFiscalPeriod {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_fiscal_period")
+}
+
+/// Table: tb_bank_master (Phase 4 - Banking & Accounting)
+/// Stores bank master information for the related Zuno ERP business process.
+model TbBankMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_bank_master")
+}
+
+/// Table: tb_company_bank_account (Phase 4 - Banking & Accounting)
+/// Stores company bank account information for the related Zuno ERP business process.
+model TbCompanyBankAccount {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_bank_account")
+}
+
+/// Table: tb_bank_statement (Phase 4 - Banking & Accounting)
+/// Stores bank statement information for the related Zuno ERP business process.
+model TbBankStatement {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_bank_statement")
+}
+
+/// Table: tb_bank_statement_detail (Phase 4 - Banking & Accounting)
+/// Stores bank statement detail information for the related Zuno ERP business process.
+model TbBankStatementDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_bank_statement_detail")
+}
+
+/// Table: tb_bank_reconciliation (Phase 4 - Banking & Accounting)
+/// Stores bank reconciliation information for the related Zuno ERP business process.
+model TbBankReconciliation {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_bank_reconciliation")
+}
+
+/// Table: tb_cash_transaction (Phase 4 - Banking & Accounting)
+/// Stores cash transaction information for the related Zuno ERP business process.
+model TbCashTransaction {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_cash_transaction")
+}
+
+/// Table: tb_expense_category (Phase 4 - Banking & Accounting)
+/// Stores expense category information for the related Zuno ERP business process.
+model TbExpenseCategory {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_expense_category")
+}
+
+/// Table: tb_expense_claim (Phase 4 - Banking & Accounting)
+/// Stores expense claim information for the related Zuno ERP business process.
+model TbExpenseClaim {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_expense_claim")
+}
+
+/// Table: tb_expense_claim_detail (Phase 4 - Banking & Accounting)
+/// Stores expense claim detail information for the related Zuno ERP business process.
+model TbExpenseClaimDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_expense_claim_detail")
+}
+
+/// Table: tb_payment_voucher (Phase 4 - Banking & Accounting)
+/// Stores payment voucher information for the related Zuno ERP business process.
+model TbPaymentVoucher {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_payment_voucher")
+}
+
+/// Table: tb_receipt_voucher (Phase 4 - Banking & Accounting)
+/// Stores receipt voucher information for the related Zuno ERP business process.
+model TbReceiptVoucher {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_receipt_voucher")
+}
+
+/// Table: tb_journal_voucher (Phase 4 - Banking & Accounting)
+/// Stores journal voucher information for the related Zuno ERP business process.
+model TbJournalVoucher {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_journal_voucher")
+}
+
+/// Table: tb_salary_component (Phase 4 - Payroll & Benefits)
+/// Stores salary component information for the related Zuno ERP business process.
+model TbSalaryComponent {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_salary_component")
+}
+
+/// Table: tb_salary_structure (Phase 4 - Payroll & Benefits)
+/// Stores salary structure information for the related Zuno ERP business process.
+model TbSalaryStructure {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_salary_structure")
+}
+
+/// Table: tb_salary_structure_detail (Phase 4 - Payroll & Benefits)
+/// Stores salary structure detail information for the related Zuno ERP business process.
+model TbSalaryStructureDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_salary_structure_detail")
+}
+
+/// Table: tb_employee_salary (Phase 4 - Payroll & Benefits)
+/// Stores employee salary information for the related Zuno ERP business process.
+model TbEmployeeSalary {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_employee_salary")
+}
+
+/// Table: tb_payroll_period (Phase 4 - Payroll & Benefits)
+/// Stores payroll period information for the related Zuno ERP business process.
+model TbPayrollPeriod {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_payroll_period")
+}
+
+/// Table: tb_payroll_run (Phase 4 - Payroll & Benefits)
+/// Stores payroll run information for the related Zuno ERP business process.
+model TbPayrollRun {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_payroll_run")
+}
+
+/// Table: tb_payroll_detail (Phase 4 - Payroll & Benefits)
+/// Stores payroll detail information for the related Zuno ERP business process.
+model TbPayrollDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_payroll_detail")
+}
+
+/// Table: tb_payroll_component_detail (Phase 4 - Payroll & Benefits)
+/// Stores payroll component detail information for the related Zuno ERP business process.
+model TbPayrollComponentDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_payroll_component_detail")
+}
+
+/// Table: tb_payroll_deduction (Phase 4 - Payroll & Benefits)
+/// Stores payroll deduction information for the related Zuno ERP business process.
+model TbPayrollDeduction {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_payroll_deduction")
+}
+
+/// Table: tb_payroll_overtime (Phase 4 - Payroll & Benefits)
+/// Stores payroll overtime information for the related Zuno ERP business process.
+model TbPayrollOvertime {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_payroll_overtime")
+}
+
+/// Table: tb_pf_contribution (Phase 4 - Payroll & Benefits)
+/// Stores pf contribution information for the related Zuno ERP business process.
+model TbPfContribution {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_pf_contribution")
+}
+
+/// Table: tb_esi_contribution (Phase 4 - Payroll & Benefits)
+/// Stores esi contribution information for the related Zuno ERP business process.
+model TbEsiContribution {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_esi_contribution")
+}
+
+/// Table: tb_bonus_calculation (Phase 4 - Payroll & Benefits)
+/// Stores bonus calculation information for the related Zuno ERP business process.
+model TbBonusCalculation {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_bonus_calculation")
+}
+
+/// Table: tb_gratuity_calculation (Phase 4 - Payroll & Benefits)
+/// Stores gratuity calculation information for the related Zuno ERP business process.
+model TbGratuityCalculation {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_gratuity_calculation")
+}
+
+/// Table: tb_payslip (Phase 4 - Payroll & Benefits)
+/// Stores payslip information for the related Zuno ERP business process.
+model TbPayslip {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_payslip")
+}
+
+/// Table: tb_full_final_settlement (Phase 4 - Payroll & Benefits)
+/// Stores full final settlement information for the related Zuno ERP business process.
+model TbFullFinalSettlement {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_full_final_settlement")
+}
+
+/// Table: tb_licence_type (Phase 4 - Licence & Compliance)
+/// Stores licence type information for the related Zuno ERP business process.
+model TbLicenceType {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_licence_type")
+}
+
+/// Table: tb_company_licence (Phase 4 - Licence & Compliance)
+/// Stores company licence information for the related Zuno ERP business process.
+model TbCompanyLicence {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  @@map("tb_company_licence")
+}
+
+/// Table: tb_licence_document (Phase 4 - Licence & Compliance)
+/// Stores licence document information for the related Zuno ERP business process.
+model TbLicenceDocument {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_licence_document")
+}
+
+/// Table: tb_licence_renewal (Phase 4 - Licence & Compliance)
+/// Stores licence renewal information for the related Zuno ERP business process.
+model TbLicenceRenewal {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_licence_renewal")
+}
+
+/// Table: tb_compliance_type (Phase 4 - Licence & Compliance)
+/// Stores compliance type information for the related Zuno ERP business process.
+model TbComplianceType {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_type")
+}
+
+/// Table: tb_compliance_master (Phase 4 - Licence & Compliance)
+/// Stores compliance master information for the related Zuno ERP business process.
+model TbComplianceMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_master")
+}
+
+/// Table: tb_compliance_calendar (Phase 4 - Licence & Compliance)
+/// Stores compliance calendar information for the related Zuno ERP business process.
+model TbComplianceCalendar {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_calendar")
+}
+
+/// Table: tb_compliance_task (Phase 4 - Licence & Compliance)
+/// Stores compliance task information for the related Zuno ERP business process.
+model TbComplianceTask {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_task")
+}
+
+/// Table: tb_compliance_submission (Phase 4 - Licence & Compliance)
+/// Stores compliance submission information for the related Zuno ERP business process.
+model TbComplianceSubmission {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_submission")
+}
+
+/// Table: tb_compliance_payment (Phase 4 - Licence & Compliance)
+/// Stores compliance payment information for the related Zuno ERP business process.
+model TbCompliancePayment {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_payment")
+}
+
+/// Table: tb_compliance_notice (Phase 4 - Licence & Compliance)
+/// Stores compliance notice information for the related Zuno ERP business process.
+model TbComplianceNotice {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_notice")
+}
+
+/// Table: tb_compliance_document (Phase 4 - Licence & Compliance)
+/// Stores compliance document information for the related Zuno ERP business process.
+model TbComplianceDocument {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  file_name String? @db.VarChar(255)
+  storage_key String? @db.Text
+  file_type String? @db.VarChar(80)
+  uploaded_by String? @db.Uuid
+  uploaded_time DateTime? @db.Timestamptz(6)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_compliance_document")
+}
+
+/// Table: tb_government_portal (Phase 4 - Government Integration & Statutory)
+/// Stores government portal information for the related Zuno ERP business process.
+model TbGovernmentPortal {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_government_portal")
+}
+
+/// Table: tb_government_api_config (Phase 4 - Government Integration & Statutory)
+/// Stores government api config information for the related Zuno ERP business process.
+model TbGovernmentApiConfig {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_government_api_config")
+}
+
+/// Table: tb_government_api_log (Phase 4 - Government Integration & Statutory)
+/// Stores government api log information for the related Zuno ERP business process.
+model TbGovernmentApiLog {
+  id String @id @default(uuid()) @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_government_api_log")
+}
+
+/// Table: tb_statutory_form_master (Phase 4 - Government Integration & Statutory)
+/// Stores statutory form master information for the related Zuno ERP business process.
+model TbStatutoryFormMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_form_master")
+}
+
+/// Table: tb_statutory_form_version (Phase 4 - Government Integration & Statutory)
+/// Stores statutory form version information for the related Zuno ERP business process.
+model TbStatutoryFormVersion {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_form_version")
+}
+
+/// Table: tb_statutory_submission (Phase 4 - Government Integration & Statutory)
+/// Stores statutory submission information for the related Zuno ERP business process.
+model TbStatutorySubmission {
+  id String @id @default(uuid()) @db.Uuid
+  document_number String? @db.VarChar(50)
+  document_date DateTime? @db.Date
+  status String? @db.VarChar(30) @default("ACTIVE")
+  remarks String? @db.Text
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_submission")
+}
+
+/// Table: tb_statutory_submission_detail (Phase 4 - Government Integration & Statutory)
+/// Stores statutory submission detail information for the related Zuno ERP business process.
+model TbStatutorySubmissionDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_submission_detail")
+}
+
+/// Table: tb_statutory_acknowledgement (Phase 4 - Government Integration & Statutory)
+/// Stores statutory acknowledgement information for the related Zuno ERP business process.
+model TbStatutoryAcknowledgement {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_acknowledgement")
+}
+
+/// Table: tb_statutory_rule_master (Phase 4 - Government Integration & Statutory)
+/// Stores statutory rule master information for the related Zuno ERP business process.
+model TbStatutoryRuleMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_rule_master")
+}
+
+/// Table: tb_statutory_rule_version (Phase 4 - Government Integration & Statutory)
+/// Stores statutory rule version information for the related Zuno ERP business process.
+model TbStatutoryRuleVersion {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_rule_version")
+}
+
+/// Table: tb_minimum_wage_master (Phase 4 - Government Integration & Statutory)
+/// Stores minimum wage master information for the related Zuno ERP business process.
+model TbMinimumWageMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_minimum_wage_master")
+}
+
+/// Table: tb_minimum_wage_detail (Phase 4 - Government Integration & Statutory)
+/// Stores minimum wage detail information for the related Zuno ERP business process.
+model TbMinimumWageDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_minimum_wage_detail")
+}
+
+/// Table: tb_statutory_calculation_log (Phase 4 - Government Integration & Statutory)
+/// Stores statutory calculation log information for the related Zuno ERP business process.
+model TbStatutoryCalculationLog {
+  id String @id @default(uuid()) @db.Uuid
+  action_type String? @db.VarChar(50)
+  action_by String? @db.Uuid
+  action_time DateTime? @db.Timestamptz(6)
+  details Json?
+  quantity Decimal? @db.Decimal(14, 3)
+  amount Decimal? @db.Decimal(14, 2)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_calculation_log")
+}
+
+/// Table: tb_statutory_rule_impact (Phase 4 - Government Integration & Statutory)
+/// Stores statutory rule impact information for the related Zuno ERP business process.
+model TbStatutoryRuleImpact {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_statutory_rule_impact")
+}
+
+/// Table: tb_investment_type (Phase 4 - Investment & Finance)
+/// Stores investment type information for the related Zuno ERP business process.
+model TbInvestmentType {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_investment_type")
+}
+
+/// Table: tb_investment_master (Phase 4 - Investment & Finance)
+/// Stores investment master information for the related Zuno ERP business process.
+model TbInvestmentMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_investment_master")
+}
+
+/// Table: tb_investment_transaction (Phase 4 - Investment & Finance)
+/// Stores investment transaction information for the related Zuno ERP business process.
+model TbInvestmentTransaction {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_investment_transaction")
+}
+
+/// Table: tb_capital_contribution (Phase 4 - Investment & Finance)
+/// Stores capital contribution information for the related Zuno ERP business process.
+model TbCapitalContribution {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_capital_contribution")
+}
+
+/// Table: tb_loan_master (Phase 4 - Investment & Finance)
+/// Stores loan master information for the related Zuno ERP business process.
+model TbLoanMaster {
+  id String @id @default(uuid()) @db.Uuid
+  code String? @db.VarChar(50)
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_loan_master")
+}
+
+/// Table: tb_loan_schedule (Phase 4 - Investment & Finance)
+/// Stores loan schedule information for the related Zuno ERP business process.
+model TbLoanSchedule {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  effective_from DateTime? @db.Date
+  effective_to DateTime? @db.Date
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_loan_schedule")
+}
+
+/// Table: tb_loan_transaction (Phase 4 - Investment & Finance)
+/// Stores loan transaction information for the related Zuno ERP business process.
+model TbLoanTransaction {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_loan_transaction")
+}
+
+/// Table: tb_interest_calculation (Phase 4 - Investment & Finance)
+/// Stores interest calculation information for the related Zuno ERP business process.
+model TbInterestCalculation {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  quantity Decimal? @db.Decimal(14, 3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_interest_calculation")
+}
+
+/// Table: tb_financial_budget (Phase 4 - Investment & Finance)
+/// Stores financial budget information for the related Zuno ERP business process.
+model TbFinancialBudget {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(200)
+  description String? @db.Text
+  status String? @db.VarChar(30) @default("ACTIVE")
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_financial_budget")
+}
+
+/// Table: tb_financial_budget_detail (Phase 4 - Investment & Finance)
+/// Stores financial budget detail information for the related Zuno ERP business process.
+model TbFinancialBudgetDetail {
+  id String @id @default(uuid()) @db.Uuid
+  parent_id String? @db.Uuid
+  line_number Int?
+  description String? @db.Text
+  quantity Decimal? @db.Decimal(14, 3)
+  unit_price Decimal? @db.Decimal(14, 2)
+  line_amount Decimal? @db.Decimal(14, 2)
+  amount Decimal? @db.Decimal(14, 2)
+  currency_code String? @db.VarChar(3)
+  created_by String? @db.Uuid
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String? @db.Uuid
+  updated_time DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  is_active Boolean @default(true)
+  tenant_id String? @db.Uuid
+  @@map("tb_financial_budget_detail")
+}
+
+/// Operational Outbox for Two-Database Synchronization
+model TbArchiveOutbox {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String @db.Uuid
+  source_table String @db.VarChar(100)
+  source_record_id String @db.Uuid
+  event_type String @db.VarChar(50)
+  payload Json
+  status String @default("PENDING") @db.VarChar(30)
+  retry_count Int @default(0)
+  last_error String? @db.Text
+  next_retry_at DateTime? @db.Timestamptz(6)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+  processed_time DateTime? @db.Timestamptz(6)
+
+  @@map("tb_archive_outbox")
+  @@index([status, next_retry_at])
+  @@index([tenant_id])
+}
+
+/// Operational Audit Log
+model TbAuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  tenant_id String? @db.Uuid
+  company_id String? @db.Uuid
+  branch_id String? @db.Uuid
+  user_id String? @db.Uuid
+  action String @db.VarChar(100)
+  resource String @db.VarChar(100)
+  resource_id String? @db.Uuid
+  ip_address String? @db.VarChar(50)
+  user_agent String? @db.Text
+  old_data Json?
+  new_data Json?
+  status String @default("SUCCESS") @db.VarChar(20)
+  created_time DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tb_audit_log")
+  @@index([tenant_id, created_time])
+}

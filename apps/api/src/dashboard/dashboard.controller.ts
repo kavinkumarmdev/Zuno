@@ -1,0 +1,20 @@
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { DashboardService } from './dashboard.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentTenant } from '../common/decorators/tenant.decorator';
+
+@ApiTags('Executive Dashboard')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('dashboard')
+export class DashboardController {
+  constructor(private readonly dashboardService: DashboardService) {}
+
+  @Get('metrics')
+  @ApiOperation({ summary: 'Retrieve high-level ERP KPIs, charts and operational summaries' })
+  async getMetrics(@CurrentTenant() tenantId: string) {
+    return this.dashboardService.getExecutiveMetrics(tenantId);
+  }
+}
+

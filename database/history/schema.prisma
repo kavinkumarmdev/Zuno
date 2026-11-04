@@ -1,0 +1,78 @@
+// ==============================================================================
+// ZUNO ERP — HISTORICAL ARCHIVE PRISMA SCHEMA
+// Provider: PostgreSQL (Supabase Historical Database)
+// ==============================================================================
+
+generator historyClient {
+  provider = "prisma-client-js"
+  output   = "./generated/history-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPABASE_HISTORY_DATABASE_URL")
+}
+
+model TbHistoricalRecord {
+  archive_id String @id @default(uuid()) @db.Uuid
+  tenant_id String @db.Uuid
+  company_id String? @db.Uuid
+  source_table String @db.VarChar(100)
+  source_record_id String @db.Uuid
+  archive_reason String @db.VarChar(100)
+  fiscal_year String? @db.VarChar(30)
+  version_number Int @default(1)
+  payload_snapshot Json
+  hash_checksum String @db.VarChar(128)
+  archived_by String? @db.Uuid
+  archived_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tb_historical_records")
+  @@index([tenant_id, source_table, source_record_id])
+  @@index([archived_at])
+}
+
+model TbHistoricalSalesInvoice {
+  archive_id String @id @default(uuid()) @db.Uuid
+  original_id String @db.Uuid
+  tenant_id String @db.Uuid
+  company_id String? @db.Uuid
+  document_number String @db.VarChar(50)
+  document_date DateTime? @db.Date
+  customer_id String? @db.Uuid
+  amount Decimal? @db.Decimal(14, 2)
+  details_snapshot Json
+  archived_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tb_historical_sales_invoice")
+  @@index([tenant_id, document_number])
+}
+
+model TbHistoricalPayrollRun {
+  archive_id String @id @default(uuid()) @db.Uuid
+  original_id String @db.Uuid
+  tenant_id String @db.Uuid
+  company_id String? @db.Uuid
+  payroll_period String? @db.VarChar(50)
+  document_number String? @db.VarChar(50)
+  total_payout Decimal? @db.Decimal(14, 2)
+  details_snapshot Json
+  archived_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tb_historical_payroll_run")
+  @@index([tenant_id])
+}
+
+model TbHistoricalTombstone {
+  archive_id String @id @default(uuid()) @db.Uuid
+  tenant_id String @db.Uuid
+  source_table String @db.VarChar(100)
+  deleted_record_id String @db.Uuid
+  deleted_by String? @db.Uuid
+  deletion_reason String? @db.Text
+  record_data Json
+  deleted_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tb_historical_tombstones")
+  @@index([tenant_id, source_table])
+}

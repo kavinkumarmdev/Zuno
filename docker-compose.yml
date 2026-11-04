@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Database 1: Operational Database (Local simulator for Neon PostgreSQL)
+  neon-db:
+    image: postgres:16-alpine
+    container_name: zuno-neon-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: zuno_operational
+    ports:
+      - "5432:5432"
+    volumes:
+      - neon_data:/var/lib/postgresql/data
+      - ./database/main/migrations/001_initial_neon_243_tables.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zuno_operational"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Database 2: Historical Database (Local simulator for Supabase Historical PostgreSQL)
+  supabase-history-db:
+    image: postgres:16-alpine
+    container_name: zuno-supabase-history-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: zuno_historical
+    ports:
+      - "5433:5432"
+    volumes:
+      - supabase_history_data:/var/lib/postgresql/data
+      - ./database/history/migrations/001_initial_supabase_history.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zuno_historical"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend REST API Service
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: zuno-api
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      NEON_DATABASE_URL: postgresql://postgres:postgrespassword@neon-db:5432/zuno_operational?sslmode=disable
+      SUPABASE_HISTORY_DATABASE_URL: postgresql://postgres:postgrespassword@supabase-history-db:5432/zuno_historical?sslmode=disable
+      JWT_SECRET: zuno_production_enterprise_jwt_signing_key_min_32_chars!
+      JWT_REFRESH_SECRET: zuno_production_refresh_token_rotation_vault_key!
+      FRONTEND_URL: http://localhost:5173
+      BACKEND_URL: http://localhost:4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      neon-db:
+        condition: service_healthy
+      supabase-history-db:
+        condition: service_healthy
+
+  # Frontend Web Application
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.web
+    container_name: zuno-web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  neon_data:
+  supabase_history_data:
+
