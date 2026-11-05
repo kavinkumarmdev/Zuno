@@ -198,6 +198,39 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
       { name: 'tb_loan_master', label: 'Loans' },
       { name: 'tb_capital_contribution', label: 'Capital Accounts' }
     ]
+  },
+  'portal': {
+    title: 'Employee & Manager Portal (ESS)',
+    phase: 'Self-Service & Approvals',
+    tables: [
+      { name: 'tb_employee_request', label: 'My Requests & Helpdesk' },
+      { name: 'tb_leave_application', label: 'Leave Applications' },
+      { name: 'tb_gate_pass', label: 'Gate Passes' },
+      { name: 'tb_approval_action', label: 'Pending Approvals' },
+      { name: 'tb_employee_document', label: 'My Documents' },
+      { name: 'tb_employee_appraisal', label: 'Performance Appraisals' }
+    ]
+  },
+  'subscriptions': {
+    title: 'SaaS Platform & Subscriptions',
+    phase: 'Phase 1: SaaS Foundation',
+    tables: [
+      { name: 'tb_subscription', label: 'Tenant Subscriptions' },
+      { name: 'tb_subscription_plan', label: 'Pricing Plans' },
+      { name: 'tb_subscription_module', label: 'Active Modules' },
+      { name: 'tb_payment', label: 'Billing Payments' },
+      { name: 'tb_payment_webhook', label: 'Webhook Logs' }
+    ]
+  },
+  'reports': {
+    title: 'Reports & Management Information Systems (MIS)',
+    phase: 'Intelligence & Storage',
+    tables: [
+      { name: 'tb_sales_summary', label: 'Sales Performance' },
+      { name: 'tb_purchase_summary', label: 'Procurement Summary' },
+      { name: 'tb_inventory_valuation', label: 'Stock Valuation' },
+      { name: 'tb_profit_loss', label: 'Profit & Loss (P&L)' }
+    ]
   }
 };
 

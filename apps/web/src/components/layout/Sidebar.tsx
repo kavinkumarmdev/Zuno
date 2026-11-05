@@ -24,7 +24,9 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
-  History
+  History,
+  Sparkles,
+  UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -34,6 +36,7 @@ interface SidebarProps {
 
 export const ERP_MODULES = [
   { id: 'dashboard', name: 'Executive Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { id: 'modules-hub', name: '19 Modules Architecture', path: '/modules', icon: Sparkles },
   {
     phase: 'Phase 1: SaaS Foundation',
     items: [
@@ -59,7 +62,8 @@ export const ERP_MODULES = [
       { id: 'inventory', name: 'Inventory & Warehouse', path: '/modules/inventory', icon: Boxes, count: 14, table: 'tb_stock_balance' },
       { id: 'sales', name: 'Sales Management', path: '/modules/sales', icon: TrendingUp, count: 12, table: 'tb_sales_order' },
       { id: 'attendance', name: 'Attendance & Leave', path: '/modules/attendance', icon: Clock, count: 15, table: 'tb_attendance' },
-      { id: 'production', name: 'Manufacturing & BOM', path: '/modules/production', icon: Factory, count: 16, table: 'tb_work_order' }
+      { id: 'production', name: 'Manufacturing & BOM', path: '/modules/production', icon: Factory, count: 16, table: 'tb_work_order' },
+      { id: 'portal', name: 'Employee & Manager Portal', path: '/modules/portal', icon: UserCheck, count: 6, table: 'tb_employee_request' }
     ]
   },
   {

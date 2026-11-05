@@ -5,6 +5,7 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ModuleHubPage } from '../pages/modules/ModuleHubPage';
+import { ModulesOverviewPage } from '../pages/modules/ModulesOverviewPage';
 import { SubscriptionsPage } from '../pages/subscriptions/SubscriptionsPage';
 import { ReportStudioPage } from '../pages/reports/ReportStudioPage';
 import { HistoryPage } from '../pages/history/HistoryPage';
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
       {
         path: 'modules/reports',
         element: <ReportStudioPage />,
+      },
+      {
+        path: 'modules',
+        element: <ModulesOverviewPage />,
       },
       {
         path: 'modules/:moduleKey',

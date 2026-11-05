@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../services/api';
 import {
@@ -14,7 +15,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CheckCircle2,
-  Calendar
+  Calendar,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import {
   AreaChart,
@@ -107,6 +110,34 @@ export const DashboardPage: React.FC = () => {
             <span>Generate Report</span>
           </button>
         </div>
+      </div>
+
+      {/* 19 Modules Quick Architecture Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/90 via-slate-900 to-indigo-950 p-5 text-white border border-blue-500/20 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <span>Zuno ERP — 19 Powerful Business Modules</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 uppercase font-semibold">
+                Approved Catalogue
+              </span>
+            </h3>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Explore all 19 integrated modules, smart sub-modules, and 243 approved operational tables in the unified Architecture Hub.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/modules"
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5 shadow-md transition-all"
+        >
+          <span>Explore 19 Modules</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
       {/* KPI Metric Cards */}

@@ -9,6 +9,7 @@ import {
 } from '@zuno/shared-validation';
 import { ZUNO_BRAND, STATUS_BADGE_STYLES, getStatusBadgeClass } from '@zuno/ui';
 import { ERP_MODULES } from '../src/components/layout/Sidebar';
+import { OFFICIAL_19_MODULES } from '../src/pages/modules/ModulesOverviewPage';
 
 describe('Zuno ERP Frontend & Shared Logic Test Suite', () => {
   describe('Zod Validation Schemas', () => {
@@ -137,6 +138,19 @@ describe('Zuno ERP Frontend & Shared Logic Test Suite', () => {
         expect(item.name).toBeTruthy();
         expect(item.path.startsWith('/')).toBe(true);
         expect(item.icon).toBeDefined();
+      });
+    });
+
+    it('should verify all 19 official business modules are configured with submodules', () => {
+      expect(OFFICIAL_19_MODULES.length).toBe(19);
+
+      OFFICIAL_19_MODULES.forEach((mod, idx) => {
+        expect(mod.number).toBe(idx + 1);
+        expect(mod.name).toBeTruthy();
+        expect(mod.path.startsWith('/modules')).toBe(true);
+        expect(mod.primaryTable).toBeTruthy();
+        expect(mod.submodules.length).toBeGreaterThanOrEqual(3);
+        expect(mod.tablesCount).toBeGreaterThanOrEqual(4);
       });
     });
   });
