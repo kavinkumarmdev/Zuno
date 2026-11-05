@@ -13,7 +13,10 @@ import {
   Eye,
   EyeOff,
   Check,
-  X
+  X,
+  Sparkles,
+  ShieldCheck,
+  Layers
 } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
@@ -114,26 +117,54 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Gradient Accents */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[550px] bg-gradient-to-b from-blue-600/10 via-cyan-500/5 to-transparent blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 relative flex flex-col justify-center py-10 sm:py-16 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white overflow-hidden">
+      {/* Premium Ambient Background Accents */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-100/70 via-indigo-50/40 to-slate-50 pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center z-10 px-4">
-        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl mb-3">
-          <img src="/logo/logo.png" alt="Zuno ERP" className="w-10 h-10 object-contain" />
+      {/* Decorative Grid Mesh */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(#1e293b 1px, transparent 1px)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center relative z-10">
+        {/* Brand Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold text-blue-700 bg-blue-50/90 border border-blue-200/80 shadow-sm mb-3 backdrop-blur-sm">
+          <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+          <span>Instant 30-Day Free Trial • 19 Enterprise Modules</span>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">Register Organization on Zuno ERP</h2>
-        <p className="mt-1 text-xs text-slate-400">
-          Instant 30-day trial with all 19 approved ERP modules unlocked and isolated multi-tenant data boundaries.
+
+        {/* Official Brand Logo */}
+        <div className="flex justify-center mb-3">
+          <div className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-md shadow-blue-500/5 transition-transform hover:scale-105 duration-300">
+            <img src="/logo/logo.png" alt="Zuno ERP" className="w-12 h-12 object-contain" />
+          </div>
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Create Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">Enterprise Tenant</span>
+        </h1>
+        <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
+          Start your multi-tenant workspace with isolated PostgreSQL schemas, role-based controls, and automated compliance.
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl z-10 px-4">
-        <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10">
+      <div className="mt-7 sm:mx-auto sm:w-full sm:max-w-2xl relative z-10">
+        {/* Main Card Container */}
+        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 py-8 px-6 sm:px-10 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.08)] rounded-3xl relative overflow-hidden">
+          {/* Top Gradient Accent Bar */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500" />
+
+          {/* Error Message Callout */}
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
-              <span>{error}</span>
+            <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-700 text-xs flex items-start gap-2.5 shadow-sm animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500 mt-0.5" />
+              <div className="flex-1 font-medium leading-relaxed">{error}</div>
             </div>
           )}
 
@@ -141,11 +172,11 @@ export const RegisterPage: React.FC = () => {
             {/* Row 1: Tenant & Primary Company */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tenant / Organization Name *
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Tenant / Organization Name <span className="text-blue-600">*</span>
                 </label>
-                <div className="relative">
-                  <Building2 className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+                <div className="relative group">
+                  <Building2 className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                   <input
                     type="text"
                     required
@@ -154,44 +185,47 @@ export const RegisterPage: React.FC = () => {
                       setFormData({ ...formData, tenantName: e.target.value });
                       if (fieldErrors.tenantName) setFieldErrors((p) => ({ ...p, tenantName: undefined }));
                     }}
-                    placeholder="e.g. Apex Industrial Group"
-                    className={`w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none transition-all ${
+                    placeholder="e.g. Apex Industrial Holdings"
+                    className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.tenantName
-                        ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
-                        : 'border-slate-800 focus:ring-2 focus:ring-blue-500'
+                        ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                        : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
                     }`}
                   />
                 </div>
                 {fieldErrors.tenantName && (
-                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{fieldErrors.tenantName}</span>
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Primary Company Entity *
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Primary Company Legal Entity <span className="text-blue-600">*</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.companyName}
-                  onChange={(e) => {
-                    setFormData({ ...formData, companyName: e.target.value });
-                    if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }));
-                  }}
-                  placeholder="e.g. Apex Industries Pvt Ltd"
-                  className={`w-full px-3 py-2 text-xs bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none transition-all ${
-                    fieldErrors.companyName
-                      ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
-                      : 'border-slate-800 focus:ring-2 focus:ring-blue-500'
-                  }`}
-                />
+                <div className="relative group">
+                  <Layers className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                  <input
+                    type="text"
+                    required
+                    value={formData.companyName}
+                    onChange={(e) => {
+                      setFormData({ ...formData, companyName: e.target.value });
+                      if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }));
+                    }}
+                    placeholder="e.g. Apex Technologies Pvt Ltd"
+                    className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
+                      fieldErrors.companyName
+                        ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                        : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
+                    }`}
+                  />
+                </div>
                 {fieldErrors.companyName && (
-                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{fieldErrors.companyName}</span>
                   </p>
                 )}
@@ -201,11 +235,11 @@ export const RegisterPage: React.FC = () => {
             {/* Row 2: Owner Name & Phone Number */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Managing Director / Owner Name *
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Managing Director / Owner Name <span className="text-blue-600">*</span>
                 </label>
-                <div className="relative">
-                  <User className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+                <div className="relative group">
+                  <User className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                   <input
                     type="text"
                     required
@@ -217,16 +251,16 @@ export const RegisterPage: React.FC = () => {
                       if (fieldErrors.ownerName) setFieldErrors((p) => ({ ...p, ownerName: undefined }));
                     }}
                     placeholder="e.g. Ramesh Kumar"
-                    className={`w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.ownerName
-                        ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
-                        : 'border-slate-800 focus:ring-2 focus:ring-blue-500'
+                        ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                        : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
                     }`}
                   />
                 </div>
                 {fieldErrors.ownerName && (
-                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{fieldErrors.ownerName}</span>
                   </p>
                 )}
@@ -234,25 +268,25 @@ export const RegisterPage: React.FC = () => {
 
               {/* Strict 10-Digit Phone Number */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-slate-300">
-                    Business Mobile Number *
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Business Mobile Number <span className="text-blue-600">*</span>
                   </label>
                   <span
-                    className={`text-[10px] font-mono ${
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${
                       formData.mobile.length === 10
-                        ? 'text-emerald-400 font-bold'
+                        ? 'text-emerald-700 font-bold bg-emerald-50 border-emerald-200'
                         : formData.mobile.length > 0
-                        ? 'text-cyan-400'
-                        : 'text-slate-500'
+                        ? 'text-blue-700 font-semibold bg-blue-50 border-blue-200'
+                        : 'text-slate-400 bg-slate-100 border-slate-200'
                     }`}
                   >
                     {formData.mobile.length}/10 digits
                   </span>
                 </div>
-                <div className="relative">
-                  <Phone className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
-                  <div className="absolute left-9 top-2 text-xs text-slate-400 font-mono select-none border-r border-slate-800 pr-1.5">
+                <div className="relative group flex items-center">
+                  <Phone className="w-4 h-4 absolute left-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10" />
+                  <div className="absolute left-9.5 text-xs text-slate-600 font-semibold font-mono select-none border-r border-slate-200 pr-2 z-10">
                     +91
                   </div>
                   <input
@@ -269,16 +303,16 @@ export const RegisterPage: React.FC = () => {
                       if (fieldErrors.mobile) setFieldErrors((p) => ({ ...p, mobile: undefined }));
                     }}
                     placeholder="9876543210"
-                    className={`w-full pl-20 pr-3 py-2 text-xs bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-500 font-mono focus:outline-none transition-all tracking-wider ${
+                    className={`w-full pl-20 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-mono font-medium focus:outline-none transition-all duration-200 shadow-sm tracking-wider ${
                       fieldErrors.mobile
-                        ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
-                        : 'border-slate-800 focus:ring-2 focus:ring-blue-500'
+                        ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                        : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
                     }`}
                   />
                 </div>
                 {fieldErrors.mobile && (
-                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{fieldErrors.mobile}</span>
                   </p>
                 )}
@@ -288,11 +322,11 @@ export const RegisterPage: React.FC = () => {
             {/* Row 3: Corporate Email & Master Password with Toggle */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Corporate Email Address *
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Corporate Email Address <span className="text-blue-600">*</span>
                 </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+                <div className="relative group">
+                  <Mail className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                   <input
                     type="email"
                     required
@@ -302,27 +336,27 @@ export const RegisterPage: React.FC = () => {
                       if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
                     }}
                     placeholder="owner@company.com"
-                    className={`w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.email
-                        ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
-                        : 'border-slate-800 focus:ring-2 focus:ring-blue-500'
+                        ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                        : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
                     }`}
                   />
                 </div>
                 {fieldErrors.email && (
-                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{fieldErrors.email}</span>
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Master Password *
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Master Account Password <span className="text-blue-600">*</span>
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+                <div className="relative group">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -332,69 +366,133 @@ export const RegisterPage: React.FC = () => {
                       if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
                     }}
                     placeholder="Min 8 chars, 1 uppercase, 1 symbol"
-                    className={`w-full pl-9 pr-10 py-2 text-xs bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none transition-all ${
+                    className={`w-full pl-10 pr-11 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.password
-                        ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
-                        : 'border-slate-800 focus:ring-2 focus:ring-blue-500'
+                        ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                        : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
                     }`}
                   />
                   <button
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                    className="absolute right-2.5 top-2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none"
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {fieldErrors.password && (
-                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{fieldErrors.password}</span>
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Password Security Criteria Checklist */}
+            {/* Password Security Criteria Checklist in Light Mode */}
             {formData.password.length > 0 && (
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] grid grid-cols-2 gap-1.5 animate-in fade-in duration-200">
-                <div className={`flex items-center gap-1.5 ${passHasMinLen ? 'text-emerald-400 font-medium' : 'text-slate-500'}`}>
-                  {passHasMinLen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-600" />}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 text-[11px] grid grid-cols-2 gap-2 animate-in fade-in duration-200 shadow-inner">
+                <div
+                  className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-colors ${
+                    passHasMinLen
+                      ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-700 font-semibold'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {passHasMinLen ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                  ) : (
+                    <X className="w-3.5 h-3.5 text-slate-300" />
+                  )}
                   <span>8+ characters</span>
                 </div>
-                <div className={`flex items-center gap-1.5 ${passHasUpper ? 'text-emerald-400 font-medium' : 'text-slate-500'}`}>
-                  {passHasUpper ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-600" />}
+                <div
+                  className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-colors ${
+                    passHasUpper
+                      ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-700 font-semibold'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {passHasUpper ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                  ) : (
+                    <X className="w-3.5 h-3.5 text-slate-300" />
+                  )}
                   <span>1 uppercase letter</span>
                 </div>
-                <div className={`flex items-center gap-1.5 ${passHasNumber ? 'text-emerald-400 font-medium' : 'text-slate-500'}`}>
-                  {passHasNumber ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-600" />}
+                <div
+                  className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-colors ${
+                    passHasNumber
+                      ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-700 font-semibold'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {passHasNumber ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                  ) : (
+                    <X className="w-3.5 h-3.5 text-slate-300" />
+                  )}
                   <span>1 number (0-9)</span>
                 </div>
-                <div className={`flex items-center gap-1.5 ${passHasSpecial ? 'text-emerald-400 font-medium' : 'text-slate-500'}`}>
-                  {passHasSpecial ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-600" />}
+                <div
+                  className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-colors ${
+                    passHasSpecial
+                      ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-700 font-semibold'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {passHasSpecial ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                  ) : (
+                    <X className="w-3.5 h-3.5 text-slate-300" />
+                  )}
                   <span>1 special symbol (!@#$)</span>
                 </div>
               </div>
             )}
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-2 hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full mt-2 py-3 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
             >
-              <span>{isLoading ? 'Creating Tenant Boundary...' : 'Activate Free 30-Day Trial'}</span>
+              <span>{isLoading ? 'Creating Tenant Workspace...' : 'Activate Free 30-Day Trial'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
-            Already registered?{' '}
-            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
-              Sign in
-            </Link>
-          </p>
+          {/* Switch to Login */}
+          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-500 font-medium">
+              Already have an enterprise account?{' '}
+              <Link
+                to="/login"
+                className="text-blue-600 hover:text-blue-700 font-bold hover:underline ml-1 inline-flex items-center gap-0.5"
+              >
+                <span>Sign in</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Trust Indicators */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-5 text-[11px] text-slate-500 font-medium">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Dedicated PostgreSQL Schema</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>Instant Provisioning</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
+            <span>No Credit Card Required</span>
+          </div>
         </div>
       </div>
     </div>
