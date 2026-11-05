@@ -114,23 +114,44 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
       {/* Navigation Links (Scrollable) */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-        {/* Dashboard Direct Link */}
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              isActive
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-            }`
-          }
-        >
-          <LayoutDashboard className="w-4 h-4 text-blue-400" />
-          <span>Executive Dashboard</span>
-        </NavLink>
+        {/* Top-Level Navigation Links */}
+        <div className="space-y-1">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`
+            }
+          >
+            <LayoutDashboard className="w-4 h-4 text-blue-400" />
+            <span>Executive Dashboard</span>
+          </NavLink>
+
+          <NavLink
+            to="/modules"
+            className={({ isActive }) =>
+              `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 shadow-sm'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`
+            }
+          >
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>19-Module Matrix</span>
+            </div>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              19
+            </span>
+          </NavLink>
+        </div>
 
         {/* Phase Groups */}
-        {ERP_MODULES.slice(1).map((group: any) => {
+        {ERP_MODULES.filter((group: any) => group.phase && Array.isArray(group.items)).map((group: any) => {
           const isCollapsed = collapsedPhases[group.phase];
           return (
             <div key={group.phase} className="space-y-1">
@@ -148,7 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
               {!isCollapsed && (
                 <div className="space-y-0.5 pl-1">
-                  {group.items.map((item: any) => {
+                  {group.items?.map((item: any) => {
                     const Icon = item.icon;
                     return (
                       <NavLink
