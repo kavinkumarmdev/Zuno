@@ -83,11 +83,16 @@ const DEFAULT_DEMO_SESSION: AuthSessionResponse = {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<AuthSessionResponse>(() => {
+  const [session, setSession] = useState<AuthSessionResponse | null>(() => {
+    const isLoggedOut = localStorage.getItem('zuno_logged_out');
+    if (isLoggedOut === 'true') {
+      return null;
+    }
     const saved = localStorage.getItem('zuno_auth_session');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.user) return parsed;
       } catch {}
     }
     return DEFAULT_DEMO_SESSION;
@@ -95,9 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('zuno_auth_session', JSON.stringify(session));
-    if (session.accessToken) {
+    if (session?.accessToken) {
+      localStorage.setItem('zuno_auth_session', JSON.stringify(session));
       localStorage.setItem('zuno_access_token', session.accessToken);
+      localStorage.removeItem('zuno_logged_out');
+    } else {
+      localStorage.removeItem('zuno_auth_session');
+      localStorage.removeItem('zuno_access_token');
+      localStorage.removeItem('zuno_refresh_token');
     }
   }, [session]);
 
@@ -107,10 +117,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res: any = await apiClient.post('/auth/login', credentials);
       if (res.data) {
         setSession(res.data);
+        localStorage.removeItem('zuno_logged_out');
       }
     } catch {
       // Demo fallback login if API is offline
       setSession(DEFAULT_DEMO_SESSION);
+      localStorage.removeItem('zuno_logged_out');
     } finally {
       setIsLoading(false);
     }
@@ -122,52 +134,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res: any = await apiClient.post('/auth/register', tenantData);
       if (res.data) {
         setSession(res.data);
+        localStorage.removeItem('zuno_logged_out');
       }
     } catch {
       setSession(DEFAULT_DEMO_SESSION);
+      localStorage.removeItem('zuno_logged_out');
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
+    localStorage.setItem('zuno_logged_out', 'true');
     localStorage.removeItem('zuno_auth_session');
     localStorage.removeItem('zuno_access_token');
     localStorage.removeItem('zuno_refresh_token');
-    setSession({} as any);
+    setSession(null);
   };
 
   const switchCompany = (companyId: string) => {
-    const target = session.companies.find((c) => c.id === companyId);
+    if (!session) return;
+    const target = session.companies?.find((c) => c.id === companyId);
     if (target) {
-      setSession((prev) => ({
-        ...prev,
-        activeCompany: target,
-      }));
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              activeCompany: target,
+            }
+          : null
+      );
     }
   };
 
   const switchBranch = (branchId: string) => {
-    const target = session.branches.find((b) => b.id === branchId);
+    if (!session) return;
+    const target = session.branches?.find((b) => b.id === branchId);
     if (target) {
-      setSession((prev) => ({
-        ...prev,
-        activeBranch: target,
-      }));
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              activeBranch: target,
+            }
+          : null
+      );
     }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user: session.user || null,
-        tenant: session.tenant || null,
-        activeCompany: session.activeCompany || null,
-        activeBranch: session.activeBranch || null,
-        companies: session.companies || [],
-        branches: session.branches || [],
-        permissions: session.permissions || [],
-        isAuthenticated: !!session.user,
+        user: session?.user || null,
+        tenant: session?.tenant || null,
+        activeCompany: session?.activeCompany || null,
+        activeBranch: session?.activeBranch || null,
+        companies: session?.companies || [],
+        branches: session?.branches || [],
+        permissions: session?.permissions || [],
+        isAuthenticated: !!session?.user,
         isLoading,
         login,
         register,

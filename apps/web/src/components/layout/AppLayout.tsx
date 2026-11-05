@@ -1,11 +1,17 @@
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ChevronRight, Home } from 'lucide-react';
+import { useAuth } from '../../stores/auth-store';
 
 export const AppLayout: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  if (!isAuthenticated && !isLoading) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
   const pathParts = location.pathname.split('/').filter(Boolean);
 
   return (

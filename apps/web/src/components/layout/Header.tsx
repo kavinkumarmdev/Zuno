@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   MapPin,
@@ -20,6 +21,7 @@ import { OnboardingGuide } from '../guidance/OnboardingGuide';
 import { DemoDataManager } from '../demo/DemoDataManager';
 
 export const Header: React.FC = () => {
+  const navigate = useNavigate();
   const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, logout } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -206,8 +208,9 @@ export const Header: React.FC = () => {
                     onClick={() => {
                       setShowProfileMenu(false);
                       logout();
+                      navigate('/login');
                     }}
-                    className="w-full px-3 py-1.5 text-left text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded flex items-center gap-2"
+                    className="w-full px-3 py-1.5 text-left text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded flex items-center gap-2 cursor-pointer font-medium transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>

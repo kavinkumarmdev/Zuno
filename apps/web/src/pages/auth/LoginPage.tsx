@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../stores/auth-store';
 import { Lock, Mail, Building, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const [usernameOrEmail, setUsernameOrEmail] = useState('admin@acme.com');
   const [password, setPassword] = useState('ZunoEnterprise2026!#');
   const [error, setError] = useState<string | null>(null);
+
+  if (isAuthenticated && !isLoading) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

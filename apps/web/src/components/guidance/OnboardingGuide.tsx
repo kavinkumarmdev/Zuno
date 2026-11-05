@@ -248,3 +248,4 @@ export const OnboardingGuide: React.FC<OnboardingGuideProps> = ({ isOpen, onClos
     </div>
   );
 };
+
