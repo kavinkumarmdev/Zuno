@@ -60,7 +60,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'company',
     name: 'Company Setup & Registration',
     category: 'Foundation',
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     icon: Building2,
     submodules: ['Company Profile', 'Branches', 'Business Details', 'Settings'],
     tablesCount: 6,
@@ -80,7 +80,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'land-building',
     name: 'Land, Building & Construction',
     category: 'Master',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     icon: Landmark,
     submodules: ['Land Records', 'Construction', 'Project Tracking', 'Assets'],
     tablesCount: 5,
@@ -100,7 +100,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'investment',
     name: 'Investment & Finance',
     category: 'Finance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     icon: PiggyBank,
     submodules: ['Investments', 'Loans', 'Capital Management'],
     tablesCount: 4,
@@ -120,7 +120,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'compliance',
     name: 'Licences & Compliance',
     category: 'Finance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     icon: FileCheck,
     submodules: ['Licences', 'Renewals', 'Regulatory Compliance'],
     tablesCount: 4,
@@ -140,7 +140,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'products',
     name: 'Product & Material',
     category: 'Master',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     icon: Package,
     submodules: ['Products', 'Materials', 'BOM', 'Specifications'],
     tablesCount: 6,
@@ -160,7 +160,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'purchase',
     name: 'Purchase & Supplier',
     category: 'Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     icon: ShoppingCart,
     submodules: ['Suppliers', 'Purchase Orders', 'Procurement'],
     tablesCount: 6,
@@ -180,7 +180,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'production',
     name: 'Production & Manufacturing',
     category: 'Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     icon: Factory,
     submodules: ['Production Plans', 'Work Orders', 'Quality Control'],
     tablesCount: 5,
@@ -200,7 +200,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'sales',
     name: 'Sales & Customer',
     category: 'Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     icon: TrendingUp,
     submodules: ['Customers', 'Sales Orders', 'Invoicing'],
     tablesCount: 6,
@@ -220,7 +220,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'inventory',
     name: 'Inventory & Warehouse',
     category: 'Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     icon: Boxes,
     submodules: ['Stock', 'Warehouses', 'Stock Movement'],
     tablesCount: 6,
@@ -240,7 +240,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'hr',
     name: 'HR & Employee',
     category: 'Master',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     icon: Users,
     submodules: ['Employees', 'Recruitment', 'Organization Structure'],
     tablesCount: 5,
@@ -260,7 +260,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'attendance',
     name: 'Attendance, Leave & Requests',
     category: 'Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     icon: Clock,
     submodules: ['Attendance', 'Leave', 'Gate Pass', 'Requests'],
     tablesCount: 5,
@@ -280,7 +280,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'payroll',
     name: 'Payroll & Benefits',
     category: 'Finance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     icon: BadgePercent,
     submodules: ['Salary', 'Deductions', 'Benefits', 'Payslips'],
     tablesCount: 5,
@@ -300,7 +300,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'statutory',
     name: 'Government Integration',
     category: 'Finance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     icon: Scale,
     submodules: ['GST', 'PF', 'ESI', 'Statutory Forms'],
     tablesCount: 4,
@@ -320,7 +320,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'banking',
     name: 'Banking & Accounting',
     category: 'Finance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     icon: Wallet,
     submodules: ['Bank Reconciliation', 'Accounts', 'Reports'],
     tablesCount: 5,
@@ -340,7 +340,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'assets',
     name: 'Assets & Maintenance',
     category: 'Master',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     icon: Wrench,
     submodules: ['Asset Tracking', 'Maintenance Schedules', 'Depreciation'],
     tablesCount: 4,
@@ -360,7 +360,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'admin',
     name: 'Administration & RBAC',
     category: 'Foundation',
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     icon: ShieldCheck,
     submodules: ['User Accounts', 'Role Matrix', 'Permissions', 'Audit Logs'],
     tablesCount: 5,
@@ -380,7 +380,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'reports',
     name: 'Reports & MIS',
     category: 'Intelligence',
-    phase: 'Intelligence & Storage',
+    phase: 'Analytics & Archive',
     icon: BarChart3,
     submodules: ['Business Reports', 'Dashboards', 'Analytics'],
     tablesCount: 4,
@@ -400,7 +400,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'portal',
     name: 'Employee & Manager Portal',
     category: 'Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     icon: UserCheck,
     submodules: ['Self-Service', 'Approvals', 'Performance'],
     tablesCount: 6,
@@ -420,7 +420,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
     id: 'subscriptions',
     name: 'SaaS Platform & Subscription',
     category: 'Foundation',
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     icon: CreditCard,
     submodules: ['Subscription', 'Billing', 'Multi-Tenant Access'],
     tablesCount: 8,
@@ -468,7 +468,7 @@ export const ModulesOverviewPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-12">
       {/* Hero Banner with Official Branding */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-8 md:p-10 shadow-2xl border border-slate-700/60">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-8 md:p-10 shadow-2xl border border-slate-700/60 mt-1">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-16 w-80 h-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
 
@@ -485,7 +485,7 @@ export const ModulesOverviewPage: React.FC = () => {
 
             <p className="text-slate-300 text-base leading-relaxed">
               One Platform. Infinite Possibilities. 19 fully integrated enterprise modules backed by
-              the approved 243-table dual-database operational and historical cold storage architecture.
+              the approved 243-table cloud operational ledger and immutable cold archive architecture.
             </p>
 
             {/* 4 Architectural Pillars */}
@@ -638,7 +638,7 @@ export const ModulesOverviewPage: React.FC = () => {
           Zuno — Smart Business. Stronger Tomorrow.
         </p>
         <p className="text-xs text-slate-400 mt-1">
-          Complete Enterprise SaaS ERP — Engineered with NestJS, React, Prisma, Neon Operational DB, and Supabase Cold Archival.
+          Complete Enterprise SaaS ERP — Engineered with Multi-Tenant Architecture, High-Speed Operational Cloud Ledger, and Immutable Audit Vault.
         </p>
       </div>
 

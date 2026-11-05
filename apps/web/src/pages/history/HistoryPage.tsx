@@ -92,13 +92,13 @@ export const HistoryPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
-              Supabase Historical Vault
+              Immutable Compliance Vault
             </span>
-            <span className="text-xs text-slate-400 font-mono">Immutable Compliance Ledger</span>
+            <span className="text-xs text-slate-400 font-mono">Statutory Audit Ledger</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">Two-Database Cold Storage Archive</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">Tamper-Evident Historical Archive</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Separated from live operational Neon database. Read-only historical statutory records verified with SHA-256 checksums.
+            Separated from live operational transactions. Read-only historical records verified with cryptographic SHA-256 digital seals.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export const HistoryPage: React.FC = () => {
           <span className="text-xs text-slate-400 font-medium">Operational Database</span>
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="font-bold text-slate-800 dark:text-slate-200">Neon PostgreSQL</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">High-Performance Cloud Cluster</span>
           </div>
           <p className="text-xs text-slate-500 mt-2">Active business records, live sales, inventory balances & attendance.</p>
         </div>
@@ -129,7 +129,7 @@ export const HistoryPage: React.FC = () => {
           <span className="text-xs text-slate-400 font-medium">Historical Database</span>
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-            <span className="font-bold text-slate-800 dark:text-slate-200">Supabase PostgreSQL</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">Immutable Cold Archive Cluster</span>
           </div>
           <p className="text-xs text-slate-500 mt-2">Archived vouchers, closed fiscal periods & statutory retention logs.</p>
         </div>
@@ -140,14 +140,14 @@ export const HistoryPage: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             <span className="font-bold text-slate-800 dark:text-slate-200">Idempotent Worker</span>
           </div>
-          <p className="text-xs text-slate-500 mt-2">Zero operational loss: rows verified in Supabase prior to purging.</p>
+          <p className="text-xs text-slate-500 mt-2">Zero operational loss: rows verified in cold vault prior to purging.</p>
         </div>
       </div>
 
       {/* Historical Data Grid */}
       <DataGrid
         title="Archived Statutory Records"
-        subtitle="Read-only query directly against Supabase Historical schema"
+        subtitle="Read-only query directly against Immutable Compliance Vault schema"
         columns={columns}
         data={data?.records || []}
         total={data?.count || 0}

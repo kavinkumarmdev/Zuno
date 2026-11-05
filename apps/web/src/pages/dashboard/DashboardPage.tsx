@@ -92,7 +92,7 @@ export const DashboardPage: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Executive Performance Dashboard</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time operational metrics across Neon Operational Database and statutory audit synchronization.
+            Real-time operational metrics across enterprise cloud ledgers and statutory audit synchronization.
           </p>
         </div>
 
@@ -289,7 +289,7 @@ export const DashboardPage: React.FC = () => {
                 <span>Historical Outbox Synced</span>
               </div>
               <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-1">
-                All statutory vouchers replicated to Supabase cold ledger with zero lag.
+                All statutory vouchers replicated to immutable cold vault ledger with zero lag.
               </p>
             </div>
           </div>

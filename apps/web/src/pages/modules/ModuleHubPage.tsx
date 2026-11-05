@@ -17,7 +17,7 @@ import {
 const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: Array<{ name: string; label: string; count?: number }> }> = {
   'company': {
     title: 'Company Management',
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     tables: [
       { name: 'tb_company', label: 'Companies' },
       { name: 'tb_company_branch', label: 'Branches' },
@@ -29,7 +29,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'admin': {
     title: 'Administration & Management',
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     tables: [
       { name: 'tb_user', label: 'Users' },
       { name: 'tb_role', label: 'Roles' },
@@ -40,7 +40,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'products': {
     title: 'Product & Material Management',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     tables: [
       { name: 'tb_product_master', label: 'Product Master' },
       { name: 'tb_product_category', label: 'Categories' },
@@ -52,7 +52,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'hr': {
     title: 'HR & Employee Management',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     tables: [
       { name: 'tb_employee_master', label: 'Employee Master' },
       { name: 'tb_department', label: 'Departments' },
@@ -63,7 +63,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'crm': {
     title: 'Customer & Supplier Master',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     tables: [
       { name: 'tb_customer_master', label: 'Customers' },
       { name: 'tb_supplier_master', label: 'Suppliers' },
@@ -73,7 +73,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'land-building': {
     title: 'Land & Building Management',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     tables: [
       { name: 'tb_property_master', label: 'Properties' },
       { name: 'tb_construction_project', label: 'Projects' },
@@ -83,7 +83,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'assets': {
     title: 'Assets & Maintenance Master',
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     tables: [
       { name: 'tb_asset_master', label: 'Asset Master' },
       { name: 'tb_asset_category', label: 'Asset Categories' },
@@ -93,7 +93,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'purchase': {
     title: 'Purchase & Supplier Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     tables: [
       { name: 'tb_purchase_order', label: 'Purchase Orders' },
       { name: 'tb_purchase_request', label: 'Purchase Requests' },
@@ -104,7 +104,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'inventory': {
     title: 'Inventory & Warehouse Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     tables: [
       { name: 'tb_stock_balance', label: 'Stock Balances' },
       { name: 'tb_stock_ledger', label: 'Stock Ledger' },
@@ -116,7 +116,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'sales': {
     title: 'Sales & Customer Operations',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     tables: [
       { name: 'tb_sales_order', label: 'Sales Orders' },
       { name: 'tb_sales_quotation', label: 'Quotations' },
@@ -127,7 +127,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'attendance': {
     title: 'Attendance & Leave Management',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     tables: [
       { name: 'tb_attendance', label: 'Daily Attendance' },
       { name: 'tb_shift_master', label: 'Shifts' },
@@ -138,7 +138,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'production': {
     title: 'Production & Manufacturing',
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     tables: [
       { name: 'tb_work_order', label: 'Work Orders' },
       { name: 'tb_bom_master', label: 'Bill of Materials (BOM)' },
@@ -149,7 +149,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'banking': {
     title: 'Banking & Financial Accounting',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     tables: [
       { name: 'tb_accounting_voucher', label: 'Vouchers' },
       { name: 'tb_account_ledger', label: 'Chart of Accounts' },
@@ -160,7 +160,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'payroll': {
     title: 'Payroll & Employee Benefits',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     tables: [
       { name: 'tb_payroll_run', label: 'Payroll Runs' },
       { name: 'tb_salary_structure', label: 'Salary Structures' },
@@ -171,7 +171,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'compliance': {
     title: 'Licence & Statutory Compliance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     tables: [
       { name: 'tb_compliance_master', label: 'Compliance Register' },
       { name: 'tb_company_licence', label: 'Company Licences' },
@@ -181,7 +181,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'statutory': {
     title: 'Government Integration & Statutory',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     tables: [
       { name: 'tb_statutory_submission', label: 'Submissions' },
       { name: 'tb_statutory_form_master', label: 'Statutory Forms' },
@@ -191,7 +191,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'investment': {
     title: 'Investment & Corporate Finance',
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     tables: [
       { name: 'tb_financial_budget', label: 'Budgets' },
       { name: 'tb_investment_master', label: 'Investments' },
@@ -213,7 +213,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'subscriptions': {
     title: 'SaaS Platform & Subscriptions',
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     tables: [
       { name: 'tb_subscription', label: 'Tenant Subscriptions' },
       { name: 'tb_subscription_plan', label: 'Pricing Plans' },
@@ -224,7 +224,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   },
   'reports': {
     title: 'Reports & Management Information Systems (MIS)',
-    phase: 'Intelligence & Storage',
+    phase: 'Analytics & Archive',
     tables: [
       { name: 'tb_sales_summary', label: 'Sales Performance' },
       { name: 'tb_purchase_summary', label: 'Procurement Summary' },
@@ -315,9 +315,9 @@ export const ModuleHubPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Active DB:</span>
+            <span className="text-xs text-slate-400">Ledger Status:</span>
             <span className="text-xs font-semibold px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-              Neon Operational
+              Live Cloud Active
             </span>
           </div>
         </div>

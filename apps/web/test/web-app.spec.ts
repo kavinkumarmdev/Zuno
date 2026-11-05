@@ -122,10 +122,10 @@ describe('Zuno ERP Frontend & Shared Logic Test Suite', () => {
       expect(ERP_MODULES.length).toBeGreaterThanOrEqual(5);
 
       const phaseNames = ERP_MODULES.filter((m: any) => m.phase).map((m: any) => m.phase);
-      expect(phaseNames).toContain('Phase 1: SaaS Foundation');
-      expect(phaseNames).toContain('Phase 2: Master Data');
-      expect(phaseNames).toContain('Phase 3: Operations');
-      expect(phaseNames).toContain('Phase 4: Finance & Compliance');
+      expect(phaseNames).toContain('Core Setup & Admin');
+      expect(phaseNames).toContain('Master Records');
+      expect(phaseNames).toContain('Business Operations');
+      expect(phaseNames).toContain('Finance & Compliance');
     });
 
     it('should map each module item to a valid route and table', () => {

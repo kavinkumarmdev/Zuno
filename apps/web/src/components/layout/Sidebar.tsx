@@ -38,7 +38,7 @@ export const ERP_MODULES = [
   { id: 'dashboard', name: 'Executive Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { id: 'modules-hub', name: '19 Modules Architecture', path: '/modules', icon: Sparkles },
   {
-    phase: 'Phase 1: SaaS Foundation',
+    phase: 'Core Setup & Admin',
     items: [
       { id: 'company', name: 'Company Management', path: '/modules/company', icon: Building2, count: 10, table: 'tb_company' },
       { id: 'subscriptions', name: 'SaaS & Subscriptions', path: '/modules/subscriptions', icon: CreditCard, count: 24, table: 'tb_subscription' },
@@ -46,7 +46,7 @@ export const ERP_MODULES = [
     ]
   },
   {
-    phase: 'Phase 2: Master Data',
+    phase: 'Master Records',
     items: [
       { id: 'products', name: 'Product & Material', path: '/modules/products', icon: Package, count: 12, table: 'tb_product_master' },
       { id: 'hr', name: 'HR & Employees', path: '/modules/hr', icon: Users, count: 16, table: 'tb_employee_master' },
@@ -56,7 +56,7 @@ export const ERP_MODULES = [
     ]
   },
   {
-    phase: 'Phase 3: Operations',
+    phase: 'Business Operations',
     items: [
       { id: 'purchase', name: 'Purchase Management', path: '/modules/purchase', icon: ShoppingCart, count: 12, table: 'tb_purchase_order' },
       { id: 'inventory', name: 'Inventory & Warehouse', path: '/modules/inventory', icon: Boxes, count: 14, table: 'tb_stock_balance' },
@@ -67,7 +67,7 @@ export const ERP_MODULES = [
     ]
   },
   {
-    phase: 'Phase 4: Finance & Compliance',
+    phase: 'Finance & Compliance',
     items: [
       { id: 'banking', name: 'Banking & Accounts', path: '/modules/banking', icon: Wallet, count: 18, table: 'tb_accounting_voucher' },
       { id: 'payroll', name: 'Payroll & Benefits', path: '/modules/payroll', icon: BadgePercent, count: 16, table: 'tb_payroll_run' },
@@ -77,10 +77,10 @@ export const ERP_MODULES = [
     ]
   },
   {
-    phase: 'Intelligence & Storage',
+    phase: 'Analytics & Archive',
     items: [
       { id: 'reports', name: 'Report Studio & MIS', path: '/modules/reports', icon: BarChart3, count: 1, table: 'reports' },
-      { id: 'history', name: 'Historical Archive (Supabase)', path: '/history', icon: History, count: 1, table: 'tb_historical_records' }
+      { id: 'history', name: 'Audit & Historical Archive', path: '/history', icon: History, count: 1, table: 'tb_historical_records' }
     ]
   }
 ];
@@ -202,15 +202,15 @@ export const Sidebar: React.FC<SidebarProps> = () => {
         })}
       </div>
 
-      {/* Database Topology Indicator */}
+      {/* System Operational Status */}
       <div className="p-3 bg-slate-950/60 border-t border-slate-800 text-[11px] flex items-center justify-between text-slate-400">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Neon Operational (243)</span>
+          <span>Cloud Operational (Active)</span>
         </div>
-        <div className="flex items-center gap-1 text-[10px] text-slate-500">
-          <Database className="w-3 h-3" />
-          <span>Supabase Ready</span>
+        <div className="flex items-center gap-1 text-[10px] text-slate-400">
+          <Database className="w-3 h-3 text-cyan-400" />
+          <span>Audit Vault Ready</span>
         </div>
       </div>
     </aside>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   MapPin,
@@ -10,15 +10,33 @@ import {
   User,
   LogOut,
   Shield,
-  ChevronDown
+  ChevronDown,
+  Gamepad2,
+  Sparkles,
+  Database
 } from 'lucide-react';
 import { useAuth } from '../../stores/auth-store';
+import { OnboardingGuide } from '../guidance/OnboardingGuide';
+import { DemoDataManager } from '../demo/DemoDataManager';
 
 export const Header: React.FC = () => {
   const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, logout } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showDemoManager, setShowDemoManager] = useState(false);
+
+  useEffect(() => {
+    // Open gamified guide automatically for first-time visitors
+    const completed = localStorage.getItem('zuno_tour_completed');
+    if (!completed) {
+      const timer = setTimeout(() => {
+        setShowGuide(true);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);
@@ -26,7 +44,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between flex-shrink-0 z-10">
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between flex-shrink-0 relative z-30">
       {/* Left: Organization & Company Selectors */}
       <div className="flex items-center gap-4">
         {/* Company Selector */}
@@ -74,6 +92,26 @@ export const Header: React.FC = () => {
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* HUD Interactive Guide Tour Button */}
+        <button
+          onClick={() => setShowGuide(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition-all hover:scale-105 active:scale-95"
+          title="Interactive Game-Style Controller Guide Tour"
+        >
+          <Gamepad2 className="w-3.5 h-3.5 animate-pulse text-cyan-600 dark:text-cyan-400" />
+          <span className="hidden sm:inline">Guide Tour</span>
+        </button>
+
+        {/* Demo / Sample Data Manager Button */}
+        <button
+          onClick={() => setShowDemoManager(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all hover:scale-105 active:scale-95"
+          title="Populate Sample Data or Clear Operational Data"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <span className="hidden sm:inline">Demo Data</span>
+        </button>
+
         {/* Dark/Light Mode */}
         <button
           onClick={toggleDarkMode}
@@ -93,24 +131,27 @@ export const Header: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5" />
           </button>
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-3 z-30">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Alerts & Actions</span>
-                <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium">
-                  2 New
-                </span>
-              </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-700 text-xs py-1">
-                <div className="py-2">
-                  <p className="font-medium text-slate-800 dark:text-slate-200">GST-3B Statutory Return Due</p>
-                  <p className="text-[11px] text-slate-500">Government filing deadline in 4 days</p>
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-3 z-50">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Alerts & Actions</span>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium">
+                    2 New
+                  </span>
                 </div>
-                <div className="py-2">
-                  <p className="font-medium text-slate-800 dark:text-slate-200">Pending PO-2026-1049 Approval</p>
-                  <p className="text-[11px] text-slate-500">Awaiting Managing Director signature</p>
+                <div className="divide-y divide-slate-100 dark:divide-slate-700 text-xs py-1">
+                  <div className="py-2">
+                    <p className="font-medium text-slate-800 dark:text-slate-200">GST-3B Statutory Return Due</p>
+                    <p className="text-[11px] text-slate-500">Government filing deadline in 4 days</p>
+                  </div>
+                  <div className="py-2">
+                    <p className="font-medium text-slate-800 dark:text-slate-200">Pending PO-2026-1049 Approval</p>
+                    <p className="text-[11px] text-slate-500">Awaiting Managing Director signature</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -135,36 +176,54 @@ export const Header: React.FC = () => {
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-30">
-              <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
-                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{tenant?.tenantName}</p>
-                <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
-              </div>
-
-              <div className="py-1 text-xs">
-                <div className="px-3 py-1.5 text-slate-600 dark:text-slate-300 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
-                  <Shield className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Security & Sessions</span>
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-50">
+                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{tenant?.tenantName}</p>
+                  <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
                 </div>
-                <div className="px-3 py-1.5 text-slate-600 dark:text-slate-300 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
-                  <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Switch Organization</span>
+
+                <div className="py-1 text-xs">
+                  <div
+                    onClick={() => setShowProfileMenu(false)}
+                    className="px-3 py-1.5 text-slate-600 dark:text-slate-300 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Security & Sessions</span>
+                  </div>
+                  <div
+                    onClick={() => setShowProfileMenu(false)}
+                    className="px-3 py-1.5 text-slate-600 dark:text-slate-300 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Switch Organization</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-700">
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      logout();
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded flex items-center gap-2"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="pt-1 border-t border-slate-100 dark:border-slate-700">
-                <button
-                  onClick={logout}
-                  className="w-full px-3 py-1.5 text-left text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded flex items-center gap-2"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* Gamified First-Time Walkthrough Guide Modal */}
+      <OnboardingGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
+
+      {/* Sample / Demo Data Manager Modal */}
+      <DemoDataManager isOpen={showDemoManager} onClose={() => setShowDemoManager(false)} />
     </header>
   );
 };
