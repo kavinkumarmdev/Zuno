@@ -303,27 +303,19 @@ export const ModuleHubPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
                 {moduleInfo.phase}
               </span>
-              <span className="text-xs text-slate-400 font-mono">243-Table Catalogue</span>
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{moduleInfo.title}</h1>
             <p className="text-xs text-slate-500 mt-1">
-              Isolated operational view with server-side transactions, composite tenant keys and multi-branch visibility.
+              Manage operational records, approvals, and documents across your company entities and branches.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Ledger Status:</span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-              Live Cloud Active
-            </span>
           </div>
         </div>
 
         {/* Submodule Table Selector Tabs */}
-        <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 dark:border-slate-800 pt-4">
+        <div className="mt-6 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-4 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
           {moduleInfo.tables.map((t) => (
             <button
               key={t.name}
@@ -331,15 +323,13 @@ export const ModuleHubPage: React.FC = () => {
                 setSelectedTable(t.name);
                 setPage(1);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 selectedTable === t.name
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <Database className="w-3 h-3" />
               <span>{t.label}</span>
-              <code className="text-[10px] opacity-75 font-mono">({t.name})</code>
             </button>
           ))}
         </div>
@@ -348,7 +338,7 @@ export const ModuleHubPage: React.FC = () => {
       {/* Enterprise Data Grid */}
       <DataGrid
         title={`${moduleInfo.tables.find((t) => t.name === selectedTable)?.label || selectedTable}`}
-        subtitle={`Catalogue Table: ${selectedTable} • Multi-Tenant Operational Scope`}
+        subtitle="Manage business records with multi-column sorting, instant search, and CSV export."
         columns={columns}
         data={data?.items || []}
         total={data?.meta?.total || 0}

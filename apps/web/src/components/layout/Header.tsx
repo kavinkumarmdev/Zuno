@@ -14,13 +14,18 @@ import {
   ChevronDown,
   Gamepad2,
   Sparkles,
-  Database
+  Database,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../../stores/auth-store';
 import { OnboardingGuide } from '../guidance/OnboardingGuide';
 import { DemoDataManager } from '../demo/DemoDataManager';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
   const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, logout } = useAuth();
   const [isDark, setIsDark] = useState(false);
@@ -46,16 +51,25 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between flex-shrink-0 relative z-30">
-      {/* Left: Organization & Company Selectors */}
-      <div className="flex items-center gap-4">
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 relative z-30">
+      {/* Left: Mobile Toggle & Organization / Company Selectors */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* Mobile Sidebar Hamburger Toggle */}
+        <button
+          onClick={onToggleSidebar}
+          className="lg:hidden p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors -ml-1"
+          title="Open Navigation"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {/* Company Selector */}
-        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs">
-          <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 sm:px-3 py-1.5 text-xs max-w-[170px] sm:max-w-none">
+          <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
           <select
             value={activeCompany?.id || ''}
             onChange={(e) => switchCompany(e.target.value)}
-            className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+            className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs"
           >
             {companies.map((c) => (
               <option key={c.id} value={c.id} className="dark:bg-slate-800">

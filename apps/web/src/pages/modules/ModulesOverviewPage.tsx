@@ -483,9 +483,9 @@ export const ModulesOverviewPage: React.FC = () => {
               Run Your Entire Business in One Powerful Platform
             </h1>
 
-            <p className="text-slate-300 text-base leading-relaxed">
-              One Platform. Infinite Possibilities. 19 fully integrated enterprise modules backed by
-              the approved 243-table cloud operational ledger and immutable cold archive architecture.
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+              One Platform. Infinite Possibilities. 19 fully integrated enterprise modules designed
+              for modern workforce management, multi-company accounting, supply chain, and compliance.
             </p>
 
             {/* 4 Architectural Pillars */}
@@ -516,11 +516,11 @@ export const ModulesOverviewPage: React.FC = () => {
               className="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-lg backdrop-blur-sm"
             >
               <Eye className="w-4 h-4 text-cyan-300" />
-              <span>View Architecture Poster</span>
+              <span>View Architecture Matrix</span>
             </button>
             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-700/80 text-center">
-              <span className="text-2xl font-black text-white">243</span>
-              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Approved Tables</p>
+              <span className="text-2xl font-black text-cyan-400">19</span>
+              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Enterprise Modules</p>
             </div>
           </div>
         </div>
@@ -609,14 +609,11 @@ export const ModulesOverviewPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Footer: Database Metadata & Launch Button */}
+              {/* Footer: Launch Action */}
               <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-mono">
-                  <Database className="w-3.5 h-3.5 text-blue-500" />
-                  <span className="truncate max-w-[130px] font-medium">{mod.primaryTable}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-slate-200 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">
-                    +{mod.tablesCount} tables
-                  </span>
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Enterprise Ready</span>
                 </div>
 
                 <Link
