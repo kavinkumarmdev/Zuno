@@ -14,6 +14,8 @@
     "build": "npm run build --workspaces --if-present",
     "build:api": "npm run build --workspace=@zuno/api",
     "build:web": "npm run build --workspace=@zuno/web",
+    "start": "node apps/api/dist/apps/api/src/main.js",
+    "start:api": "node apps/api/dist/apps/api/src/main.js",
     "test": "npm run test --workspaces --if-present",
     "test:api": "npm run test --workspace=@zuno/api",
     "test:web": "npm run test --workspace=@zuno/web",

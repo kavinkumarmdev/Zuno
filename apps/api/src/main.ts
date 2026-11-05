@@ -7,13 +7,30 @@ async function bootstrap() {
   const logger = new Logger('ZunoBootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for frontend web application
+  // Enable flexible, production-ready CORS for cloud deployments (Cloudflare Pages, Render, localhost)
+  const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((o) => o.trim())
+    : [];
+
   app.enableCors({
-    origin: [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
-      'http://localhost:3000',
-      'http://localhost:5173',
-    ],
+    origin: (origin, callback) => {
+      // Allow server-to-server, curl, mobile, or missing origin
+      if (!origin) return callback(null, true);
+
+      if (
+        process.env.CORS_ALLOW_ALL === 'true' ||
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.pages.dev') ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-razorpay-signature'],
@@ -60,7 +77,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   logger.log(`🚀 Zuno ERP Backend API service running at: http://localhost:${port}/${apiPrefix.replace(/^\//, '')}`);
   logger.log(`📖 Swagger API documentation available at: http://localhost:${port}/api/docs`);
 }
