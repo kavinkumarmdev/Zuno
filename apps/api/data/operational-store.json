@@ -70,5 +70,92 @@
       "created_time": "2026-10-31T12:11:08.746Z",
       "is_active": true
     }
+  ],
+  "30000000-0000-0000-0000-000000000001:tb_company": [
+    {
+      "id": "d5a146e9-a711-4a78-bc4a-6f2782b35677",
+      "tenant_id": "30000000-0000-0000-0000-000000000001",
+      "name": "Titan Aerospace Dynamics",
+      "code": "TITAN-AERO",
+      "description": "Advanced Aerospace Logistics & Supply Chain Unit",
+      "amount": "8900000.00",
+      "status": "ACTIVE",
+      "currency_code": "INR",
+      "created_time": "2026-11-05T12:39:28.862Z",
+      "updated_time": "2026-11-05T12:39:28.862Z",
+      "created_by": "60000000-0000-0000-0000-000000000001",
+      "is_active": true,
+      "is_user_record": true
+    },
+    {
+      "id": "7e034b71-affa-44ba-86c6-7854563cd353",
+      "tenant_id": "30000000-0000-0000-0000-000000000001",
+      "code": "COMP-1001",
+      "name": "Company Item #1",
+      "description": "Operational business record for Company under active fiscal year",
+      "document_number": "DOC-2026-1001",
+      "status": "ACTIVE",
+      "amount": "14500.50",
+      "quantity": "12.000",
+      "currency_code": "INR",
+      "created_time": "2026-11-04T12:39:28.803Z",
+      "is_active": true
+    },
+    {
+      "id": "654ef347-ff1d-4a3c-ba9d-968a58c9ef95",
+      "tenant_id": "30000000-0000-0000-0000-000000000001",
+      "code": "COMP-1002",
+      "name": "Company Item #2",
+      "description": "Operational business record for Company under active fiscal year",
+      "document_number": "DOC-2026-1002",
+      "status": "ACTIVE",
+      "amount": "29001.00",
+      "quantity": "24.000",
+      "currency_code": "INR",
+      "created_time": "2026-11-03T12:39:28.804Z",
+      "is_active": true
+    },
+    {
+      "id": "b2384804-34fa-40b9-a76f-e9914cbfbcac",
+      "tenant_id": "30000000-0000-0000-0000-000000000001",
+      "code": "COMP-1003",
+      "name": "Company Item #3",
+      "description": "Operational business record for Company under active fiscal year",
+      "document_number": "DOC-2026-1003",
+      "status": "ACTIVE",
+      "amount": "43501.50",
+      "quantity": "36.000",
+      "currency_code": "INR",
+      "created_time": "2026-11-02T12:39:28.804Z",
+      "is_active": true
+    },
+    {
+      "id": "05655a30-0db2-4fa0-ade8-343739c88be1",
+      "tenant_id": "30000000-0000-0000-0000-000000000001",
+      "code": "COMP-1004",
+      "name": "Company Item #4",
+      "description": "Operational business record for Company under active fiscal year",
+      "document_number": "DOC-2026-1004",
+      "status": "PENDING",
+      "amount": "58002.00",
+      "quantity": "48.000",
+      "currency_code": "INR",
+      "created_time": "2026-11-01T12:39:28.804Z",
+      "is_active": true
+    },
+    {
+      "id": "1a6bcef3-af4e-4d09-99c4-577e2163e0bd",
+      "tenant_id": "30000000-0000-0000-0000-000000000001",
+      "code": "COMP-1005",
+      "name": "Company Item #5",
+      "description": "Operational business record for Company under active fiscal year",
+      "document_number": "DOC-2026-1005",
+      "status": "ACTIVE",
+      "amount": "72502.50",
+      "quantity": "60.000",
+      "currency_code": "INR",
+      "created_time": "2026-10-31T12:39:28.804Z",
+      "is_active": true
+    }
   ]
 }

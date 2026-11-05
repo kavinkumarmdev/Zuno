@@ -77,7 +77,8 @@ const DEFAULT_DEMO_SESSION: AuthSessionResponse = {
     },
   ],
   permissions: ['*'],
-  accessToken: 'demo_jwt_access_token_zuno_2026',
+  accessToken:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJ0ZW5hbnRJZCI6IjMwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQGFjbWUuY29tIiwidXNlclR5cGUiOiJPV05FUiIsInBlcm1pc3Npb25zIjpbIioiXSwiaWF0IjoxNzkzODgyMDk5LCJleHAiOjE4MjU0MTgwOTl9.t2ZgrcPrYUN0O2DV_mYdFGG0P0C2SnOqmjcTqWgX6NY',
   refreshToken: 'demo_jwt_refresh_token_zuno_2026',
   expiresIn: 3600,
 };
