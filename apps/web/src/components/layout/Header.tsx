@@ -51,41 +51,41 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   };
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 relative z-30">
+    <header className="h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 relative z-30 shadow-[0_1px_3px_0_rgba(0,0,0,0.03)]">
       {/* Left: Mobile Toggle & Organization / Company Selectors */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Mobile Sidebar Hamburger Toggle */}
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors -ml-1"
+          className="lg:hidden p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors -ml-1"
           title="Open Navigation"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         {/* Company Selector */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 sm:px-3 py-1.5 text-xs max-w-[170px] sm:max-w-none">
+        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs max-w-[160px] sm:max-w-[210px] md:max-w-[250px]">
           <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
           <select
             value={activeCompany?.id || ''}
             onChange={(e) => switchCompany(e.target.value)}
-            className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs"
+            className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs w-full"
           >
             {companies.map((c) => (
-              <option key={c.id} value={c.id} className="dark:bg-slate-800">
-                {c.companyName} ({c.companyCode})
+              <option key={c.id} value={c.id} className="dark:bg-slate-800 font-medium">
+                {c.companyName}
               </option>
             ))}
           </select>
         </div>
 
         {/* Branch Selector */}
-        <div className="hidden sm:flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs">
-          <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+        <div className="hidden lg:flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs max-w-[190px]">
+          <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <select
             value={activeBranch?.id || ''}
             onChange={(e) => switchBranch(e.target.value)}
-            className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+            className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs w-full"
           >
             {branches.map((b) => (
               <option key={b.id} value={b.id} className="dark:bg-slate-800">
@@ -96,55 +96,56 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Center: Global Search Bar */}
-      <div className="hidden md:flex items-center relative w-80">
-        <Search className="w-4 h-4 absolute left-3 text-slate-400" />
+      {/* Center: Global Search Bar (Shown on large screens to prevent header crowding) */}
+      <div className="hidden xl:flex items-center relative w-64 2xl:w-80">
+        <Search className="w-4 h-4 absolute left-3.5 text-slate-400" />
         <input
           type="text"
           placeholder="Search modules, vouchers, invoices..."
-          className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-full focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:outline-none transition-all"
+          className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-full focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:outline-none transition-all"
         />
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {/* HUD Interactive Guide Tour Button */}
         <button
           onClick={() => setShowGuide(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition-all hover:scale-105 active:scale-95"
-          title="Interactive Game-Style Controller Guide Tour"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-50/80 dark:bg-cyan-950/40 border border-cyan-200/80 dark:border-cyan-800/80 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all whitespace-nowrap shrink-0"
+          title="Interactive Guide Tour"
         >
-          <Gamepad2 className="w-3.5 h-3.5 animate-pulse text-cyan-600 dark:text-cyan-400" />
+          <Gamepad2 className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
           <span className="hidden sm:inline">Guide Tour</span>
         </button>
 
         {/* Demo / Sample Data Manager Button */}
         <button
           onClick={() => setShowDemoManager(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all whitespace-nowrap shrink-0"
           title="Populate Sample Data or Clear Operational Data"
         >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
           <span className="hidden sm:inline">Demo Data</span>
         </button>
 
         {/* Dark/Light Mode */}
         <button
           onClick={toggleDarkMode}
-          className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
           title="Toggle Theme"
         >
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
         {/* Notification Bell */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors"
+            className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors"
+            title="Notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5" />
+            <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5 ring-2 ring-white dark:ring-slate-900" />
           </button>
           {showNotifications && (
             <>
@@ -172,23 +173,23 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
 
         {/* User Profile Menu */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-xs shadow-sm">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-blue-500/20 shrink-0">
               {user?.fullName?.charAt(0) || 'A'}
             </div>
-            <div className="hidden lg:flex flex-col text-left">
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+            <div className="hidden sm:flex flex-col text-left">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight max-w-[120px] truncate">
                 {user?.fullName || 'Admin User'}
               </span>
               <span className="text-[10px] text-slate-400 capitalize">
                 {user?.userType || 'Administrator'}
               </span>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           </button>
 
           {showProfileMenu && (

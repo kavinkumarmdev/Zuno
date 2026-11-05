@@ -257,13 +257,21 @@ export const ModuleHubPage: React.FC = () => {
   }, [moduleKey]);
 
   // Query table records
-  const { data, isLoading, refetch } = useQuery({
+  const { data: queryResult, isLoading, refetch } = useQuery({
     queryKey: ['module-data', selectedTable, page, limit, search, sortField, sortOrder],
     queryFn: async () => {
       const res: any = await apiClient.get(`/modules/data/${selectedTable}`, {
         params: { page, limit, search, sortBy: sortField, sortOrder }
       });
-      return res.data || res;
+      const items = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res)
+        ? res
+        : [];
+      const total = res?.meta?.total ?? items.length;
+      return { items, total };
     }
   });
 
@@ -340,8 +348,8 @@ export const ModuleHubPage: React.FC = () => {
         title={`${moduleInfo.tables.find((t) => t.name === selectedTable)?.label || selectedTable}`}
         subtitle="Manage business records with multi-column sorting, instant search, and CSV export."
         columns={columns}
-        data={data?.items || []}
-        total={data?.meta?.total || 0}
+        data={queryResult?.items || []}
+        total={queryResult?.total || 0}
         page={page}
         limit={limit}
         isLoading={isLoading}
