@@ -403,28 +403,32 @@ export const ModuleHubPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Identification Code
+                  Identification Code (Uppercase Alphanumeric)
                 </label>
                 <input
                   type="text"
                   value={createFormData.code}
-                  onChange={(e) => setCreateFormData({ ...createFormData, code: e.target.value })}
+                  onChange={(e) => {
+                    const cleanCode = e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 30);
+                    setCreateFormData({ ...createFormData, code: cleanCode });
+                  }}
                   placeholder="e.g. REF-2026-001"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Value / Amount (INR)
+                  Value / Amount (INR, numbers only)
                 </label>
                 <input
                   type="number"
+                  min="0"
                   step="0.01"
                   value={createFormData.amount}
                   onChange={(e) => setCreateFormData({ ...createFormData, amount: e.target.value })}
                   placeholder="e.g. 50000.00"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 />
               </div>
 

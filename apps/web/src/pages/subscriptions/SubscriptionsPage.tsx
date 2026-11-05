@@ -45,6 +45,7 @@ export const SubscriptionsPage: React.FC = () => {
   const [showQrModal, setShowQrModal] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
+  const [utrError, setUtrError] = useState<string | null>(null);
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
 
   // Mock pending payments for Admin manual verification workflow
@@ -95,14 +96,24 @@ export const SubscriptionsPage: React.FC = () => {
   // Submit manual payment
   const handleSubmitManualPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!utrNumber.trim()) return;
+    setUtrError(null);
+
+    const cleanUtr = utrNumber.replace(/\D/g, '');
+    if (!cleanUtr) {
+      setUtrError('Transaction reference number (UTR) is required.');
+      return;
+    }
+    if (cleanUtr.length !== 12) {
+      setUtrError(`Transaction reference (UTR) must be exactly 12 digits (currently ${cleanUtr.length} digits).`);
+      return;
+    }
 
     const newPayment: PendingPayment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       tenantName: 'Acme Global Enterprises Ltd',
       planName: `Custom Pack (${selectedModules.size} Modules)`,
       amount: totalAmount,
-      utrNumber: utrNumber.trim(),
+      utrNumber: cleanUtr,
       submittedAt: new Date().toLocaleString(),
       status: 'PENDING',
     };
@@ -115,6 +126,7 @@ export const SubscriptionsPage: React.FC = () => {
     setPaymentSubmitted(true);
     setShowQrModal(false);
     setUtrNumber('');
+    setUtrError(null);
   };
 
   // Admin approves manual payment
@@ -509,22 +521,53 @@ export const SubscriptionsPage: React.FC = () => {
 
               {/* UTR Input Form */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Enter 12-Digit Transaction Reference (UTR / UPI Ref Number) *
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Enter 12-Digit Transaction Reference (UTR / UPI Ref Number) *
+                  </label>
+                  <span
+                    className={`text-[10px] font-mono ${
+                      utrNumber.length === 12
+                        ? 'text-emerald-400 font-bold'
+                        : utrNumber.length > 0
+                        ? 'text-cyan-400'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    {utrNumber.length}/12 digits
+                  </span>
+                </div>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{12}"
+                  maxLength={12}
                   required
-                  placeholder="e.g. 429184029184"
+                  placeholder="12-digit number (e.g. 429184029184)"
                   value={utrNumber}
-                  onChange={(e) => setUtrNumber(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    setUtrNumber(digits);
+                    if (utrError) setUtrError(null);
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-800 border rounded-xl text-xs text-white placeholder-slate-500 font-mono focus:outline-none transition-all tracking-wider ${
+                    utrError
+                      ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/40'
+                      : 'border-slate-700 focus:ring-2 focus:ring-cyan-500'
+                  }`}
                 />
+                {utrError && (
+                  <p className="mt-1 text-[11px] text-rose-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 text-rose-400" />
+                    <span>{utrError}</span>
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-lg transition-all"
+                disabled={utrNumber.length !== 12}
+                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-lg transition-all"
               >
                 Submit Payment for Manual Verification
               </button>
