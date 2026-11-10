@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Plus,
   Trash2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Pencil
 } from 'lucide-react';
 import { STATUS_BADGE_STYLES } from '@zuno/ui';
 
@@ -44,6 +45,8 @@ interface DataGridProps<T = any> {
   onAddNew?: () => void;
   bulkActions?: Array<{ label: string; action: (selectedIds: string[]) => void; icon?: React.ReactNode }>;
   addNewLabel?: string;
+  onEdit?: (row: T) => void;
+  canEdit?: boolean;
 }
 
 export function DataGrid<T extends { id: string }>({
@@ -63,6 +66,8 @@ export function DataGrid<T extends { id: string }>({
   onAddNew,
   bulkActions,
   addNewLabel = 'Create New',
+  onEdit,
+  canEdit = true,
 }: DataGridProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<string | null>(null);
@@ -277,6 +282,11 @@ export function DataGrid<T extends { id: string }>({
                   </div>
                 </th>
               ))}
+              {onEdit && canEdit !== false && (
+                <th className="p-3 w-20 text-center select-none text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -290,11 +300,16 @@ export function DataGrid<T extends { id: string }>({
                       <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
                     </td>
                   ))}
+                  {onEdit && canEdit !== false && (
+                    <td className="p-3 text-center">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-12 mx-auto" />
+                    </td>
+                  )}
                 </tr>
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={displayedColumns.length + 1} className="p-12 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={displayedColumns.length + 1 + (onEdit && canEdit !== false ? 1 : 0)} className="p-12 text-center text-slate-400 dark:text-slate-500">
                   <FileSpreadsheet className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
                   <p className="font-medium text-sm">No records found</p>
                   <p className="text-xs mt-1">Try adjusting your filters or create a new entry.</p>
@@ -339,6 +354,21 @@ export function DataGrid<T extends { id: string }>({
                         )}
                       </td>
                     ))}
+                    {onEdit && canEdit !== false && (
+                      <td className="p-3 text-center whitespace-nowrap">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(row);
+                          }}
+                          className="px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800 rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          title="Edit Record"
+                        >
+                          <Pencil className="w-3 h-3 shrink-0" />
+                          <span>Edit</span>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })

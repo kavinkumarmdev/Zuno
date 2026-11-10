@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting ZUNO ERP Master Database Seeding...');
 
-  const passwordHash = await bcrypt.hash('ZunoEnterprise2026!#', 10);
+  const passwordHash = await bcrypt.hash('Kavin@987', 10);
 
   // 1. Seed Platform Super Administrator
   const platformAdmin = await (prisma as any).tbPlatformAdmin.upsert({
@@ -94,11 +94,14 @@ async function main() {
   // 3. Seed Demo Tenant & Owner
   const demoTenant = await (prisma as any).tbTenant.upsert({
     where: { id: '30000000-0000-0000-0000-000000000001' },
-    update: {},
+    update: {
+      tenant_code: 'KAVIN-CORP',
+      tenant_name: 'Kavin Global Enterprises Ltd',
+    },
     create: {
       id: '30000000-0000-0000-0000-000000000001',
-      tenant_code: 'ACME-CORP',
-      tenant_name: 'Acme Global Enterprises Ltd',
+      tenant_code: 'KAVIN-CORP',
+      tenant_name: 'Kavin Global Enterprises Ltd',
       account_status: 'ACTIVE',
       registration_source: 'ADMIN'
     }
@@ -106,17 +109,21 @@ async function main() {
 
   const demoCompany = await (prisma as any).tbCompany.upsert({
     where: { id: '40000000-0000-0000-0000-000000000001' },
-    update: {},
+    update: {
+      company_code: 'KAVIN-HQ',
+      company_name: 'Kavin Industries Private Limited',
+      legal_name: 'Kavin Industries Private Limited',
+    },
     create: {
       id: '40000000-0000-0000-0000-000000000001',
       tenant_id: demoTenant.id,
-      company_code: 'ACME-HQ',
-      company_name: 'Acme Industries Private Limited',
-      legal_name: 'Acme Industries Private Limited',
+      company_code: 'KAVIN-HQ',
+      company_name: 'Kavin Industries Private Limited',
+      legal_name: 'Kavin Industries Private Limited',
       business_type: 'Manufacturing & Export',
       ownership_type: 'Private Limited',
-      pan_number: 'AAACA1234F',
-      gstin: '33AAACA1234F1Z5',
+      pan_number: 'AAACK1234F',
+      gstin: '33AAACK1234F1Z5',
       currency_code: 'INR',
       country_code: 'IN',
       company_status: 'ACTIVE'
@@ -137,13 +144,17 @@ async function main() {
 
   const demoUser = await (prisma as any).tbUser.upsert({
     where: { id: '60000000-0000-0000-0000-000000000001' },
-    update: {},
+    update: {
+      username: 'kavin',
+      full_name: 'Kavin',
+      email: 'kavin@zuno.com',
+    },
     create: {
       id: '60000000-0000-0000-0000-000000000001',
       tenant_id: demoTenant.id,
-      username: 'admin',
-      full_name: 'Rajesh Sharma',
-      email: 'admin@acme.com',
+      username: 'kavin',
+      full_name: 'Kavin',
+      email: 'kavin@zuno.com',
       mobile: '+919876543210',
       user_type: 'OWNER',
       user_status: 'ACTIVE',
@@ -160,7 +171,7 @@ async function main() {
     }
   }).catch(() => {});
 
-  console.log('✅ Seeded Demo Tenant: admin@acme.com / ZunoEnterprise2026!#');
+  console.log('✅ Seeded Default Master Tenant: kavin / Kavin@987');
   console.log('🎉 Database seeding completed successfully!');
 }
 

@@ -17,6 +17,7 @@ interface AuthContextType {
   logout: () => void;
   switchCompany: (companyId: string) => void;
   switchBranch: (branchId: string) => void;
+  addCompany: (comp: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -93,12 +94,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.user) return parsed;
+        if (parsed && parsed.user) {
+          // If legacy cached session was Rajesh Sharma / Acme, sanitize to Kavin
+          if (
+            parsed.user.username === 'admin' ||
+            parsed.user.fullName === 'Rajesh Sharma' ||
+            parsed.user.email === 'admin@acme.com'
+          ) {
+            localStorage.setItem('zuno_auth_session', JSON.stringify(DEFAULT_DEMO_SESSION));
+            return DEFAULT_DEMO_SESSION;
+          }
+          return parsed;
+        }
       } catch {}
     }
     return DEFAULT_DEMO_SESSION;
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Seed default Kavin company & user into local database tables if uninitialized
+  useEffect(() => {
+    try {
+      const rawComp = localStorage.getItem('zuno_records_tb_company');
+      if (!rawComp || rawComp === '[]') {
+        const defaultComps = [
+          {
+            id: '40000000-0000-0000-0000-000000000001',
+            name: 'Kavin Industries Private Limited',
+            company_name: 'Kavin Industries Private Limited',
+            code: 'KAVIN-HQ',
+            company_code: 'KAVIN-HQ',
+            legal_name: 'Kavin Industries Private Limited',
+            gstin: '33AAACK1234F1Z5',
+            currency_code: 'INR',
+            email: 'kavin@zuno.com',
+            phone: '+91 9876543210',
+            status: 'ACTIVE',
+            created_time: new Date().toISOString(),
+            is_user_record: true,
+          },
+          {
+            id: '40000000-0000-0000-0000-000000000002',
+            name: 'Kavin Logistics & Tech Ltd',
+            company_name: 'Kavin Logistics & Tech Ltd',
+            code: 'KAVIN-LOG',
+            company_code: 'KAVIN-LOG',
+            legal_name: 'Kavin Logistics & Tech Ltd',
+            gstin: '33AAACK5678F1Z8',
+            currency_code: 'INR',
+            email: 'logistics@kavin.com',
+            phone: '+91 9876543211',
+            status: 'ACTIVE',
+            created_time: new Date().toISOString(),
+            is_user_record: true,
+          },
+        ];
+        localStorage.setItem('zuno_records_tb_company', JSON.stringify(defaultComps));
+      }
+
+      const rawUser = localStorage.getItem('zuno_records_tb_user');
+      if (!rawUser || rawUser === '[]') {
+        const defaultUsers = [
+          {
+            id: '60000000-0000-0000-0000-000000000001',
+            name: 'Kavin',
+            full_name: 'Kavin',
+            code: 'USR-KAVIN-001',
+            username: 'Kavin',
+            email: 'kavin@zuno.com',
+            phone: '+91 9876543210',
+            user_type: 'OWNER',
+            status: 'ACTIVE',
+            created_time: new Date().toISOString(),
+            is_user_record: true,
+          },
+        ];
+        localStorage.setItem('zuno_records_tb_user', JSON.stringify(defaultUsers));
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -320,6 +394,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addCompany = (newCompany: any) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const compItem = {
+        id: newCompany.id,
+        companyCode: newCompany.code || newCompany.companyCode,
+        companyName: newCompany.name || newCompany.companyName,
+        currencyCode: newCompany.currencyCode || 'INR',
+        role: 'OWNER',
+      };
+      const existing = prev.companies || [];
+      const updated = [compItem, ...existing.filter((c) => c.id !== newCompany.id)];
+      return {
+        ...prev,
+        companies: updated,
+        activeCompany: compItem,
+      };
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -337,6 +431,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         switchCompany,
         switchBranch,
+        addCompany,
       }}
     >
       {children}

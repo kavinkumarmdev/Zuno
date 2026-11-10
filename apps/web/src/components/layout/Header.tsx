@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, logout } = useAuth();
+  const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, addCompany, logout } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -135,15 +135,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       localStorage.setItem('zuno_records_tb_company', JSON.stringify(list));
     } catch {}
 
-    // Switch company
-    companies.push({
+    // Add and switch to new company
+    addCompany({
       id: newId,
       companyCode: compCode,
       companyName: newCompanyName.trim(),
       currencyCode: 'INR',
-      role: 'Owner'
+      role: 'OWNER'
     });
-    switchCompany(newId);
     setNewCompanyName('');
     setNewCompanyCode('');
     setShowSwitchOrgModal(false);

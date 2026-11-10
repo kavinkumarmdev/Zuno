@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../services/api';
+import { useAuth } from '../../stores/auth-store';
 import { DataGrid, ColumnDef } from '../../components/ui/DataGrid';
 import {
   Package,
@@ -485,10 +486,28 @@ export const ModuleHubPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('created_time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const { user, permissions, addCompany } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Check if current user has permission to edit records in this module
+  const canEdit = useMemo(() => {
+    if (!user) return false;
+    // OWNER, ADMIN, and MANAGER roles have edit privileges
+    if (user.userType === 'OWNER' || user.userType === 'ADMIN' || user.userType === 'MANAGER') return true;
+    // Wildcard or specific module/table permission
+    if (
+      permissions?.includes('*') ||
+      permissions?.includes(`${moduleKey}:write`) ||
+      permissions?.includes(`${selectedTable}:edit`)
+    ) {
+      return true;
+    }
+    return false;
+  }, [user, permissions, moduleKey, selectedTable]);
 
   const currentTableObj = moduleInfo.tables.find((t) => t.name === selectedTable);
   const currentTableLabel = currentTableObj?.label || selectedTable.replace(/^tb_/, '').replace(/_/g, ' ');
@@ -531,12 +550,27 @@ export const ModuleHubPage: React.FC = () => {
     } catch {}
   };
 
-  // Reset form when table changes or modal opens
+  // Open Create Modal
   const openCreateModal = () => {
+    setEditingRecord(null);
     const initial: Record<string, any> = {};
     for (const f of currentSchema) {
       initial[f.key] = f.defaultValue || '';
     }
+    setFormData(initial);
+    setFormErrors({});
+    setShowCreateModal(true);
+  };
+
+  // Open Edit Modal with existing record pre-filled
+  const handleEditRecord = (record: any) => {
+    setEditingRecord(record);
+    const initial: Record<string, any> = {};
+    for (const f of currentSchema) {
+      initial[f.key] = record[f.key] ?? record[f.key.replace(/_/g, '')] ?? f.defaultValue ?? '';
+    }
+    if (!initial.name && record.name) initial.name = record.name;
+    if (!initial.code && record.code) initial.code = record.code;
     setFormData(initial);
     setFormErrors({});
     setShowCreateModal(true);
@@ -557,13 +591,16 @@ export const ModuleHubPage: React.FC = () => {
       if (!codeVal) {
         errors[codeKey] = `${codeField.label} is required.`;
       } else {
-        // Check uniqueness across query results and local cached records
+        // Check uniqueness across query results and local cached records, excluding current record
         const normalizedCode = codeVal.toUpperCase();
         const allExisting = [
           ...(queryResult?.items || []),
           ...getLocalRecords(selectedTable)
         ];
         const isDuplicate = allExisting.some((rec: any) => {
+          if (editingRecord && (rec.id === editingRecord.id || rec.code === editingRecord.code)) {
+            return false;
+          }
           const recCode = String(rec.code || rec.sku_code || rec.company_code || rec.id || '').toUpperCase();
           return recCode === normalizedCode;
         });
@@ -656,9 +693,27 @@ export const ModuleHubPage: React.FC = () => {
     }
   });
 
-  // Create mutation with dual layer persistence
+  // Create or Update mutation with dual layer persistence
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
+      if (editingRecord) {
+        // Update existing record
+        const updatedRecord = {
+          ...editingRecord,
+          ...payload,
+          id: editingRecord.id,
+          updated_time: new Date().toISOString()
+        };
+        saveLocalRecord(selectedTable, updatedRecord);
+        try {
+          await apiClient.put(`/modules/data/${selectedTable}/${editingRecord.id}`, payload);
+        } catch (err: any) {
+          console.warn('API update fallback to local store:', err);
+        }
+        return { data: updatedRecord };
+      }
+
+      // Create new record
       const tempId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const prefix = selectedTable.replace(/^tb_/, '').substring(0, 4).toUpperCase();
       const codeVal = payload.code || payload.sku_code || payload.company_code || `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -667,6 +722,15 @@ export const ModuleHubPage: React.FC = () => {
         id: tempId,
         code: codeVal,
         name: payload.name || payload.company_name || payload.branch_name || `${singleLabel} Entry`,
+        company_name: payload.name || payload.company_name,
+        company_code: codeVal,
+        branch_name: payload.name || payload.branch_name,
+        branch_code: codeVal,
+        full_name: payload.name || payload.full_name,
+        product_name: payload.name || payload.product_name,
+        customer_name: payload.name || payload.customer_name,
+        supplier_name: payload.name || payload.supplier_name,
+        employee_name: payload.name || payload.employee_name,
         description: payload.description || '',
         amount: payload.amount ? Number(payload.amount) : 0,
         status: payload.status || 'ACTIVE',
@@ -691,8 +755,21 @@ export const ModuleHubPage: React.FC = () => {
       }
     },
     onSuccess: () => {
+      const isEdit = !!editingRecord;
+      if (selectedTable === 'tb_company') {
+        addCompany({
+          id: editingRecord?.id || formData.id || 'comp-' + Date.now(),
+          companyCode: formData.code || formData.company_code,
+          companyName: formData.name || formData.company_name,
+          currencyCode: formData.currency_code || 'INR'
+        });
+      }
       setShowCreateModal(false);
-      setActionAlert({ type: 'success', message: `${singleLabel} record successfully saved and synchronized with database.` });
+      setEditingRecord(null);
+      setActionAlert({
+        type: 'success',
+        message: `${singleLabel} record successfully ${isEdit ? 'updated' : 'saved'} and synchronized with database.`
+      });
       refetch();
     },
     onError: (err: any) => {
@@ -928,9 +1005,11 @@ export const ModuleHubPage: React.FC = () => {
         onRefresh={() => refetch()}
         onAddNew={openCreateModal}
         addNewLabel={`Add ${singleLabel}`}
+        onEdit={handleEditRecord}
+        canEdit={canEdit}
       />
 
-      {/* Dynamic Add Record Modal */}
+      {/* Dynamic Add / Edit Record Modal */}
       {showCreateModal && (
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -946,9 +1025,13 @@ export const ModuleHubPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                    Add New {singleLabel}
+                    {editingRecord ? `Edit ${singleLabel}` : `Add New ${singleLabel}`}
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Record will be saved directly to your isolated tenant database.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {editingRecord
+                      ? `Update operational record fields and details for ${editingRecord.code || editingRecord.name || singleLabel}.`
+                      : 'Record will be saved directly to your isolated tenant database.'}
+                  </p>
                 </div>
               </div>
               <button
@@ -1047,7 +1130,11 @@ export const ModuleHubPage: React.FC = () => {
                   disabled={createMutation.isPending}
                   className="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 disabled:opacity-50 cursor-pointer transition-all"
                 >
-                  {createMutation.isPending ? 'Saving...' : `Save ${singleLabel}`}
+                  {createMutation.isPending
+                    ? 'Saving...'
+                    : editingRecord
+                    ? `Update ${singleLabel}`
+                    : `Save ${singleLabel}`}
                 </button>
               </div>
             </form>
