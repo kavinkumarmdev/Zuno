@@ -3,30 +3,30 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
+  Building,
   CreditCard,
-  ShieldCheck,
+  UserCog,
   Package,
   Users,
-  Briefcase,
+  Handshake,
   Landmark,
   Wrench,
   ShoppingCart,
   Boxes,
-  TrendingUp,
-  Clock,
+  Receipt,
+  CalendarCheck,
   Factory,
-  Wallet,
-  BadgePercent,
-  FileCheck,
+  Banknote,
+  FileCheck2,
   Scale,
-  PiggyBank,
+  TrendingUp,
   BarChart3,
   ChevronDown,
   ChevronRight,
   Database,
   History,
-  Sparkles,
-  UserCheck,
+  Layers,
+  Laptop,
   X
 } from 'lucide-react';
 
@@ -37,13 +37,13 @@ interface SidebarProps {
 
 export const ERP_MODULES = [
   { id: 'dashboard', name: 'Executive Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { id: 'modules-hub', name: '19 Modules Architecture', path: '/modules', icon: Sparkles },
+  { id: 'modules-hub', name: '19 Modules Architecture', path: '/modules', icon: Layers },
   {
     phase: 'Core Setup & Admin',
     items: [
       { id: 'company', name: 'Company Management', path: '/modules/company', icon: Building2, count: 10, table: 'tb_company' },
       { id: 'subscriptions', name: 'SaaS & Subscriptions', path: '/modules/subscriptions', icon: CreditCard, count: 24, table: 'tb_subscription' },
-      { id: 'admin', name: 'Administration & RBAC', path: '/modules/admin', icon: ShieldCheck, count: 14, table: 'tb_user' }
+      { id: 'admin', name: 'Administration & RBAC', path: '/modules/admin', icon: UserCog, count: 14, table: 'tb_user' }
     ]
   },
   {
@@ -51,8 +51,8 @@ export const ERP_MODULES = [
     items: [
       { id: 'products', name: 'Product & Material', path: '/modules/products', icon: Package, count: 12, table: 'tb_product_master' },
       { id: 'hr', name: 'HR & Employees', path: '/modules/hr', icon: Users, count: 16, table: 'tb_employee_master' },
-      { id: 'crm', name: 'Customer & Supplier', path: '/modules/crm', icon: Briefcase, count: 8, table: 'tb_customer_master' },
-      { id: 'land-building', name: 'Land & Building', path: '/modules/land-building', icon: Landmark, count: 12, table: 'tb_property_master' },
+      { id: 'crm', name: 'Customer & Supplier', path: '/modules/crm', icon: Handshake, count: 8, table: 'tb_customer_master' },
+      { id: 'land-building', name: 'Land & Building', path: '/modules/land-building', icon: Building, count: 12, table: 'tb_property_master' },
       { id: 'assets', name: 'Assets & Maintenance', path: '/modules/assets', icon: Wrench, count: 8, table: 'tb_asset_master' }
     ]
   },
@@ -61,20 +61,20 @@ export const ERP_MODULES = [
     items: [
       { id: 'purchase', name: 'Purchase Management', path: '/modules/purchase', icon: ShoppingCart, count: 12, table: 'tb_purchase_order' },
       { id: 'inventory', name: 'Inventory & Warehouse', path: '/modules/inventory', icon: Boxes, count: 14, table: 'tb_stock_balance' },
-      { id: 'sales', name: 'Sales Management', path: '/modules/sales', icon: TrendingUp, count: 12, table: 'tb_sales_order' },
-      { id: 'attendance', name: 'Attendance & Leave', path: '/modules/attendance', icon: Clock, count: 15, table: 'tb_attendance' },
+      { id: 'sales', name: 'Sales Management', path: '/modules/sales', icon: Receipt, count: 12, table: 'tb_sales_order' },
+      { id: 'attendance', name: 'Attendance & Leave', path: '/modules/attendance', icon: CalendarCheck, count: 15, table: 'tb_attendance' },
       { id: 'production', name: 'Manufacturing & BOM', path: '/modules/production', icon: Factory, count: 16, table: 'tb_work_order' },
-      { id: 'portal', name: 'Employee & Manager Portal', path: '/modules/portal', icon: UserCheck, count: 6, table: 'tb_employee_request' }
+      { id: 'portal', name: 'Employee & Manager Portal', path: '/modules/portal', icon: Laptop, count: 6, table: 'tb_employee_request' }
     ]
   },
   {
     phase: 'Finance & Compliance',
     items: [
-      { id: 'banking', name: 'Banking & Accounts', path: '/modules/banking', icon: Wallet, count: 18, table: 'tb_accounting_voucher' },
-      { id: 'payroll', name: 'Payroll & Benefits', path: '/modules/payroll', icon: BadgePercent, count: 16, table: 'tb_payroll_run' },
-      { id: 'compliance', name: 'Licence & Compliance', path: '/modules/compliance', icon: FileCheck, count: 12, table: 'tb_compliance_master' },
+      { id: 'banking', name: 'Banking & Accounts', path: '/modules/banking', icon: Landmark, count: 18, table: 'tb_accounting_voucher' },
+      { id: 'payroll', name: 'Payroll & Benefits', path: '/modules/payroll', icon: Banknote, count: 16, table: 'tb_payroll_run' },
+      { id: 'compliance', name: 'Licence & Compliance', path: '/modules/compliance', icon: FileCheck2, count: 12, table: 'tb_compliance_master' },
       { id: 'statutory', name: 'Government & Statutory', path: '/modules/statutory', icon: Scale, count: 14, table: 'tb_statutory_submission' },
-      { id: 'investment', name: 'Investment & Finance', path: '/modules/investment', icon: PiggyBank, count: 10, table: 'tb_financial_budget' }
+      { id: 'investment', name: 'Investment & Finance', path: '/modules/investment', icon: TrendingUp, count: 10, table: 'tb_financial_budget' }
     ]
   },
   {
@@ -168,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               }
             >
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <Layers className="w-4 h-4 text-cyan-400" />
                 <span>19-Module Matrix</span>
               </div>
             </NavLink>

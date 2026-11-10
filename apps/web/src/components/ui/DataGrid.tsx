@@ -8,7 +8,7 @@ import {
   Search,
   Download,
   Filter,
-  Eye,
+  SlidersHorizontal,
   CheckSquare,
   Square,
   RefreshCw,
@@ -153,7 +153,7 @@ export function DataGrid<T extends { id: string }>({
               className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1.5 px-3"
               title="Select columns"
             >
-              <Eye className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4" />
               <span>Columns</span>
             </button>
             {showColumnPicker && (

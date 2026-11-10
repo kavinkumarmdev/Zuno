@@ -10,8 +10,141 @@ import {
   Info,
   Check,
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Building2,
+  Building,
+  CreditCard,
+  UserCog,
+  Users,
+  Handshake,
+  Landmark,
+  Wrench,
+  ShoppingCart,
+  Boxes,
+  Receipt,
+  CalendarCheck,
+  Factory,
+  Laptop,
+  Banknote,
+  FileCheck2,
+  Scale,
+  TrendingUp,
+  BarChart3,
+  MapPin,
+  Calendar,
+  Sliders,
+  User,
+  Shield,
+  Key,
+  Truck,
+  FileText,
+  Clock,
+  CheckCircle2,
+  Table
 } from 'lucide-react';
+
+const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
+  'company': Building2,
+  'admin': UserCog,
+  'products': Package,
+  'hr': Users,
+  'crm': Handshake,
+  'land-building': Building,
+  'assets': Wrench,
+  'purchase': ShoppingCart,
+  'inventory': Boxes,
+  'sales': Receipt,
+  'attendance': CalendarCheck,
+  'production': Factory,
+  'banking': Landmark,
+  'payroll': Banknote,
+  'compliance': FileCheck2,
+  'statutory': Scale,
+  'investment': TrendingUp,
+  'portal': Laptop,
+  'subscriptions': CreditCard,
+  'reports': BarChart3,
+};
+
+const getTableIcon = (tableName: string): React.ElementType => {
+  if (tableName === 'tb_company') return Building2;
+  if (tableName === 'tb_company_branch' || tableName === 'tb_company_address') return MapPin;
+  if (tableName === 'tb_company_registration') return FileCheck2;
+  if (tableName === 'tb_company_financial_year') return Calendar;
+  if (tableName === 'tb_company_settings') return Sliders;
+
+  if (tableName === 'tb_user') return User;
+  if (tableName === 'tb_role') return Shield;
+  if (tableName === 'tb_permission') return Key;
+  if (tableName === 'tb_approval_workflow') return Layers;
+  if (tableName === 'tb_login_history') return Clock;
+
+  if (tableName === 'tb_product_master') return Package;
+  if (tableName === 'tb_product_category') return Layers;
+  if (tableName === 'tb_product_variant') return Boxes;
+  if (tableName === 'tb_product_unit') return Scale;
+  if (tableName === 'tb_product_price') return Banknote;
+  if (tableName === 'tb_product_batch') return Boxes;
+
+  if (tableName === 'tb_employee_master') return Users;
+  if (tableName === 'tb_department') return Building;
+  if (tableName === 'tb_designation') return UserCog;
+  if (tableName === 'tb_employee_salary') return Banknote;
+  if (tableName === 'tb_employee_bank') return Landmark;
+
+  if (tableName === 'tb_customer_master') return Users;
+  if (tableName === 'tb_supplier_master') return Truck;
+  if (tableName === 'tb_customer_contact' || tableName === 'tb_supplier_contact') return User;
+
+  if (tableName === 'tb_property_master') return Building;
+  if (tableName.includes('construction')) return Factory;
+
+  if (tableName.includes('asset')) return Wrench;
+
+  if (tableName === 'tb_purchase_order') return ShoppingCart;
+  if (tableName === 'tb_purchase_request') return FileText;
+  if (tableName === 'tb_goods_receipt') return Boxes;
+  if (tableName === 'tb_supplier_invoice') return Receipt;
+  if (tableName === 'tb_purchase_return') return ShoppingCart;
+
+  if (tableName.includes('stock')) return Boxes;
+  if (tableName === 'tb_warehouse_master') return Building;
+
+  if (tableName === 'tb_sales_order') return Receipt;
+  if (tableName === 'tb_sales_quotation') return FileText;
+  if (tableName === 'tb_sales_invoice') return Receipt;
+  if (tableName === 'tb_customer_receipt') return Banknote;
+  if (tableName === 'tb_sales_delivery') return Truck;
+
+  if (tableName.includes('attendance')) return CalendarCheck;
+  if (tableName.includes('shift') || tableName.includes('roster')) return Clock;
+  if (tableName.includes('leave')) return Calendar;
+
+  if (tableName.includes('production') || tableName.includes('work_order') || tableName.includes('bom')) return Factory;
+
+  if (tableName.includes('bank') || tableName.includes('account')) return Landmark;
+  if (tableName.includes('voucher') || tableName.includes('expense')) return Receipt;
+
+  if (tableName.includes('payroll') || tableName.includes('salary') || tableName.includes('payslip')) return Banknote;
+  if (tableName.includes('pf') || tableName.includes('esi')) return Scale;
+
+  if (tableName.includes('compliance') || tableName.includes('licence')) return FileCheck2;
+  if (tableName.includes('statutory') || tableName.includes('government')) return Scale;
+
+  if (tableName.includes('investment') || tableName.includes('budget') || tableName.includes('loan') || tableName.includes('capital')) return TrendingUp;
+
+  if (tableName.includes('request') || tableName.includes('helpdesk')) return Laptop;
+  if (tableName.includes('approval')) return CheckCircle2;
+  if (tableName.includes('document')) return FileText;
+  if (tableName.includes('appraisal')) return BarChart3;
+
+  if (tableName.includes('subscription')) return CreditCard;
+  if (tableName.includes('payment')) return Banknote;
+
+  if (tableName.includes('summary') || tableName.includes('valuation') || tableName.includes('profit')) return BarChart3;
+
+  return Table;
+};
 
 // Approved catalogue tables mapped to each module
 const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: Array<{ name: string; label: string; count?: number }> }> = {
@@ -358,6 +491,8 @@ export const ModuleHubPage: React.FC = () => {
   const currentTableObj = moduleInfo.tables.find((t) => t.name === selectedTable);
   const currentTableLabel = currentTableObj?.label || selectedTable.replace(/^tb_/, '').replace(/_/g, ' ');
   const singleLabel = currentTableLabel.replace(/s$/, '').replace(/ies$/, 'y');
+  const ModuleIcon = MODULE_ICONS_MAP[moduleKey || 'products'] || Package;
+  const ModalTableIcon = getTableIcon(selectedTable);
 
   // Dynamic schema for the selected table
   const currentSchema: FormFieldConfig[] = useMemo(() => {
@@ -674,37 +809,46 @@ export const ModuleHubPage: React.FC = () => {
       {/* Module Header */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                {moduleInfo.phase}
-              </span>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+              <ModuleIcon className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{moduleInfo.title}</h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Manage operational records, approvals, and documents across your company entities and branches.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                  {moduleInfo.phase}
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{moduleInfo.title}</h1>
+              <p className="text-xs text-slate-500 mt-1">
+                Manage operational records, approvals, and documents across your company entities and branches.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Submodule Table Selector Tabs */}
         <div className="mt-6 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-4 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
-          {moduleInfo.tables.map((t) => (
-            <button
-              key={t.name}
-              onClick={() => {
-                setSelectedTable(t.name);
-                setPage(1);
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                selectedTable === t.name
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              <span>{t.label}</span>
-            </button>
-          ))}
+          {moduleInfo.tables.map((t) => {
+            const TabIcon = getTableIcon(t.name);
+            return (
+              <button
+                key={t.name}
+                onClick={() => {
+                  setSelectedTable(t.name);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  selectedTable === t.name
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <TabIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -735,12 +879,20 @@ export const ModuleHubPage: React.FC = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                Add New {singleLabel}
-              </h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/50 dark:border-blue-800/50">
+                  <ModalTableIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                    Add New {singleLabel}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Record will be saved directly to your isolated tenant database.</p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
