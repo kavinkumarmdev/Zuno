@@ -4,6 +4,8 @@ services:
     runtime: node
     plan: free
     region: oregon
+    branch: main
+    autoDeploy: true
     buildCommand: npm install && npm run db:generate && npm run build:api
     startCommand: node apps/api/dist/apps/api/src/main.js
     healthCheckPath: /api/v1/health
