@@ -40,6 +40,7 @@ import {
   FileText,
   Clock,
   CheckCircle2,
+  AlertCircle,
   Table
 } from 'lucide-react';
 
@@ -486,6 +487,7 @@ export const ModuleHubPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const currentTableObj = moduleInfo.tables.find((t) => t.name === selectedTable);
@@ -536,7 +538,61 @@ export const ModuleHubPage: React.FC = () => {
       initial[f.key] = f.defaultValue || '';
     }
     setFormData(initial);
+    setFormErrors({});
     setShowCreateModal(true);
+  };
+
+  // Validate all record fields and enforce unique Code / Identifier ID
+  const validateRecordForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // 1. Identify primary code/ID field
+    const codeField = currentSchema.find(
+      (f) => f.key === 'code' || f.key === 'sku_code' || f.key === 'company_code' || f.key === 'branch_code'
+    );
+    const codeKey = codeField?.key;
+
+    if (codeKey) {
+      const codeVal = String(formData[codeKey] || '').trim();
+      if (!codeVal) {
+        errors[codeKey] = `${codeField.label} is required.`;
+      } else {
+        // Check uniqueness across query results and local cached records
+        const normalizedCode = codeVal.toUpperCase();
+        const allExisting = [
+          ...(queryResult?.items || []),
+          ...getLocalRecords(selectedTable)
+        ];
+        const isDuplicate = allExisting.some((rec: any) => {
+          const recCode = String(rec.code || rec.sku_code || rec.company_code || rec.id || '').toUpperCase();
+          return recCode === normalizedCode;
+        });
+
+        if (isDuplicate) {
+          errors[codeKey] = `Unique ID Violation: Code "${codeVal}" is already registered. Please provide a unique code.`;
+        }
+      }
+    }
+
+    // 2. Validate all other schema fields
+    for (const field of currentSchema) {
+      if (field.key === codeKey) continue;
+      const val = formData[field.key];
+      const strVal = String(val ?? '').trim();
+
+      if (field.required && !strVal) {
+        errors[field.key] = `${field.label} is required.`;
+      } else if (field.type === 'number' && strVal && isNaN(Number(strVal))) {
+        errors[field.key] = `${field.label} must be a valid numeric amount.`;
+      } else if (field.type === 'email' && strVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(strVal)) {
+        errors[field.key] = `Please enter a valid email address format.`;
+      } else if (field.type === 'tel' && strVal && strVal.replace(/\D/g, '').length < 7) {
+        errors[field.key] = `Please enter a valid phone number.`;
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   // Update table when moduleKey changes
@@ -876,7 +932,12 @@ export const ModuleHubPage: React.FC = () => {
 
       {/* Dynamic Add Record Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCreateModal(false);
+          }}
+        >
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
@@ -901,9 +962,11 @@ export const ModuleHubPage: React.FC = () => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!validateRecordForm()) return;
                 createMutation.mutate(formData);
               }}
               className="mt-4 space-y-4"
+              noValidate
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {currentSchema.map((field) => (
@@ -914,8 +977,15 @@ export const ModuleHubPage: React.FC = () => {
                     {field.type === 'select' ? (
                       <select
                         value={formData[field.key] || field.defaultValue || ''}
-                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                        className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        onChange={(e) => {
+                          setFormData({ ...formData, [field.key]: e.target.value });
+                          if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                        }}
+                        className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 cursor-pointer transition-colors ${
+                          formErrors[field.key]
+                            ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
+                            : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
+                        }`}
                       >
                         {field.options?.map((opt) => (
                           <option key={opt} value={opt} className="dark:bg-slate-800">
@@ -927,19 +997,38 @@ export const ModuleHubPage: React.FC = () => {
                       <textarea
                         rows={3}
                         value={formData[field.key] || ''}
-                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, [field.key]: e.target.value });
+                          if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                        }}
                         placeholder={field.placeholder}
-                        className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
+                          formErrors[field.key]
+                            ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
+                            : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
+                        }`}
                       />
                     ) : (
                       <input
                         type={field.type}
-                        required={field.required}
                         value={formData[field.key] || ''}
-                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, [field.key]: e.target.value });
+                          if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                        }}
                         placeholder={field.placeholder}
-                        className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
+                          formErrors[field.key]
+                            ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
+                            : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
+                        }`}
                       />
+                    )}
+                    {formErrors[field.key] && (
+                      <p className="mt-1 text-[11px] text-rose-600 font-medium flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                        <span>{formErrors[field.key]}</span>
+                      </p>
                     )}
                   </div>
                 ))}

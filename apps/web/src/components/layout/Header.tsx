@@ -33,6 +33,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, logout } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -85,6 +87,21 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Auto-close dropdowns when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
+        setShowProfileMenu(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
   const toggleDarkMode = () => {
@@ -252,7 +269,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </button>
 
           {/* Notification Bell */}
-          <div className="relative shrink-0">
+          <div className="relative shrink-0" ref={notificationsRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors"
@@ -308,7 +325,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <span className="hidden sm:inline-block w-px h-6 bg-slate-200/80 dark:bg-slate-700/80 my-auto mx-0.5" />
 
           {/* User Profile Pill Menu */}
-          <div className="relative shrink-0">
+          <div className="relative shrink-0" ref={profileMenuRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700/80 cursor-pointer"

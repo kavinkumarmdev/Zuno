@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -72,6 +72,22 @@ export function DataGrid<T extends { id: string }>({
     new Set(columns.map((c) => c.key))
   );
   const [showColumnPicker, setShowColumnPicker] = useState(false);
+  const columnPickerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-close column picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (columnPickerRef.current && !columnPickerRef.current.contains(event.target as Node)) {
+        setShowColumnPicker(false);
+      }
+    };
+    if (showColumnPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showColumnPicker]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -147,7 +163,7 @@ export function DataGrid<T extends { id: string }>({
           </div>
 
           {/* Column Visibility Toggle */}
-          <div className="relative">
+          <div className="relative" ref={columnPickerRef}>
             <button
               onClick={() => setShowColumnPicker(!showColumnPicker)}
               className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1.5 px-3"
