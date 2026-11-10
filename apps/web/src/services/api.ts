@@ -1,6 +1,18 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+const isBrowser = typeof window !== 'undefined';
+const isLocalhost =
+  isBrowser &&
+  (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.'));
+
+export const PRODUCTION_API_URL = 'https://zuno-erp-api.onrender.com/api/v1';
+export const LOCAL_API_URL = 'http://localhost:4000/api/v1';
+
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (isLocalhost ? LOCAL_API_URL : PRODUCTION_API_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
