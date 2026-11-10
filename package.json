@@ -20,6 +20,7 @@
     "test:api": "npm run test --workspace=@zuno/api",
     "test:web": "npm run test --workspace=@zuno/web",
     "lint": "npm run lint --workspaces --if-present",
+    "postinstall": "npm run db:generate || true",
     "db:generate": "npm run db:generate --workspace=@zuno/api",
     "db:migrate": "npm run db:migrate --workspace=@zuno/api",
     "db:seed": "npm run db:seed --workspace=@zuno/api"
