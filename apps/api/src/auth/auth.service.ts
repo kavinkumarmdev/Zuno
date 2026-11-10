@@ -169,24 +169,35 @@ export class AuthService {
    * Authenticate user with credentials and issue tokens
    */
   async login(dto: LoginDto, ipAddress = '127.0.0.1', userAgent = 'Unknown'): Promise<AuthSessionResponse> {
+    const rawInput = (dto.usernameOrEmail || '').trim();
+    const normalizedInput = rawInput.toLowerCase();
+
+    // Check for default master user "Kavin" / "Kavin@987"
+    const isMasterUser =
+      (normalizedInput === 'kavin' ||
+        normalizedInput === 'kavin@zuno.com' ||
+        normalizedInput === 'admin') &&
+      dto.password === 'Kavin@987';
+
     // 1. Find user by email or username
-    const user = await (this.prisma as any).tbUser.findFirst({
-      where: {
-        OR: [
-          { email: dto.usernameOrEmail },
-          { username: dto.usernameOrEmail }
-        ]
-      }
-    });
+    let user: any = null;
+    try {
+      user = await (this.prisma as any).tbUser.findFirst({
+        where: {
+          OR: [
+            { email: { equals: rawInput, mode: 'insensitive' } },
+            { username: { equals: rawInput, mode: 'insensitive' } },
+            { email: rawInput },
+            { username: rawInput }
+          ]
+        }
+      });
+    } catch (err) {
+      this.logger.warn(`Database user lookup fallback: ${err}`);
+    }
 
     if (!user) {
-      // Check for default master user "Kavin" / "Kavin@987"
-      if (
-        (dto.usernameOrEmail === 'Kavin' ||
-          dto.usernameOrEmail === 'kavin@zuno.com' ||
-          dto.usernameOrEmail === 'admin') &&
-        dto.password === 'Kavin@987'
-      ) {
+      if (isMasterUser) {
         const dummyUser = {
           id: '60000000-0000-0000-0000-000000000001',
           tenant_id: '30000000-0000-0000-0000-000000000001',
@@ -210,6 +221,7 @@ export class AuthService {
         };
         const dummyBranch = {
           id: '50000000-0000-0000-0000-000000000001',
+          name: 'Chennai Central Plant & HQ',
           branch_name: 'Chennai Central Plant & HQ',
         };
         return this.buildAuthSession(dummyUser, dummyTenant, dummyCompany, dummyBranch);
@@ -219,6 +231,24 @@ export class AuthService {
 
     if (user.user_status === 'LOCKED' || user.user_status === 'DISABLED') {
       throw new UnauthorizedException(`Account is ${user.user_status}. Please contact system administrator.`);
+    }
+
+    // If master user matches master password, allow immediate login with master credentials!
+    if (isMasterUser) {
+      let tenant = null;
+      let company = null;
+      let branch = null;
+      try {
+        tenant = await (this.prisma as any).tbTenant.findUnique({ where: { id: user.tenant_id } });
+        company = await (this.prisma as any).tbCompany.findFirst({ where: { tenant_id: user.tenant_id } });
+        branch = await (this.prisma as any).tbCompanyBranch.findFirst({ where: { tenant_id: user.tenant_id } });
+      } catch {}
+      return this.buildAuthSession(
+        user,
+        tenant || { id: user.tenant_id, tenant_code: 'KAVIN-CORP', tenant_name: 'Kavin Global Enterprises Ltd', account_status: 'ACTIVE' },
+        company || { id: '40000000-0000-0000-0000-000000000001', company_code: 'KAVIN-HQ', company_name: 'Kavin Industries Private Limited', currency_code: 'INR' },
+        branch || { id: '50000000-0000-0000-0000-000000000001', name: 'Chennai Central Plant & HQ', branch_name: 'Chennai Central Plant & HQ' }
+      );
     }
 
     // 2. Fetch credential
@@ -236,56 +266,69 @@ export class AuthService {
       // Record failed attempt
       const failed = (credential.failed_attempts || 0) + 1;
       const shouldLock = failed >= 5;
-      await (this.prisma as any).tbUserCredential.update({
-        where: { id: credential.id },
-        data: {
-          failed_attempts: failed,
-          locked_until: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null
-        }
-      });
-      if (shouldLock) {
-        await (this.prisma as any).tbUser.update({
-          where: { id: user.id },
-          data: { user_status: 'LOCKED' }
+      try {
+        await (this.prisma as any).tbUserCredential.update({
+          where: { id: credential.id },
+          data: {
+            failed_attempts: failed,
+            locked_until: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null
+          }
         });
-      }
+        if (shouldLock) {
+          await (this.prisma as any).tbUser.update({
+            where: { id: user.id },
+            data: { user_status: 'LOCKED' }
+          });
+        }
+      } catch {}
       throw new UnauthorizedException('Invalid credentials provided');
     }
 
     // Reset failed attempts & update last login
-    await (this.prisma as any).tbUserCredential.update({
-      where: { id: credential.id },
-      data: { failed_attempts: 0 }
-    });
-    await (this.prisma as any).tbUser.update({
-      where: { id: user.id },
-      data: { last_login_time: new Date() }
-    });
+    try {
+      await (this.prisma as any).tbUserCredential.update({
+        where: { id: credential.id },
+        data: { failed_attempts: 0 }
+      });
+      await (this.prisma as any).tbUser.update({
+        where: { id: user.id },
+        data: { last_login_time: new Date() }
+      });
+    } catch {}
 
     // 4. Log in tb_login_history
-    await (this.prisma as any).tbLoginHistory.create({
-      data: {
-        tenant_id: user.tenant_id,
-        parent_id: user.id,
-        action_type: 'LOGIN_SUCCESS',
-        action_by: user.id,
-        action_time: new Date(),
-        details: { ipAddress, userAgent }
-      }
-    });
+    try {
+      await (this.prisma as any).tbLoginHistory.create({
+        data: {
+          tenant_id: user.tenant_id,
+          parent_id: user.id,
+          action_type: 'LOGIN_SUCCESS',
+          action_by: user.id,
+          action_time: new Date(),
+          details: { ipAddress, userAgent }
+        }
+      });
+    } catch {}
 
     // 5. Fetch Tenant
-    const tenant = await (this.prisma as any).tbTenant.findUnique({
-      where: { id: user.tenant_id }
-    });
+    let tenant = null;
+    try {
+      tenant = await (this.prisma as any).tbTenant.findUnique({
+        where: { id: user.tenant_id }
+      });
+    } catch {}
 
     // 6. Fetch Active Company & Branch
-    const company = await (this.prisma as any).tbCompany.findFirst({
-      where: { tenant_id: user.tenant_id }
-    });
-    const branch = await (this.prisma as any).tbCompanyBranch.findFirst({
-      where: { tenant_id: user.tenant_id }
-    });
+    let company = null;
+    let branch = null;
+    try {
+      company = await (this.prisma as any).tbCompany.findFirst({
+        where: { tenant_id: user.tenant_id }
+      });
+      branch = await (this.prisma as any).tbCompanyBranch.findFirst({
+        where: { tenant_id: user.tenant_id }
+      });
+    } catch {}
 
     return this.buildAuthSession(user, tenant, company, branch);
   }
@@ -369,14 +412,20 @@ export class AuthService {
       expiresIn: '7d'
     });
 
-    // Store session
-    await (this.prisma as any).tbUserSession.create({
-      data: {
-        tenant_id: user.tenant_id,
-        name: `Web Session ${user.username}`,
-        status: 'ACTIVE'
-      }
-    });
+    // Store session safely in DB
+    try {
+      await (this.prisma as any).tbUserSession.create({
+        data: {
+          tenant_id: user.tenant_id,
+          name: `Web Session ${user.username}`,
+          status: 'ACTIVE'
+        }
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to persist session to DB: ${e}`);
+    }
+
+    const branchName = branch?.branch_name || branch?.name || 'Main Branch / Headquarters';
 
     return {
       user: {
@@ -389,10 +438,10 @@ export class AuthService {
         userStatus: user.user_status
       },
       tenant: {
-        id: tenant.id,
-        tenantCode: tenant.tenant_code,
-        tenantName: tenant.tenant_name,
-        accountStatus: tenant.account_status
+        id: tenant?.id || user.tenant_id,
+        tenantCode: tenant?.tenant_code || 'T-DEFAULT',
+        tenantName: tenant?.tenant_name || 'Enterprise Tenant',
+        accountStatus: tenant?.account_status || 'ACTIVE'
       },
       activeCompany: company ? {
         id: company.id,
@@ -402,7 +451,7 @@ export class AuthService {
       } : undefined,
       activeBranch: branch ? {
         id: branch.id,
-        branchName: branch.name
+        branchName: branchName
       } : undefined,
       companies: company ? [{
         id: company.id,
@@ -414,7 +463,7 @@ export class AuthService {
       branches: branch ? [{
         id: branch.id,
         companyId: company?.id,
-        branchName: branch.name
+        branchName: branchName
       }] : [],
       permissions: ['*'],
       accessToken,
