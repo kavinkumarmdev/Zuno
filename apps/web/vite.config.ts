@@ -1,9 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'cloudflare-spa-fallback',
+      closeBundle() {
+        const distPath = path.resolve(__dirname, 'dist');
+        const indexPath = path.resolve(distPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          fs.copyFileSync(indexPath, path.resolve(distPath, '200.html'));
+          fs.copyFileSync(indexPath, path.resolve(distPath, '404.html'));
+        }
+      },
+    },
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
