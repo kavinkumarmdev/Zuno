@@ -21,27 +21,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initial fallback session for seamless enterprise demo preview
+// Initial fallback session with default user "Kavin"
 const DEFAULT_DEMO_SESSION: AuthSessionResponse = {
   user: {
     id: '60000000-0000-0000-0000-000000000001',
     tenantId: '30000000-0000-0000-0000-000000000001',
-    username: 'admin',
-    fullName: 'Rajesh Sharma',
-    email: 'admin@acme.com',
+    username: 'Kavin',
+    fullName: 'Kavin',
+    email: 'kavin@zuno.com',
     userType: UserType.OWNER,
     userStatus: 'ACTIVE' as any,
   },
   tenant: {
     id: '30000000-0000-0000-0000-000000000001',
-    tenantCode: 'ACME-CORP',
-    tenantName: 'Acme Global Enterprises Ltd',
+    tenantCode: 'KAVIN-CORP',
+    tenantName: 'Kavin Global Enterprises Ltd',
     accountStatus: 'ACTIVE',
   },
   activeCompany: {
     id: '40000000-0000-0000-0000-000000000001',
-    companyCode: 'ACME-HQ',
-    companyName: 'Acme Industries Private Limited',
+    companyCode: 'KAVIN-HQ',
+    companyName: 'Kavin Industries Private Limited',
     currencyCode: 'INR',
   },
   activeBranch: {
@@ -51,15 +51,15 @@ const DEFAULT_DEMO_SESSION: AuthSessionResponse = {
   companies: [
     {
       id: '40000000-0000-0000-0000-000000000001',
-      companyCode: 'ACME-HQ',
-      companyName: 'Acme Industries Private Limited',
+      companyCode: 'KAVIN-HQ',
+      companyName: 'Kavin Industries Private Limited',
       currencyCode: 'INR',
       role: 'Administrator',
     },
     {
       id: '40000000-0000-0000-0000-000000000002',
-      companyCode: 'ACME-LOG',
-      companyName: 'Acme Logistics & Warehousing Ltd',
+      companyCode: 'KAVIN-LOG',
+      companyName: 'Kavin Logistics & Tech Ltd',
       currencyCode: 'INR',
       role: 'Administrator',
     },
@@ -78,7 +78,7 @@ const DEFAULT_DEMO_SESSION: AuthSessionResponse = {
   ],
   permissions: ['*'],
   accessToken:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJ0ZW5hbnRJZCI6IjMwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQGFjbWUuY29tIiwidXNlclR5cGUiOiJPV05FUiIsInBlcm1pc3Npb25zIjpbIioiXSwiaWF0IjoxNzkzODgyMDk5LCJleHAiOjE4MjU0MTgwOTl9.t2ZgrcPrYUN0O2DV_mYdFGG0P0C2SnOqmjcTqWgX6NY',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJ0ZW5hbnRJZCI6IjMwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInVzZXJuYW1lIjoiS2F2aW4iLCJlbWFpbCI6ImthdmluQHp1bm8uY29tIiwidXNlclR5cGUiOiJPV05FUiIsInBlcm1pc3Npb25zIjpbIioiXSwiaWF0IjoxNzkzODgyMDk5LCJleHAiOjE4MjU0MTgwOTl9.t2ZgrcPrYUN0O2DV_mYdFGG0P0C2SnOqmjcTqWgX6NY',
   refreshToken: 'demo_jwt_refresh_token_zuno_2026',
   expiresIn: 3600,
 };
@@ -116,12 +116,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const res: any = await apiClient.post('/auth/login', credentials);
-      if (res.data) {
-        setSession(res.data);
+      const sessionData = res?.data || res;
+      if (sessionData && sessionData.user) {
+        setSession(sessionData);
         localStorage.removeItem('zuno_logged_out');
+      } else {
+        throw new Error('Invalid login response');
       }
     } catch {
-      // Demo fallback login if API is offline
+      // Check if credentials match Kavin or local session
+      const saved = localStorage.getItem('zuno_auth_session');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (
+            parsed &&
+            (parsed.user?.email === credentials.usernameOrEmail ||
+              parsed.user?.username === credentials.usernameOrEmail)
+          ) {
+            setSession(parsed);
+            localStorage.removeItem('zuno_logged_out');
+            return;
+          }
+        } catch {}
+      }
+      // Fallback to default user Kavin
       setSession(DEFAULT_DEMO_SESSION);
       localStorage.removeItem('zuno_logged_out');
     } finally {
@@ -131,14 +150,132 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (tenantData: any) => {
     setIsLoading(true);
+    const companyId = 'comp-' + Date.now();
+    const branchId = 'br-' + Date.now();
+    const userId = 'usr-' + Date.now();
+    const tenantId = 'ten-' + Date.now();
+    const compCode = (tenantData.companyName || 'COMP')
+      .replace(/[^A-Za-z0-9]/g, '')
+      .substring(0, 6)
+      .toUpperCase();
+
+    // 1. Immediately persist the newly registered company, branch, and user into local database storage
+    try {
+      const rawComp = localStorage.getItem('zuno_records_tb_company');
+      const existingComp = rawComp ? JSON.parse(rawComp) : [];
+      const newCompRecord = {
+        id: companyId,
+        name: tenantData.companyName,
+        company_name: tenantData.companyName,
+        code: `${compCode}-HQ`,
+        company_code: `${compCode}-HQ`,
+        legal_name: tenantData.tenantName || tenantData.companyName,
+        currency_code: 'INR',
+        phone: tenantData.mobile || '',
+        email: tenantData.email || '',
+        status: 'ACTIVE',
+        created_time: new Date().toISOString(),
+        is_user_record: true,
+      };
+      existingComp.unshift(newCompRecord);
+      localStorage.setItem('zuno_records_tb_company', JSON.stringify(existingComp));
+
+      // Persist branch
+      const rawBranch = localStorage.getItem('zuno_records_tb_company_branch');
+      const existingBranch = rawBranch ? JSON.parse(rawBranch) : [];
+      existingBranch.unshift({
+        id: branchId,
+        company_id: companyId,
+        name: 'Main Plant & HQ',
+        branch_name: 'Main Plant & HQ',
+        code: `${compCode}-BR01`,
+        location: 'Corporate HQ',
+        status: 'ACTIVE',
+        created_time: new Date().toISOString(),
+        is_user_record: true,
+      });
+      localStorage.setItem('zuno_records_tb_company_branch', JSON.stringify(existingBranch));
+
+      // Persist user in tb_user
+      const rawUser = localStorage.getItem('zuno_records_tb_user');
+      const existingUser = rawUser ? JSON.parse(rawUser) : [];
+      existingUser.unshift({
+        id: userId,
+        name: tenantData.ownerName || 'Kavin',
+        full_name: tenantData.ownerName || 'Kavin',
+        username: tenantData.ownerName || 'Kavin',
+        code: 'USR-001',
+        email: tenantData.email,
+        phone: tenantData.mobile,
+        user_type: 'OWNER',
+        status: 'ACTIVE',
+        created_time: new Date().toISOString(),
+        is_user_record: true,
+      });
+      localStorage.setItem('zuno_records_tb_user', JSON.stringify(existingUser));
+    } catch {}
+
+    const newSession: AuthSessionResponse = {
+      user: {
+        id: userId,
+        tenantId,
+        username: tenantData.ownerName || 'Kavin',
+        fullName: tenantData.ownerName || 'Kavin',
+        email: tenantData.email || 'kavin@zuno.com',
+        userType: UserType.OWNER,
+        userStatus: 'ACTIVE' as any,
+      },
+      tenant: {
+        id: tenantId,
+        tenantCode: `${compCode}-CORP`,
+        tenantName: tenantData.tenantName || tenantData.companyName || 'My Enterprise Group',
+        accountStatus: 'ACTIVE',
+      },
+      activeCompany: {
+        id: companyId,
+        companyCode: `${compCode}-HQ`,
+        companyName: tenantData.companyName,
+        currencyCode: 'INR',
+      },
+      activeBranch: {
+        id: branchId,
+        branchName: 'Main Plant & HQ',
+      },
+      companies: [
+        {
+          id: companyId,
+          companyCode: `${compCode}-HQ`,
+          companyName: tenantData.companyName,
+          currencyCode: 'INR',
+          role: 'OWNER',
+        },
+      ],
+      branches: [
+        {
+          id: branchId,
+          companyId,
+          branchName: 'Main Plant & HQ',
+        },
+      ],
+      permissions: ['*'],
+      accessToken: 'jwt_access_' + Date.now(),
+      refreshToken: 'jwt_refresh_' + Date.now(),
+      expiresIn: 86400,
+    };
+
+    // 2. Transmit to backend PostgreSQL database
     try {
       const res: any = await apiClient.post('/auth/register', tenantData);
-      if (res.data) {
-        setSession(res.data);
+      const sessionData = res?.data || res;
+      if (sessionData && sessionData.user) {
+        setSession(sessionData);
+        localStorage.removeItem('zuno_logged_out');
+      } else {
+        setSession(newSession);
         localStorage.removeItem('zuno_logged_out');
       }
     } catch {
-      setSession(DEFAULT_DEMO_SESSION);
+      setSession(newSession);
       localStorage.removeItem('zuno_logged_out');
     } finally {
       setIsLoading(false);

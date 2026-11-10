@@ -285,9 +285,9 @@ export const RegisterPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="relative group flex items-center">
-                  <Phone className="w-4 h-4 absolute left-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10" />
-                  <div className="absolute left-9.5 text-xs text-slate-600 font-semibold font-mono select-none border-r border-slate-200 pr-2 z-10">
-                    +91
+                  <div className="absolute left-3 flex items-center gap-1.5 pointer-events-none z-10 pr-2 border-r border-slate-200">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                    <span className="text-xs text-slate-700 font-semibold font-mono select-none">+91</span>
                   </div>
                   <input
                     type="tel"

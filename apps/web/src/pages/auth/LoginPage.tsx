@@ -242,6 +242,27 @@ export const LoginPage: React.FC = () => {
               <span>{isLoading ? 'Verifying Credentials...' : 'Sign In to Workspace'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            {/* Quick Demo Credentials Pill */}
+            <div className="mt-3.5 p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between text-xs">
+              <div>
+                <p className="text-[11px] font-semibold text-slate-700">
+                  Default User: <span className="text-blue-700 font-mono">Kavin</span>
+                </p>
+                <p className="text-[10px] text-slate-500 font-mono">Password: Kavin@987</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsernameOrEmail('Kavin');
+                  setPassword('Kavin@987');
+                  setFieldErrors({});
+                }}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-[11px] font-semibold text-blue-600 rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                Auto-fill
+              </button>
+            </div>
           </form>
 
           {/* Switch to Register */}

@@ -234,6 +234,112 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   }
 };
 
+interface FormFieldConfig {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'email' | 'tel' | 'date' | 'select' | 'textarea';
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+  defaultValue?: string;
+}
+
+const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
+  tb_company: [
+    { key: 'name', label: 'Company Legal Name', type: 'text', required: true, placeholder: 'e.g. Kavin Global Industries Ltd' },
+    { key: 'code', label: 'Company Identifier Code', type: 'text', required: true, placeholder: 'e.g. KAVIN-HQ' },
+    { key: 'legal_name', label: 'Trade / Registration Name', type: 'text', placeholder: 'e.g. Kavin Technologies Pvt Ltd' },
+    { key: 'gstin', label: 'GSTIN / Statutory Tax ID', type: 'text', placeholder: 'e.g. 33AAAAA0000A1Z5' },
+    { key: 'currency_code', label: 'Base Operational Currency', type: 'select', options: ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'], defaultValue: 'INR' },
+    { key: 'email', label: 'Corporate Contact Email', type: 'email', placeholder: 'contact@kavin.com' },
+    { key: 'phone', label: 'Corporate Phone', type: 'tel', placeholder: '+91 9876543210' },
+    { key: 'city', label: 'Registered City / State', type: 'text', placeholder: 'e.g. Chennai, Tamil Nadu' },
+    { key: 'description', label: 'Headquarters Address & Details', type: 'textarea', placeholder: 'Registered corporate office location...' }
+  ],
+  tb_company_branch: [
+    { key: 'name', label: 'Branch / Plant Name', type: 'text', required: true, placeholder: 'e.g. Chennai Central Plant & Warehouse' },
+    { key: 'code', label: 'Branch Code', type: 'text', required: true, placeholder: 'e.g. CHN-PLANT-01' },
+    { key: 'city', label: 'City / Region', type: 'text', placeholder: 'e.g. Chennai, Tamil Nadu' },
+    { key: 'manager_name', label: 'Branch Head / Manager', type: 'text', placeholder: 'e.g. Kavin' },
+    { key: 'phone', label: 'Branch Contact Phone', type: 'tel', placeholder: '+91 9876543210' },
+    { key: 'description', label: 'Branch Operational Notes', type: 'textarea', placeholder: 'Warehouse capacity, production lines...' }
+  ],
+  tb_product_master: [
+    { key: 'name', label: 'Product / Material Name', type: 'text', required: true, placeholder: 'e.g. Stainless Steel Rod 12mm' },
+    { key: 'code', label: 'SKU / Part Code', type: 'text', required: true, placeholder: 'e.g. SKU-SSR-12' },
+    { key: 'category', label: 'Product Category', type: 'select', options: ['Raw Materials', 'Finished Goods', 'Sub-Assemblies', 'Consumables', 'Packaging'], defaultValue: 'Raw Materials' },
+    { key: 'uom', label: 'Unit of Measure (UOM)', type: 'select', options: ['PCS', 'KG', 'MTR', 'LTR', 'BOX', 'NOS', 'TON'], defaultValue: 'PCS' },
+    { key: 'amount', label: 'Unit Selling Price (INR)', type: 'number', required: true, placeholder: 'e.g. 1250.00' },
+    { key: 'gst_rate', label: 'Statutory GST Rate', type: 'select', options: ['0%', '5%', '12%', '18%', '28%'], defaultValue: '18%' },
+    { key: 'reorder_level', label: 'Min Safety Reorder Level', type: 'number', placeholder: 'e.g. 50' },
+    { key: 'description', label: 'Technical Specifications', type: 'textarea', placeholder: 'Material grade, tolerance, storage specs...' }
+  ],
+  tb_customer_master: [
+    { key: 'name', label: 'Customer / Business Name', type: 'text', required: true, placeholder: 'e.g. Tata Motors Engineering Ltd' },
+    { key: 'code', label: 'Customer Account Code', type: 'text', required: true, placeholder: 'e.g. CUST-TM-001' },
+    { key: 'contact_person', label: 'Primary Contact Person', type: 'text', placeholder: 'e.g. Ramesh Kumar' },
+    { key: 'email', label: 'Billing Email Address', type: 'email', placeholder: 'accounts@tatamotors.com' },
+    { key: 'phone', label: 'Contact Phone Number', type: 'tel', placeholder: '+91 9876543210' },
+    { key: 'gstin', label: 'Customer GSTIN', type: 'text', placeholder: 'e.g. 27AAACT2727Q1ZW' },
+    { key: 'amount', label: 'Approved Credit Limit (INR)', type: 'number', placeholder: 'e.g. 1000000' },
+    { key: 'city', label: 'City / State', type: 'text', placeholder: 'e.g. Pune, Maharashtra' },
+    { key: 'description', label: 'Billing Address & Terms', type: 'textarea', placeholder: 'Registered delivery address...' }
+  ],
+  tb_supplier_master: [
+    { key: 'name', label: 'Supplier / Vendor Name', type: 'text', required: true, placeholder: 'e.g. Jindal Steel & Power Ltd' },
+    { key: 'code', label: 'Vendor Code', type: 'text', required: true, placeholder: 'e.g. VEND-JS-01' },
+    { key: 'contact_person', label: 'Vendor Representative', type: 'text', placeholder: 'e.g. Suresh Patel' },
+    { key: 'email', label: 'Vendor Email', type: 'email', placeholder: 'sales@jindalsteel.com' },
+    { key: 'phone', label: 'Contact Mobile', type: 'tel', placeholder: '+91 9876543210' },
+    { key: 'gstin', label: 'Vendor GSTIN', type: 'text', placeholder: 'e.g. 06AAACJ0123P1Z1' },
+    { key: 'payment_terms', label: 'Payment Terms', type: 'select', options: ['Immediate', 'Net 15 Days', 'Net 30 Days', 'Net 60 Days', '100% Advance'], defaultValue: 'Net 30 Days' },
+    { key: 'description', label: 'Warehouse / Factory Address', type: 'textarea', placeholder: 'Supplier factory location...' }
+  ],
+  tb_employee_master: [
+    { key: 'name', label: 'Employee Full Name', type: 'text', required: true, placeholder: 'e.g. Anand Venkatesh' },
+    { key: 'code', label: 'Employee ID Code', type: 'text', required: true, placeholder: 'e.g. EMP-2026-042' },
+    { key: 'department', label: 'Department', type: 'select', options: ['Operations', 'Engineering & Production', 'Accounts & Finance', 'Sales & Marketing', 'Human Resources', 'Supply Chain', 'Quality Assurance'], defaultValue: 'Operations' },
+    { key: 'designation', label: 'Job Title / Role', type: 'text', required: true, placeholder: 'e.g. Senior Production Engineer' },
+    { key: 'email', label: 'Work Email Address', type: 'email', placeholder: 'anand@company.com' },
+    { key: 'phone', label: 'Mobile Number', type: 'tel', placeholder: '+91 9876543210' },
+    { key: 'amount', label: 'Monthly Basic Salary (INR)', type: 'number', required: true, placeholder: 'e.g. 65000.00' },
+    { key: 'description', label: 'Emergency Contact & Notes', type: 'textarea', placeholder: 'Blood group, emergency contact details...' }
+  ],
+  tb_sales_invoice: [
+    { key: 'code', label: 'Invoice Number', type: 'text', required: true, placeholder: 'e.g. INV-2026-0891' },
+    { key: 'name', label: 'Customer / Client Name', type: 'text', required: true, placeholder: 'e.g. Apex Industries Pvt Ltd' },
+    { key: 'amount', label: 'Invoice Gross Value (INR)', type: 'number', required: true, placeholder: 'e.g. 85000.00' },
+    { key: 'tax_amount', label: 'GST Tax Amount (INR)', type: 'number', placeholder: 'e.g. 15300.00' },
+    { key: 'date', label: 'Invoice Date', type: 'date' },
+    { key: 'status', label: 'Payment Status', type: 'select', options: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'PAID', 'OVERDUE'], defaultValue: 'PENDING_APPROVAL' },
+    { key: 'description', label: 'Terms of Delivery & Payment', type: 'textarea', placeholder: 'Delivery dispatch terms...' }
+  ],
+  tb_purchase_order: [
+    { key: 'code', label: 'PO Number', type: 'text', required: true, placeholder: 'e.g. PO-2026-1049' },
+    { key: 'name', label: 'Supplier / Vendor Name', type: 'text', required: true, placeholder: 'e.g. Bharat Heavy Metals Ltd' },
+    { key: 'amount', label: 'Total PO Value (INR)', type: 'number', required: true, placeholder: 'e.g. 124000.00' },
+    { key: 'date', label: 'Expected Delivery Date', type: 'date' },
+    { key: 'status', label: 'Order Status', type: 'select', options: ['DRAFT', 'ISSUED_TO_VENDOR', 'GOODS_RECEIVED', 'CLOSED', 'CANCELLED'], defaultValue: 'ISSUED_TO_VENDOR' },
+    { key: 'description', label: 'PO Delivery Instructions', type: 'textarea', placeholder: 'Dispatch gate pass instructions...' }
+  ],
+  tb_accounting_voucher: [
+    { key: 'code', label: 'Voucher Number', type: 'text', required: true, placeholder: 'e.g. VCH-PAY-0082' },
+    { key: 'voucher_type', label: 'Voucher Type', type: 'select', options: ['Payment Voucher', 'Receipt Voucher', 'Journal Voucher', 'Contra Voucher'], defaultValue: 'Payment Voucher' },
+    { key: 'name', label: 'Debit Account Head', type: 'text', required: true, placeholder: 'e.g. Machine Maintenance & Repairs' },
+    { key: 'credit_account', label: 'Credit Account Head', type: 'text', required: true, placeholder: 'e.g. HDFC Bank Current A/c' },
+    { key: 'amount', label: 'Voucher Amount (INR)', type: 'number', required: true, placeholder: 'e.g. 24500.00' },
+    { key: 'description', label: 'Statutory Narration', type: 'textarea', placeholder: 'Being payment made towards factory repairs...' }
+  ],
+  tb_user: [
+    { key: 'name', label: 'User Full Name', type: 'text', required: true, placeholder: 'e.g. Kavin Kumar' },
+    { key: 'code', label: 'Username', type: 'text', required: true, placeholder: 'e.g. kavin' },
+    { key: 'email', label: 'Corporate Work Email', type: 'email', required: true, placeholder: 'kavin@zuno.com' },
+    { key: 'user_type', label: 'Access Role', type: 'select', options: ['OWNER', 'ADMIN', 'MANAGER', 'USER', 'AUDITOR'], defaultValue: 'OWNER' },
+    { key: 'status', label: 'Account Status', type: 'select', options: ['ACTIVE', 'DISABLED', 'LOCKED'], defaultValue: 'ACTIVE' },
+    { key: 'description', label: 'Assigned Department & Modules', type: 'textarea', placeholder: 'Full ERP access...' }
+  ]
+};
+
 export const ModuleHubPage: React.FC = () => {
   const { moduleKey } = useParams<{ moduleKey: string }>();
   const queryClient = useQueryClient();
@@ -246,8 +352,28 @@ export const ModuleHubPage: React.FC = () => {
   const [sortField, setSortField] = useState('created_time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createFormData, setCreateFormData] = useState({ name: '', description: '', code: '', amount: '' });
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const currentTableObj = moduleInfo.tables.find((t) => t.name === selectedTable);
+  const currentTableLabel = currentTableObj?.label || selectedTable.replace(/^tb_/, '').replace(/_/g, ' ');
+  const singleLabel = currentTableLabel.replace(/s$/, '').replace(/ies$/, 'y');
+
+  // Dynamic schema for the selected table
+  const currentSchema: FormFieldConfig[] = useMemo(() => {
+    if (TABLE_SCHEMAS[selectedTable]) {
+      return TABLE_SCHEMAS[selectedTable];
+    }
+    // Contextual fallback schema for any catalogue table
+    return [
+      { key: 'name', label: `${singleLabel} Name / Title`, type: 'text', required: true, placeholder: `Enter ${singleLabel.toLowerCase()} name...` },
+      { key: 'code', label: 'Identifier Code', type: 'text', required: true, placeholder: `REF-${Math.floor(1000 + Math.random() * 9000)}` },
+      { key: 'category', label: 'Category / Group', type: 'text', placeholder: 'Operational group...' },
+      { key: 'amount', label: 'Value / Amount (INR)', type: 'number', placeholder: '0.00' },
+      { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'PENDING', 'COMPLETED', 'ARCHIVED'], defaultValue: 'ACTIVE' },
+      { key: 'description', label: 'Operational Details', type: 'textarea', placeholder: 'Enter business records and audit details...' }
+    ];
+  }, [selectedTable, singleLabel]);
 
   // Helper to read local offline records cache
   const getLocalRecords = (tableName: string) => {
@@ -266,6 +392,16 @@ export const ModuleHubPage: React.FC = () => {
       const updated = [newRecord, ...filtered];
       localStorage.setItem(`zuno_records_${tableName}`, JSON.stringify(updated));
     } catch {}
+  };
+
+  // Reset form when table changes or modal opens
+  const openCreateModal = () => {
+    const initial: Record<string, any> = {};
+    for (const f of currentSchema) {
+      initial[f.key] = f.defaultValue || '';
+    }
+    setFormData(initial);
+    setShowCreateModal(true);
   };
 
   // Update table when moduleKey changes
@@ -316,6 +452,7 @@ export const ModuleHubPage: React.FC = () => {
         combined = combined.filter(
           (i: any) =>
             i.name?.toLowerCase().includes(q) ||
+            i.company_name?.toLowerCase().includes(q) ||
             i.code?.toLowerCase().includes(q) ||
             i.description?.toLowerCase().includes(q)
         );
@@ -332,15 +469,19 @@ export const ModuleHubPage: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
       const tempId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const prefix = selectedTable.replace(/^tb_/, '').substring(0, 4).toUpperCase();
+      const codeVal = payload.code || payload.sku_code || payload.company_code || `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+
       const localRecord = {
         id: tempId,
-        code: payload.code || `REF-${Date.now().toString().slice(-4)}`,
-        name: payload.name,
+        code: codeVal,
+        name: payload.name || payload.company_name || payload.branch_name || `${singleLabel} Entry`,
         description: payload.description || '',
         amount: payload.amount ? Number(payload.amount) : 0,
-        status: 'ACTIVE',
+        status: payload.status || 'ACTIVE',
         created_time: new Date().toISOString(),
-        is_user_record: true
+        is_user_record: true,
+        ...payload
       };
 
       // 1. Immediately cache locally
@@ -360,25 +501,142 @@ export const ModuleHubPage: React.FC = () => {
     },
     onSuccess: () => {
       setShowCreateModal(false);
-      setCreateFormData({ name: '', description: '', code: '', amount: '' });
-      setSaveSuccessMsg('Record saved successfully!');
-      setTimeout(() => setSaveSuccessMsg(null), 4000);
+      setActionAlert({ type: 'success', message: `${singleLabel} record successfully saved and synchronized with database.` });
       refetch();
+    },
+    onError: (err: any) => {
+      setActionAlert({ type: 'error', message: `Unable to save record: ${err?.message || 'Please check all required fields and try again.'}` });
     }
   });
 
+  // Dynamic columns based on selected table
   const columns: ColumnDef[] = useMemo(() => {
+    if (selectedTable === 'tb_company') {
+      return [
+        { key: 'name', header: 'Company Name', sortable: true },
+        { key: 'code', header: 'Company Code', sortable: true, width: '140px' },
+        { key: 'legal_name', header: 'Legal Entity' },
+        { key: 'gstin', header: 'GSTIN / Tax ID', width: '160px' },
+        { key: 'currency_code', header: 'Currency', align: 'center', width: '90px' },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' },
+        { key: 'created_time', header: 'Created', sortable: true, width: '120px', render: (r) => new Date(r.created_time || Date.now()).toLocaleDateString() }
+      ];
+    }
+
+    if (selectedTable === 'tb_company_branch') {
+      return [
+        { key: 'name', header: 'Branch Name', sortable: true },
+        { key: 'code', header: 'Branch Code', sortable: true, width: '140px' },
+        { key: 'city', header: 'Location / City' },
+        { key: 'manager_name', header: 'Branch Manager' },
+        { key: 'phone', header: 'Phone' },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_product_master') {
+      return [
+        { key: 'name', header: 'Product Name', sortable: true },
+        { key: 'code', header: 'SKU Code', sortable: true, width: '140px' },
+        { key: 'category', header: 'Category' },
+        { key: 'amount', header: 'Unit Price (INR)', sortable: true, align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'uom', header: 'UOM', align: 'center', width: '80px' },
+        { key: 'gst_rate', header: 'GST %', align: 'center', width: '90px' },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_customer_master') {
+      return [
+        { key: 'name', header: 'Customer Name', sortable: true },
+        { key: 'code', header: 'Account Code', sortable: true, width: '140px' },
+        { key: 'contact_person', header: 'Contact Person' },
+        { key: 'email', header: 'Email' },
+        { key: 'phone', header: 'Phone' },
+        { key: 'amount', header: 'Credit Limit (INR)', align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_supplier_master') {
+      return [
+        { key: 'name', header: 'Supplier Name', sortable: true },
+        { key: 'code', header: 'Vendor Code', sortable: true, width: '140px' },
+        { key: 'contact_person', header: 'Representative' },
+        { key: 'email', header: 'Email' },
+        { key: 'phone', header: 'Mobile' },
+        { key: 'payment_terms', header: 'Payment Terms' },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_employee_master') {
+      return [
+        { key: 'name', header: 'Employee Name', sortable: true },
+        { key: 'code', header: 'Employee ID', sortable: true, width: '130px' },
+        { key: 'department', header: 'Department' },
+        { key: 'designation', header: 'Designation' },
+        { key: 'email', header: 'Email' },
+        { key: 'amount', header: 'Salary (INR)', align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_sales_invoice' || selectedTable === 'tb_sales_order') {
+      return [
+        { key: 'code', header: 'Document No', sortable: true, width: '150px' },
+        { key: 'name', header: 'Customer / Client', sortable: true },
+        { key: 'amount', header: 'Gross Value (INR)', sortable: true, align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'tax_amount', header: 'GST Tax (INR)', align: 'right', render: (r) => `₹${Number(r.tax_amount || 0).toLocaleString('en-IN')}` },
+        { key: 'status', header: 'Status', align: 'center', width: '130px' },
+        { key: 'created_time', header: 'Date', sortable: true, width: '120px', render: (r) => new Date(r.created_time || Date.now()).toLocaleDateString() }
+      ];
+    }
+
+    if (selectedTable === 'tb_purchase_order') {
+      return [
+        { key: 'code', header: 'PO Number', sortable: true, width: '150px' },
+        { key: 'name', header: 'Vendor / Supplier', sortable: true },
+        { key: 'amount', header: 'Total Value (INR)', sortable: true, align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'status', header: 'Status', align: 'center', width: '130px' },
+        { key: 'created_time', header: 'Date', sortable: true, width: '120px', render: (r) => new Date(r.created_time || Date.now()).toLocaleDateString() }
+      ];
+    }
+
+    if (selectedTable === 'tb_accounting_voucher') {
+      return [
+        { key: 'code', header: 'Voucher No', sortable: true, width: '140px' },
+        { key: 'voucher_type', header: 'Type', width: '140px' },
+        { key: 'name', header: 'Debit Account Head', sortable: true },
+        { key: 'credit_account', header: 'Credit Account Head' },
+        { key: 'amount', header: 'Amount (INR)', sortable: true, align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'description', header: 'Narration' }
+      ];
+    }
+
+    if (selectedTable === 'tb_user') {
+      return [
+        { key: 'name', header: 'User Full Name', sortable: true },
+        { key: 'code', header: 'Username', sortable: true, width: '130px' },
+        { key: 'email', header: 'Corporate Email' },
+        { key: 'user_type', header: 'Role', align: 'center', width: '110px' },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' },
+        { key: 'created_time', header: 'Created', sortable: true, width: '120px', render: (r) => new Date(r.created_time || Date.now()).toLocaleDateString() }
+      ];
+    }
+
+    // Default universal catalogue columns
     return [
-      { key: 'code', header: 'Code', sortable: true, width: '150px' },
-      { key: 'name', header: 'Name / Subject', sortable: true },
-      { key: 'description', header: 'Description' },
-      { key: 'amount', header: 'Amount (INR)', sortable: true, align: 'right' },
-      { key: 'status', header: 'Status', sortable: true, align: 'center', width: '120px' },
+      { key: 'code', header: 'Code / Reference', sortable: true, width: '140px' },
+      { key: 'name', header: 'Item / Record Name', sortable: true },
+      { key: 'description', header: 'Operational Details' },
+      { key: 'amount', header: 'Amount (INR)', sortable: true, align: 'right', render: (r) => (r.amount ? `₹${Number(r.amount).toLocaleString('en-IN')}` : '—') },
+      { key: 'status', header: 'Status', sortable: true, align: 'center', width: '110px' },
       {
         key: 'created_time',
         header: 'Created Date',
         sortable: true,
-        width: '160px',
+        width: '140px',
         render: (row) => new Date(row.created_time || Date.now()).toLocaleDateString()
       }
     ];
@@ -386,16 +644,29 @@ export const ModuleHubPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification Banner */}
-      {saveSuccessMsg && (
-        <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200 animate-in fade-in duration-200 shadow-sm">
+      {/* Action Notification Alert Banner */}
+      {actionAlert && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs animate-in fade-in duration-200 shadow-sm ${
+            actionAlert.type === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200'
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span className="font-semibold">{saveSuccessMsg}</span>
-            <span className="text-emerald-600 dark:text-emerald-400 hidden sm:inline">— Data saved to database and synchronized</span>
+            {actionAlert.type === 'success' ? (
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            )}
+            <span className="font-semibold">{actionAlert.message}</span>
           </div>
-          <button onClick={() => setSaveSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
-            <X className="w-4 h-4" />
+          <button
+            onClick={() => setActionAlert(null)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+          >
+            <span>Dismiss</span>
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -425,7 +696,7 @@ export const ModuleHubPage: React.FC = () => {
                 setSelectedTable(t.name);
                 setPage(1);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 selectedTable === t.name
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -439,7 +710,7 @@ export const ModuleHubPage: React.FC = () => {
 
       {/* Enterprise Data Grid */}
       <DataGrid
-        title={`${moduleInfo.tables.find((t) => t.name === selectedTable)?.label || selectedTable}`}
+        title={currentTableLabel}
         subtitle="Manage business records with multi-column sorting, instant search, and CSV export."
         columns={columns}
         data={queryResult?.items || []}
@@ -455,19 +726,22 @@ export const ModuleHubPage: React.FC = () => {
           setSortOrder(order);
         }}
         onRefresh={() => refetch()}
-        onAddNew={() => setShowCreateModal(true)}
-        addNewLabel={`Add ${moduleInfo.tables.find((t) => t.name === selectedTable)?.label || 'Record'}`}
+        onAddNew={openCreateModal}
+        addNewLabel={`Add ${singleLabel}`}
       />
 
-      {/* Add Record Modal */}
+      {/* Dynamic Add Record Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                New Record: {selectedTable}
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                Add New {singleLabel}
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -475,82 +749,64 @@ export const ModuleHubPage: React.FC = () => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                createMutation.mutate(createFormData);
+                createMutation.mutate(formData);
               }}
               className="mt-4 space-y-4"
             >
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Item / Document Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={createFormData.name}
-                  onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
-                  placeholder="e.g. Standard Operating Asset"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {currentSchema.map((field) => (
+                  <div key={field.key} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      {field.label} {field.required && <span className="text-blue-600">*</span>}
+                    </label>
+                    {field.type === 'select' ? (
+                      <select
+                        value={formData[field.key] || field.defaultValue || ''}
+                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      >
+                        {field.options?.map((opt) => (
+                          <option key={opt} value={opt} className="dark:bg-slate-800">
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === 'textarea' ? (
+                      <textarea
+                        rows={3}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                        placeholder={field.placeholder}
+                        className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <input
+                        type={field.type}
+                        required={field.required}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                        placeholder={field.placeholder}
+                        className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Identification Code (Uppercase Alphanumeric)
-                </label>
-                <input
-                  type="text"
-                  value={createFormData.code}
-                  onChange={(e) => {
-                    const cleanCode = e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 30);
-                    setCreateFormData({ ...createFormData, code: cleanCode });
-                  }}
-                  placeholder="e.g. REF-2026-001"
-                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Value / Amount (INR, numbers only)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={createFormData.amount}
-                  onChange={(e) => setCreateFormData({ ...createFormData, amount: e.target.value })}
-                  placeholder="e.g. 50000.00"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Operational Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={createFormData.description}
-                  onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
-                  placeholder="Enter business details..."
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="px-4 py-2 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 disabled:opacity-50 cursor-pointer transition-all"
                 >
-                  {createMutation.isPending ? 'Saving...' : 'Save Record'}
+                  {createMutation.isPending ? 'Saving...' : `Save ${singleLabel}`}
                 </button>
               </div>
             </form>
