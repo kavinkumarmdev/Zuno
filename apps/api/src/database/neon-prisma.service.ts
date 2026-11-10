@@ -7,10 +7,17 @@ export class NeonPrismaService extends PrismaClient implements OnModuleInit, OnM
   private readonly logger = new Logger(NeonPrismaService.name);
 
   constructor(configService: ConfigService) {
+    const dbUrl =
+      configService.get<string>('DATABASE_URL') ||
+      configService.get<string>('NEON_DATABASE_URL') ||
+      process.env.DATABASE_URL ||
+      process.env.NEON_DATABASE_URL ||
+      'postgresql://postgres:postgres@localhost:5432/zuno_erp?schema=public';
+
     super({
       datasources: {
         db: {
-          url: configService.get<string>('NEON_DATABASE_URL') || process.env.NEON_DATABASE_URL,
+          url: dbUrl,
         },
       },
       log: ['error', 'warn'],

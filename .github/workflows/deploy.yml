@@ -36,3 +36,4 @@ jobs:
 
       - name: Verify Cloudflare Assets Configuration
         run: npx wrangler deploy --dry-run
+

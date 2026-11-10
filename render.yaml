@@ -28,6 +28,10 @@ services:
         fromDatabase:
           name: zuno-postgres
           property: connectionString
+      - key: NEON_DATABASE_URL
+        fromDatabase:
+          name: zuno-postgres
+          property: connectionString
 
 databases:
   - name: zuno-postgres
