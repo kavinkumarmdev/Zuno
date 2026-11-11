@@ -413,6 +413,10 @@ export class BusinessModulesService implements OnModuleInit {
    * Create a new record within tenant boundary with guaranteed disk & database persistence
    */
   async createRecord(tenantId: string, userId: string, tableName: string, data: any) {
+    if (tableName === 'tb_login_history') {
+      throw new BadRequestException('Security Audit Violation: Login History table (tb_login_history) is strictly immutable and read-only. Manual creation is prohibited.');
+    }
+
     // Validate uniqueness, phone format, GSTIN format before saving
     this.validateRecordPayload(tenantId, tableName, data);
 
@@ -456,6 +460,10 @@ export class BusinessModulesService implements OnModuleInit {
    * Update an existing record
    */
   async updateRecord(tenantId: string, userId: string, tableName: string, id: string, data: any) {
+    if (tableName === 'tb_login_history') {
+      throw new BadRequestException('Security Audit Violation: Login History table (tb_login_history) is strictly immutable and read-only. Modification is prohibited.');
+    }
+
     // Validate uniqueness, phone format, GSTIN format for updates (excluding current id)
     this.validateRecordPayload(tenantId, tableName, data, id);
 
@@ -482,6 +490,10 @@ export class BusinessModulesService implements OnModuleInit {
    * Soft-delete a record
    */
   async deleteRecord(tenantId: string, userId: string, tableName: string, id: string) {
+    if (tableName === 'tb_login_history') {
+      throw new BadRequestException('Security Audit Violation: Login History table (tb_login_history) is strictly immutable and read-only. Deletion is prohibited.');
+    }
+
     OperationalDataStore.deleteRecord(tenantId, userId, tableName, id);
 
     try {

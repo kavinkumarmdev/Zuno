@@ -36,9 +36,12 @@ import {
   Square,
   Search,
   Loader2,
-  Sparkles
+  Sparkles,
+  ShieldAlert
 } from 'lucide-react';
 import { VoiceGuidedAssistant } from '../guidance/VoiceGuidedAssistant';
+import { useAuth } from '../../stores/auth-store';
+import { canUserAccessModule } from '../../utils/permissionManager';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -97,6 +100,7 @@ export const ERP_MODULES = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
+  const { user } = useAuth();
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
   const [showVoiceGuide, setShowVoiceGuide] = useState(false);
 
@@ -149,10 +153,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     return ERP_MODULES.filter((group: any) => group.phase && Array.isArray(group.items))
       .map((group: any) => ({
         ...group,
-        items: group.items.filter((item: any) => enabledModules.includes(item.id))
+        items: group.items.filter((item: any) =>
+          enabledModules.includes(item.id) && canUserAccessModule(user, item.id)
+        )
       }))
       .filter((group: any) => group.items.length > 0);
-  }, [enabledModules]);
+  }, [enabledModules, user]);
 
   const allAvailableModules = useMemo(() => {
     const list: Array<{ id: string; name: string; phase: string; icon: any; count?: number; table?: string }> = [];

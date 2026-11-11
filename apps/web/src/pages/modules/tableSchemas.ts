@@ -461,52 +461,126 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Permission Title",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Sales Invoice Approval Authority"
+      "placeholder": "e.g. Sales Orders Full Access & Approval"
     },
     {
       "key": "code",
       "label": "Permission Key Code",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. PERM-SALES-INV-APPROVE"
+      "placeholder": "e.g. PERM-SALES-OPS"
+    },
+    {
+      "key": "role",
+      "label": "Assigned Access Role",
+      "type": "select",
+      "options": [
+        "ALL",
+        "OWNER",
+        "ADMIN",
+        "ROLE-FIN-HEAD",
+        "ROLE-OPS-MGR",
+        "ROLE-HR-MGR",
+        "ROLE-SALES-EXEC",
+        "ROLE-AUDITOR-RO",
+        "MANAGER",
+        "USER"
+      ],
+      "defaultValue": "ADMIN"
+    },
+    {
+      "key": "user_email",
+      "label": "Assigned User Email",
+      "type": "text",
+      "placeholder": "e.g. ALL or user@company.com",
+      "defaultValue": "ALL"
     },
     {
       "key": "module_name",
-      "label": "Target ERP Module",
+      "label": "Target ERP Menu / Module",
       "type": "select",
       "options": [
-        "sales",
+        "all",
+        "company",
+        "subscriptions",
+        "admin",
+        "products",
+        "hr",
+        "crm",
+        "land-building",
+        "assets",
         "purchase",
         "inventory",
+        "sales",
+        "attendance",
+        "production",
+        "portal",
         "banking",
         "payroll",
         "compliance",
-        "production"
+        "statutory",
+        "investment",
+        "reports",
+        "history"
       ],
       "defaultValue": "sales"
     },
     {
-      "key": "action",
-      "label": "Permitted Action",
+      "key": "actions",
+      "label": "Permitted Actions Scope",
       "type": "select",
       "options": [
-        "CREATE",
-        "READ",
-        "UPDATE",
-        "DELETE",
-        "APPROVE",
-        "EXPORT",
-        "AUDIT"
+        "VIEW,CREATE,UPDATE,DELETE,APPROVE",
+        "VIEW,CREATE,UPDATE,APPROVE",
+        "VIEW,CREATE,UPDATE",
+        "VIEW,APPROVE",
+        "VIEW_ONLY",
+        "NO_ACCESS"
       ],
-      "defaultValue": "APPROVE"
+      "defaultValue": "VIEW,CREATE,UPDATE,APPROVE"
+    },
+    {
+      "key": "can_view",
+      "label": "Show In Menu & Allow View",
+      "type": "select",
+      "options": ["YES", "NO"],
+      "defaultValue": "YES"
+    },
+    {
+      "key": "can_create",
+      "label": "Allow Create Records",
+      "type": "select",
+      "options": ["YES", "NO"],
+      "defaultValue": "YES"
+    },
+    {
+      "key": "can_update",
+      "label": "Allow Update / Edit Records",
+      "type": "select",
+      "options": ["YES", "NO"],
+      "defaultValue": "YES"
+    },
+    {
+      "key": "can_delete",
+      "label": "Allow Delete / Archive Records",
+      "type": "select",
+      "options": ["YES", "NO"],
+      "defaultValue": "NO"
+    },
+    {
+      "key": "can_approve",
+      "label": "Allow Approval Authority",
+      "type": "select",
+      "options": ["YES", "NO"],
+      "defaultValue": "NO"
     },
     {
       "key": "status",
-      "label": "Status",
+      "label": "Permission Status",
       "type": "select",
       "options": [
         "ACTIVE",
-        "DEPRECATED"
+        "INACTIVE"
       ],
       "defaultValue": "ACTIVE"
     },
@@ -586,7 +660,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "User Full Name / Login",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Rajesh Sharma"
+      "placeholder": "e.g. Kavin"
     },
     {
       "key": "code",
@@ -594,6 +668,24 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "type": "text",
       "required": true,
       "placeholder": "e.g. SES-2026-9021"
+    },
+    {
+      "key": "user_email",
+      "label": "Corporate Email Address",
+      "type": "email",
+      "placeholder": "name@company.com"
+    },
+    {
+      "key": "role",
+      "label": "Access Role",
+      "type": "text",
+      "placeholder": "e.g. Platform Super Owner"
+    },
+    {
+      "key": "action",
+      "label": "Authentication Event",
+      "type": "text",
+      "placeholder": "e.g. SIGN_IN_PASSWORD"
     },
     {
       "key": "ip_address",
@@ -613,11 +705,11 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Authentication Result",
       "type": "select",
       "options": [
-        "SUCCESS_OTP_VERIFIED",
-        "FAILED_BAD_PASSWORD",
+        "SUCCESS_AUTHENTICATED",
+        "FAILED_BAD_CREDENTIALS",
         "LOCKED_OUT"
       ],
-      "defaultValue": "SUCCESS_OTP_VERIFIED"
+      "defaultValue": "SUCCESS_AUTHENTICATED"
     },
     {
       "key": "description",

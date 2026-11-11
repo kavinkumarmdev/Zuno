@@ -47,8 +47,11 @@ import {
   Phone,
   Volume2,
   Table,
-  Loader2
+  Loader2,
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
+import { canUserAccessModule, getModuleActionPermissions } from '../../utils/permissionManager';
 
 const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
   'company': Building2,
@@ -396,21 +399,19 @@ export const ModuleHubPage: React.FC = () => {
   const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [voiceGuideModule, setVoiceGuideModule] = useState<string | null>(null);
 
-  // Check if current user has permission to edit records in this module
-  const canEdit = useMemo(() => {
-    if (!user) return false;
-    // OWNER, ADMIN, and MANAGER roles have edit privileges
-    if (user.userType === 'OWNER' || user.userType === 'ADMIN' || user.userType === 'MANAGER') return true;
-    // Wildcard or specific module/table permission
-    if (
-      permissions?.includes('*') ||
-      permissions?.includes(`${moduleKey}:write`) ||
-      permissions?.includes(`${selectedTable}:edit`)
-    ) {
-      return true;
-    }
-    return false;
-  }, [user, permissions, moduleKey, selectedTable]);
+  // Check if current user has authorization to access this module/menu
+  const hasModulePermission = useMemo(() => {
+    return canUserAccessModule(user, moduleKey || '');
+  }, [user, moduleKey]);
+
+  // Compute fine-grained action permissions (View, Create, Update, Delete, Approve)
+  const actionPerms = useMemo(() => {
+    return getModuleActionPermissions(user, moduleKey || '', selectedTable);
+  }, [user, moduleKey, selectedTable]);
+
+  const canEdit = actionPerms.canUpdate;
+  const canDelete = actionPerms.canDelete;
+  const canCreate = actionPerms.canCreate;
 
   const currentTableObj = moduleInfo.tables.find((t) => t.name === selectedTable);
   const currentTableLabel = currentTableObj?.label || selectedTable.replace(/^tb_/, '').replace(/_/g, ' ');
@@ -1102,6 +1103,51 @@ export const ModuleHubPage: React.FC = () => {
       ];
     }
 
+    if (selectedTable === 'tb_role') {
+      return [
+        { key: 'name', header: 'Role Title', sortable: true },
+        { key: 'code', header: 'Role Code', sortable: true, width: '150px' },
+        { key: 'department', header: 'Department Assignment', width: '170px' },
+        { key: 'permission_level', header: 'Access Authority', align: 'center', width: '160px' },
+        { key: 'status', header: 'Status', align: 'center', width: '100px' },
+        { key: 'description', header: 'Scope & Responsibilities' }
+      ];
+    }
+
+    if (selectedTable === 'tb_permission') {
+      return [
+        { key: 'name', header: 'Permission Name', sortable: true },
+        { key: 'code', header: 'Key Code', sortable: true, width: '150px' },
+        { key: 'role', header: 'Assigned Role', align: 'center', width: '130px' },
+        { key: 'module_name', header: 'Menu / Module', align: 'center', width: '130px' },
+        { key: 'actions', header: 'Permitted Actions Scope', width: '220px' },
+        { key: 'can_view', header: 'Menu View', align: 'center', width: '90px' },
+        { key: 'can_create', header: 'Create', align: 'center', width: '80px' },
+        { key: 'can_update', header: 'Update', align: 'center', width: '80px' },
+        { key: 'can_approve', header: 'Approve', align: 'center', width: '80px' },
+        { key: 'status', header: 'Status', align: 'center', width: '90px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_login_history') {
+      return [
+        { key: 'name', header: 'User Full Name / Login', sortable: true },
+        { key: 'user_email', header: 'Corporate Email', width: '190px' },
+        { key: 'role', header: 'Access Role', align: 'center', width: '140px' },
+        { key: 'action', header: 'Event Action', width: '160px' },
+        { key: 'ip_address', header: 'Client IP Address', width: '140px' },
+        { key: 'user_agent', header: 'Device / Browser' },
+        { key: 'status', header: 'Status Result', align: 'center', width: '140px' },
+        {
+          key: 'created_time',
+          header: 'Login Timestamp',
+          sortable: true,
+          width: '160px',
+          render: (r) => new Date(r.created_time || r.login_time || Date.now()).toLocaleString()
+        }
+      ];
+    }
+
     // Default universal catalogue columns
     return [
       { key: 'code', header: 'Code / Reference', sortable: true, width: '140px' },
@@ -1130,6 +1176,33 @@ export const ModuleHubPage: React.FC = () => {
     }
     return allItems.filter((r: any) => !r.is_deleted && r.status !== 'ARCHIVED');
   }, [allItems, showArchived]);
+
+  if (!hasModulePermission) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
+        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4 shadow-lg shadow-rose-500/10">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">
+          Access Restricted • Insufficient Role Permissions
+        </h2>
+        <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
+          Your current access role (<strong className="text-slate-700 dark:text-slate-200">{user?.userType || user?.role || 'User'}</strong>) does not have authorization to view or manage the <strong>{moduleInfo.title}</strong> module.
+        </p>
+        <div className="mt-5 p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 max-w-md text-left space-y-1">
+          <div className="font-semibold text-slate-800 dark:text-slate-200">How to configure authorization:</div>
+          <div>1. Review role assignments in <strong>Role Master</strong> (<code>tb_role</code>).</div>
+          <div>2. Grant menu & action permissions in <strong>Permission Catalog</strong> (<code>tb_permission</code>).</div>
+        </div>
+        <button
+          onClick={() => window.history.back()}
+          className="mt-6 px-5 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+        >
+          Return to Permitted Modules
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -1225,10 +1298,30 @@ export const ModuleHubPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Read-Only Security Callout for Login History */}
+      {selectedTable === 'tb_login_history' && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/20 via-indigo-900/20 to-slate-900/30 border border-blue-500/30 text-xs text-blue-200 flex items-center justify-between gap-3 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-100">Immutable Security Audit Trail • Read-Only View</span>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Every user authentication, login event, and registration is permanently recorded for compliance and security auditing. Records cannot be created, modified, or deleted manually.
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+            AUDIT ACTIVE
+          </span>
+        </div>
+      )}
+
       {/* Enterprise Data Grid */}
       <DataGrid
         title={currentTableLabel}
-        subtitle="Manage business records with multi-column sorting, instant search, and CSV export."
+        subtitle={selectedTable === 'tb_login_history' ? "Immutable audit trail of user logins, registrations, and application access events." : "Manage business records with multi-column sorting, instant search, and CSV export."}
         columns={columns}
         data={displayedData}
         total={displayedData.length}
@@ -1243,13 +1336,13 @@ export const ModuleHubPage: React.FC = () => {
           setSortOrder(order);
         }}
         onRefresh={() => refetch()}
-        onAddNew={openCreateModal}
+        onAddNew={canCreate ? openCreateModal : undefined}
         addNewLabel={`Add ${singleLabel}`}
-        onEdit={handleEditRecord}
+        onEdit={canEdit ? handleEditRecord : undefined}
         canEdit={canEdit}
-        onSoftDelete={handleSoftDelete}
-        onRestore={handleRestoreRecord}
-        canDelete={canEdit}
+        onSoftDelete={canDelete ? handleSoftDelete : undefined}
+        onRestore={canDelete ? handleRestoreRecord : undefined}
+        canDelete={canDelete}
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
         archivedCount={archivedCount}

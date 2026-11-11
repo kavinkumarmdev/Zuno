@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiClient } from '../services/api';
 import { AuthSessionResponse, UserType } from '@zuno/shared-types';
+import {
+  DEFAULT_ROLE_MASTER,
+  DEFAULT_PERMISSION_CATALOG,
+  DEFAULT_LOGIN_HISTORY,
+  isMasterPlatformUser
+} from '../utils/permissionManager';
 
 interface AuthContextType {
   user: any | null;
@@ -174,8 +180,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ];
         localStorage.setItem('zuno_records_tb_user', JSON.stringify(defaultUsers));
       }
+
+      // Seed Role Master (tb_role)
+      const rawRoles = localStorage.getItem('zuno_records_tb_role');
+      if (!rawRoles || rawRoles === '[]') {
+        localStorage.setItem('zuno_records_tb_role', JSON.stringify(DEFAULT_ROLE_MASTER));
+      }
+
+      // Seed Permission Table (tb_permission)
+      const rawPerms = localStorage.getItem('zuno_records_tb_permission');
+      if (!rawPerms || rawPerms === '[]') {
+        localStorage.setItem('zuno_records_tb_permission', JSON.stringify(DEFAULT_PERMISSION_CATALOG));
+      }
+
+      // Seed Login History (tb_login_history)
+      const rawLogs = localStorage.getItem('zuno_records_tb_login_history');
+      if (!rawLogs || rawLogs === '[]') {
+        localStorage.setItem('zuno_records_tb_login_history', JSON.stringify(DEFAULT_LOGIN_HISTORY));
+      }
     } catch {}
   }, []);
+
+  const recordLoginAudit = (targetUser: any, actionType: string, compName?: string) => {
+    try {
+      const raw = localStorage.getItem('zuno_records_tb_login_history');
+      const logs = raw ? JSON.parse(raw) : [];
+      const newLog = {
+        id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        code: `SES-${Math.floor(100000 + Math.random() * 900000)}`,
+        name: targetUser.fullName || targetUser.full_name || targetUser.name || targetUser.username || 'Authenticated User',
+        user_email: targetUser.email || 'user@zuno.in',
+        role: targetUser.userType || targetUser.user_type || targetUser.role || 'Administrator',
+        company_name: compName || targetUser.companyName || 'Primary Workspace',
+        action: actionType || 'USER_SIGN_IN',
+        ip_address: '127.0.0.1 (Local Session)',
+        user_agent: navigator.userAgent.includes('Windows') ? 'Chrome 130 on Windows 11 Enterprise' : navigator.userAgent.slice(0, 60),
+        status: 'SUCCESS_AUTHENTICATED',
+        created_time: new Date().toISOString(),
+        login_time: new Date().toISOString(),
+        is_user_record: true,
+      };
+      const updated = [newLog, ...logs].slice(0, 200);
+      localStorage.setItem('zuno_records_tb_login_history', JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Unable to record login history audit:', err);
+    }
+  };
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -196,6 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const sessionData = res?.data || res;
       if (sessionData && sessionData.user) {
         setSession(sessionData);
+        recordLoginAudit(sessionData.user, 'SIGN_IN_CREDENTIALS', sessionData.activeCompany?.companyName);
         localStorage.removeItem('zuno_logged_out');
         return;
       } else {
@@ -216,6 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (isMasterUser) {
         setSession(DEFAULT_DEMO_SESSION);
+        recordLoginAudit(DEFAULT_DEMO_SESSION.user, 'PLATFORM_SUPER_OWNER_SIGNIN', DEFAULT_DEMO_SESSION.activeCompany?.companyName);
         localStorage.removeItem('zuno_logged_out');
         return;
       }
@@ -239,7 +291,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           companyName: `${match.name || 'User'} Enterprise Ltd`,
           currencyCode: 'INR',
         };
-        setSession({
+        const newSession = {
           user: match,
           tenant: { id: 'ten-' + Date.now(), tenantCode: 'TEN-01', tenantName: userComp.companyName, accountStatus: 'ACTIVE' },
           activeCompany: userComp,
@@ -250,7 +302,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           accessToken: 'demo_token_' + Date.now(),
           refreshToken: 'demo_refresh_' + Date.now(),
           expiresIn: 3600,
-        });
+        };
+        setSession(newSession);
+        recordLoginAudit(match, 'TENANT_ADMIN_SIGNIN', userComp.companyName);
         localStorage.removeItem('zuno_logged_out');
         return;
       }
@@ -448,7 +502,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         code: 'USR-001',
         email: tenantData.email,
         phone: tenantData.mobile,
-        user_type: 'OWNER',
+        user_type: 'ADMIN',
         status: 'ACTIVE',
         created_time: new Date().toISOString(),
         is_user_record: true,
@@ -510,13 +564,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const sessionData = res?.data || res;
       if (sessionData && sessionData.user) {
         setSession(sessionData);
+        recordLoginAudit(sessionData.user, 'TENANT_REGISTRATION_SUCCESS', tenantData.companyName);
         localStorage.removeItem('zuno_logged_out');
       } else {
         setSession(newSession);
+        recordLoginAudit(newSession.user, 'TENANT_REGISTRATION_SUCCESS', tenantData.companyName);
         localStorage.removeItem('zuno_logged_out');
       }
     } catch {
       setSession(newSession);
+      recordLoginAudit(newSession.user, 'TENANT_REGISTRATION_SUCCESS', tenantData.companyName);
       localStorage.removeItem('zuno_logged_out');
     } finally {
       setIsLoading(false);

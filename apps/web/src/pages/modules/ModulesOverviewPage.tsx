@@ -34,6 +34,8 @@ import {
   Volume2
 } from 'lucide-react';
 import { VoiceGuidedAssistant } from '../../components/guidance/VoiceGuidedAssistant';
+import { useAuth } from '../../stores/auth-store';
+import { canUserAccessModule } from '../../utils/permissionManager';
 
 export interface ModuleCardData {
   number: number;
@@ -440,6 +442,7 @@ export const OFFICIAL_19_MODULES: ModuleCardData[] = [
 ];
 
 export const ModulesOverviewPage: React.FC = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [showPosterModal, setShowPosterModal] = useState(false);
@@ -447,6 +450,9 @@ export const ModulesOverviewPage: React.FC = () => {
 
   const filteredModules = useMemo(() => {
     return OFFICIAL_19_MODULES.filter((mod) => {
+      // Permission filtering: Only users with access permission can view and navigate to module
+      if (!canUserAccessModule(user, mod.id)) return false;
+
       const matchesSearch =
         mod.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         mod.primaryTable.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -457,7 +463,7 @@ export const ModulesOverviewPage: React.FC = () => {
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, user]);
 
   const categories = [
     { id: 'ALL', label: 'All 19 Modules' },
