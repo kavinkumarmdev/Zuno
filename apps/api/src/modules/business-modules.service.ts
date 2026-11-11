@@ -172,9 +172,88 @@ export class BusinessModulesService {
   }
 
   /**
+   * Strictly validate record input payload for uniqueness and statutory format
+   */
+  private validateRecordPayload(tenantId: string, tableName: string, data: any, excludeId?: string) {
+    const records = OperationalDataStore.getRecords(tenantId, tableName, false);
+
+    // 1. Code / Identifier Uniqueness
+    const code = String(data.code || data.company_code || data.sku_code || data.branch_code || '').trim();
+    if (code) {
+      const normalizedCode = code.toUpperCase();
+      const duplicateCode = records.find(
+        (r) =>
+          r.id !== excludeId &&
+          (String(r.code || r.company_code || r.sku_code || r.branch_code || '').toUpperCase() === normalizedCode)
+      );
+      if (duplicateCode) {
+        throw new BadRequestException(`Unique Code Violation: Code "${code}" is already registered. Please provide a unique code.`);
+      }
+    }
+
+    // 2. GSTIN Format & Uniqueness
+    const gstin = String(data.gstin || '').trim().toUpperCase();
+    if (gstin) {
+      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!gstinRegex.test(gstin)) {
+        throw new BadRequestException(`Invalid GSTIN format: "${gstin}". Must be 15 alphanumeric characters (e.g. 33AAAAA0000A1Z5).`);
+      }
+      const duplicateGstin = records.find(
+        (r) => r.id !== excludeId && (String(r.gstin || '').trim().toUpperCase() === gstin)
+      );
+      if (duplicateGstin) {
+        throw new BadRequestException(`Unique GSTIN Violation: GSTIN "${gstin}" is already registered with another entity.`);
+      }
+    }
+
+    // 3. Corporate Phone / Mobile Validation & Uniqueness
+    const rawPhone = String(data.phone || data.mobile || '').trim();
+    if (rawPhone) {
+      const digits = rawPhone.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        throw new BadRequestException(`Invalid Corporate Phone: "${rawPhone}". Phone number must be exactly 10 digits.`);
+      }
+      const duplicatePhone = records.find((r) => {
+        if (r.id === excludeId) return false;
+        const otherDigits = String(r.phone || r.mobile || '').replace(/\D/g, '');
+        return otherDigits.length === 10 && otherDigits === digits;
+      });
+      if (duplicatePhone) {
+        throw new BadRequestException(`Unique Phone Violation: Phone number "${digits}" is already registered with another record.`);
+      }
+    }
+
+    // 4. Email Format & Uniqueness
+    const email = String(data.email || '').trim().toLowerCase();
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new BadRequestException(`Invalid email format: "${email}". Please provide a valid email address.`);
+      }
+      const duplicateEmail = records.find(
+        (r) => r.id !== excludeId && (String(r.email || '').trim().toLowerCase() === email)
+      );
+      if (duplicateEmail) {
+        throw new BadRequestException(`Unique Email Violation: Email "${email}" is already registered.`);
+      }
+    }
+
+    // 5. Amount validation
+    if (data.amount !== undefined && data.amount !== null && data.amount !== '') {
+      const num = Number(data.amount);
+      if (isNaN(num) || num < 0) {
+        throw new BadRequestException(`Amount must be a valid non-negative number.`);
+      }
+    }
+  }
+
+  /**
    * Create a new record within tenant boundary with guaranteed disk & database persistence
    */
   async createRecord(tenantId: string, userId: string, tableName: string, data: any) {
+    // Validate uniqueness, phone format, GSTIN format before saving
+    this.validateRecordPayload(tenantId, tableName, data);
+
     // 1. Persist directly into the Operational Data Store (guarantees data is saved immediately)
     const storedRecord = OperationalDataStore.addRecord(tenantId, userId, tableName, data);
 
@@ -215,6 +294,9 @@ export class BusinessModulesService {
    * Update an existing record
    */
   async updateRecord(tenantId: string, userId: string, tableName: string, id: string, data: any) {
+    // Validate uniqueness, phone format, GSTIN format for updates (excluding current id)
+    this.validateRecordPayload(tenantId, tableName, data, id);
+
     const updated = OperationalDataStore.updateRecord(tenantId, userId, tableName, id, data);
 
     try {

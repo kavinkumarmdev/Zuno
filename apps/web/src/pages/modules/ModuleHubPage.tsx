@@ -42,6 +42,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Phone,
   Table
 } from 'lucide-react';
 
@@ -741,11 +742,26 @@ export const ModuleHubPage: React.FC = () => {
     setShowCreateModal(true);
   };
 
-  // Validate all record fields and enforce unique Code / Identifier ID
+  // Validate all record fields and enforce uniqueness & statutory formats
   const validateRecordForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // 1. Identify primary code/ID field
+    const allExisting = [
+      ...(queryResult?.items || []),
+      ...getLocalRecords(selectedTable)
+    ];
+
+    // Helper to check if a candidate record is the record currently being edited
+    const isCurrentRecord = (rec: any) => {
+      if (!editingRecord) return false;
+      return (
+        rec.id === editingRecord.id ||
+        (rec.code && rec.code === editingRecord.code) ||
+        (rec.company_code && rec.company_code === editingRecord.company_code)
+      );
+    };
+
+    // 1. Primary Code / Identifier Field Validation & Uniqueness
     const codeField = currentSchema.find(
       (f) => f.key === 'code' || f.key === 'sku_code' || f.key === 'company_code' || f.key === 'branch_code'
     );
@@ -755,22 +771,17 @@ export const ModuleHubPage: React.FC = () => {
       const codeVal = String(formData[codeKey] || '').trim();
       if (!codeVal) {
         errors[codeKey] = `${codeField.label} is required.`;
+      } else if (codeVal.length < 2) {
+        errors[codeKey] = `${codeField.label} must be at least 2 characters.`;
       } else {
-        // Check uniqueness across query results and local cached records, excluding current record
         const normalizedCode = codeVal.toUpperCase();
-        const allExisting = [
-          ...(queryResult?.items || []),
-          ...getLocalRecords(selectedTable)
-        ];
-        const isDuplicate = allExisting.some((rec: any) => {
-          if (editingRecord && (rec.id === editingRecord.id || rec.code === editingRecord.code)) {
-            return false;
-          }
-          const recCode = String(rec.code || rec.sku_code || rec.company_code || rec.id || '').toUpperCase();
-          return recCode === normalizedCode;
+        const isDuplicateCode = allExisting.some((rec: any) => {
+          if (isCurrentRecord(rec)) return false;
+          const otherCode = String(rec.code || rec.sku_code || rec.company_code || rec.branch_code || rec.id || '').toUpperCase();
+          return otherCode === normalizedCode;
         });
 
-        if (isDuplicate) {
+        if (isDuplicateCode) {
           errors[codeKey] = `Unique ID Violation: Code "${codeVal}" is already registered. Please provide a unique code.`;
         }
       }
@@ -782,14 +793,97 @@ export const ModuleHubPage: React.FC = () => {
       const val = formData[field.key];
       const strVal = String(val ?? '').trim();
 
+      // Required check
       if (field.required && !strVal) {
         errors[field.key] = `${field.label} is required.`;
-      } else if (field.type === 'number' && strVal && isNaN(Number(strVal))) {
-        errors[field.key] = `${field.label} must be a valid numeric amount.`;
-      } else if (field.type === 'email' && strVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(strVal)) {
-        errors[field.key] = `Please enter a valid email address format.`;
-      } else if (field.type === 'tel' && strVal && strVal.replace(/\D/g, '').length < 7) {
-        errors[field.key] = `Please enter a valid phone number.`;
+        continue;
+      }
+
+      if (!strVal) continue; // Optional field is empty, skip format validation
+
+      // A. Corporate Phone / Mobile Number
+      if (field.type === 'tel' || field.key.includes('phone') || field.key.includes('mobile')) {
+        const digits = strVal.replace(/\D/g, '');
+        if (digits.length !== 10) {
+          errors[field.key] = `${field.label} must be exactly 10 digits (e.g. 9876543210).`;
+        } else if (!/^[6-9][0-9]{9}$/.test(digits)) {
+          errors[field.key] = `${field.label} must start with 6, 7, 8, or 9 (standard Indian telecom format).`;
+        } else {
+          // Uniqueness check for phone
+          const isDuplicatePhone = allExisting.some((rec: any) => {
+            if (isCurrentRecord(rec)) return false;
+            const otherPhone = String(rec[field.key] || rec.phone || rec.mobile || '').replace(/\D/g, '');
+            return otherPhone.length === 10 && otherPhone === digits;
+          });
+          if (isDuplicatePhone) {
+            errors[field.key] = `Unique Phone Violation: Phone number "${strVal}" is already registered with another record.`;
+          }
+        }
+      }
+
+      // B. GSTIN / Tax ID
+      else if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
+        const gstinUpper = strVal.toUpperCase();
+        const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        if (!gstinRegex.test(gstinUpper)) {
+          errors[field.key] = `Invalid GSTIN format: Must be 15 alphanumeric characters (e.g. 33AAAAA0000A1Z5).`;
+        } else {
+          // Uniqueness check for GSTIN
+          const isDuplicateGstin = allExisting.some((rec: any) => {
+            if (isCurrentRecord(rec)) return false;
+            const otherGst = String(rec[field.key] || rec.gstin || rec.tax_id || '').trim().toUpperCase();
+            return otherGst && otherGst === gstinUpper;
+          });
+          if (isDuplicateGstin) {
+            errors[field.key] = `Unique GSTIN Violation: GSTIN "${gstinUpper}" is already registered.`;
+          }
+        }
+      }
+
+      // C. PAN Number
+      else if (field.key === 'pan' || field.key === 'pan_number') {
+        const panUpper = strVal.toUpperCase();
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        if (!panRegex.test(panUpper)) {
+          errors[field.key] = `Invalid PAN format: Must be 10 characters (e.g. AAACK1234F).`;
+        } else {
+          const isDuplicatePan = allExisting.some((rec: any) => {
+            if (isCurrentRecord(rec)) return false;
+            const otherPan = String(rec[field.key] || rec.pan || rec.pan_number || '').trim().toUpperCase();
+            return otherPan && otherPan === panUpper;
+          });
+          if (isDuplicatePan) {
+            errors[field.key] = `Unique PAN Violation: PAN "${panUpper}" is already registered.`;
+          }
+        }
+      }
+
+      // D. Corporate / Billing Email
+      else if (field.type === 'email' || field.key.includes('email')) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(strVal)) {
+          errors[field.key] = `Please enter a valid email address format (e.g. name@company.com).`;
+        } else {
+          // Uniqueness check for email
+          const isDuplicateEmail = allExisting.some((rec: any) => {
+            if (isCurrentRecord(rec)) return false;
+            const otherEmail = String(rec[field.key] || rec.email || '').trim().toLowerCase();
+            return otherEmail && otherEmail === strVal.toLowerCase();
+          });
+          if (isDuplicateEmail) {
+            errors[field.key] = `Unique Email Violation: Email "${strVal}" is already registered.`;
+          }
+        }
+      }
+
+      // E. Amount / Numeric Fields
+      else if (field.type === 'number' || field.key === 'amount' || field.key.includes('price')) {
+        const num = Number(strVal);
+        if (isNaN(num)) {
+          errors[field.key] = `${field.label} must be a valid numeric amount.`;
+        } else if (num < 0) {
+          errors[field.key] = `${field.label} cannot be negative.`;
+        }
       }
     }
 
@@ -1298,21 +1392,71 @@ export const ModuleHubPage: React.FC = () => {
                             : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
                         }`}
                       />
+                    ) : field.type === 'tel' ? (
+                      <div className="space-y-1">
+                        <div
+                          className={`flex items-center rounded-xl border bg-slate-50/70 hover:bg-slate-50 focus-within:bg-white dark:bg-slate-800 dark:focus-within:bg-slate-900 transition-all duration-200 overflow-hidden ${
+                            formErrors[field.key]
+                              ? 'border-rose-400 bg-rose-50/20 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20'
+                              : 'border-slate-300 dark:border-slate-700 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800/90 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 select-none shrink-0">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-xs font-semibold font-mono text-slate-700 dark:text-slate-300">+91</span>
+                          </div>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            maxLength={10}
+                            value={formData[field.key] || ''}
+                            onChange={(e) => {
+                              const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                              setFormData({ ...formData, [field.key]: digitsOnly });
+                              if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                            }}
+                            placeholder="9876543210"
+                            className="w-full px-3 py-2 text-xs bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 font-mono focus:outline-none tracking-wider"
+                          />
+                          <span className="px-2.5 text-[10px] font-mono text-slate-400 shrink-0">
+                            {(formData[field.key] || '').length}/10
+                          </span>
+                        </div>
+                      </div>
                     ) : (
-                      <input
-                        type={field.type}
-                        value={formData[field.key] || ''}
-                        onChange={(e) => {
-                          setFormData({ ...formData, [field.key]: e.target.value });
-                          if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
-                        }}
-                        placeholder={field.placeholder}
-                        className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
-                          formErrors[field.key]
-                            ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
-                            : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
-                        }`}
-                      />
+                      <div className="relative group">
+                        <input
+                          type={field.type}
+                          value={formData[field.key] || ''}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            if (field.key === 'gstin' || field.key.includes('gst')) {
+                              val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
+                            } else if (field.key === 'pan' || field.key === 'pan_number') {
+                              val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+                            } else if (field.key === 'code' || field.key === 'sku_code' || field.key === 'company_code') {
+                              val = val.toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 20);
+                            }
+                            setFormData({ ...formData, [field.key]: val });
+                            if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                          }}
+                          placeholder={field.placeholder}
+                          className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
+                            field.key === 'gstin' || field.key === 'code' || field.key === 'sku_code' || field.key === 'pan'
+                              ? 'font-mono tracking-wider uppercase'
+                              : ''
+                          } ${
+                            formErrors[field.key]
+                              ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
+                              : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
+                          }`}
+                        />
+                        {(field.key === 'gstin' || field.key.includes('gst')) && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/15
+                          </span>
+                        )}
+                      </div>
                     )}
                     {formErrors[field.key] && (
                       <p className="mt-1 text-[11px] text-rose-600 font-medium flex items-center gap-1 animate-in fade-in">

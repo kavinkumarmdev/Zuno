@@ -63,6 +63,14 @@ export const RegisterPage: React.FC = () => {
       errors.companyName = 'Primary legal company entity name is required.';
     } else if (formData.companyName.trim().length < 2) {
       errors.companyName = 'Company name must be at least 2 characters.';
+    } else {
+      try {
+        const rawComp = localStorage.getItem('zuno_records_tb_company');
+        const comps = rawComp ? JSON.parse(rawComp) : [];
+        if (comps.some((c: any) => c.name?.toLowerCase() === formData.companyName.trim().toLowerCase())) {
+          errors.companyName = `Unique Company Violation: "${formData.companyName.trim()}" is already registered.`;
+        }
+      } catch {}
     }
 
     if (!formData.ownerName.trim()) {
@@ -74,13 +82,31 @@ export const RegisterPage: React.FC = () => {
     if (!formData.mobile.trim()) {
       errors.mobile = 'Mobile phone number is required.';
     } else if (formData.mobile.trim().length !== 10) {
-      errors.mobile = 'Mobile phone number must be exactly 10 digits (no letters or symbols).';
+      errors.mobile = 'Mobile phone number must be exactly 10 digits.';
+    } else if (!/^[6-9][0-9]{9}$/.test(formData.mobile.trim())) {
+      errors.mobile = 'Mobile phone number must start with 6, 7, 8, or 9 (standard Indian format).';
+    } else {
+      try {
+        const rawUsers = localStorage.getItem('zuno_records_tb_user');
+        const users = rawUsers ? JSON.parse(rawUsers) : [];
+        if (users.some((u: any) => u.mobile?.replace(/\D/g, '') === formData.mobile.trim())) {
+          errors.mobile = `Unique Phone Violation: Mobile "${formData.mobile.trim()}" is already registered.`;
+        }
+      } catch {}
     }
 
     if (!formData.email.trim()) {
       errors.email = 'Corporate email address is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       errors.email = 'Please provide a valid corporate email format (e.g. name@company.com).';
+    } else {
+      try {
+        const rawUsers = localStorage.getItem('zuno_records_tb_user');
+        const users = rawUsers ? JSON.parse(rawUsers) : [];
+        if (users.some((u: any) => u.email?.toLowerCase() === formData.email.trim().toLowerCase())) {
+          errors.email = `Unique Email Violation: Email "${formData.email.trim()}" is already registered.`;
+        }
+      } catch {}
     }
 
     if (!formData.password) {
