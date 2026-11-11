@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, addCompany, logout } = useAuth();
+  const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, addCompany, logout, isKavin } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -196,21 +196,30 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             {/* Company Selector */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs max-w-[150px] sm:max-w-[210px] md:max-w-[240px]">
               <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-              <select
-                value={activeCompany?.id || ''}
-                onChange={(e) => {
-                  switchCompany(e.target.value);
-                  showToast('success', 'Active company switched successfully');
-                }}
-                className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs w-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                title="Switch Active Company"
-              >
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id} className="dark:bg-slate-800 font-medium text-slate-900 dark:text-slate-100">
-                    {c.companyName}
-                  </option>
-                ))}
-              </select>
+              {isKavin ? (
+                <select
+                  value={activeCompany?.id || ''}
+                  onChange={(e) => {
+                    switchCompany(e.target.value);
+                    showToast('success', 'Active company switched successfully');
+                  }}
+                  className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs w-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  title="Switch Active Company (Platform Master)"
+                >
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id} className="dark:bg-slate-800 font-medium text-slate-900 dark:text-slate-100">
+                      {c.companyName}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span
+                  className="font-medium text-slate-800 dark:text-slate-200 truncate text-xs select-none"
+                  title="Enterprise Isolation: You are securely restricted to your registered company details only"
+                >
+                  {activeCompany?.companyName || 'My Company'}
+                </span>
+              )}
             </div>
 
             {/* Divider */}
@@ -360,17 +369,19 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   </div>
 
                   <div className="py-1 text-xs space-y-0.5">
-                    {/* Switch Organization */}
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        setShowSwitchOrgModal(true);
-                      }}
-                      className="w-full px-3 py-2 text-slate-700 dark:text-slate-300 flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-xl cursor-pointer transition-colors text-left"
-                    >
-                      <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>Switch Organization & Entities</span>
-                    </button>
+                    {/* Switch Organization (Kavin Master Platform Owner Only) */}
+                    {isKavin && (
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          setShowSwitchOrgModal(true);
+                        }}
+                        className="w-full px-3 py-2 text-slate-700 dark:text-slate-300 flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-xl cursor-pointer transition-colors text-left"
+                      >
+                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span>Switch Organization & Entities</span>
+                      </button>
+                    )}
 
                     {/* Security & Sessions */}
                     <button

@@ -33,6 +33,24 @@ export class AuthController {
   }
 
   @Public()
+  @Post('login-request-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify credentials strictly and dispatch Sign-In OTP email' })
+  async loginRequestOtp(@Body() dto: LoginDto) {
+    return this.authService.loginRequestOtp(dto);
+  }
+
+  @Public()
+  @Post('login-verify-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify Sign-In OTP and retrieve session' })
+  async loginVerifyOtp(@Body() body: LoginDto & { otp: string }, @Req() req: Request) {
+    const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    return this.authService.loginVerifyOtp(body, ip, userAgent);
+  }
+
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Rotate refresh token and retrieve a fresh access token' })

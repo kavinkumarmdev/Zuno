@@ -472,6 +472,85 @@ const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
     { key: 'user_type', label: 'Access Role', type: 'select', options: ['OWNER', 'ADMIN', 'MANAGER', 'USER', 'AUDITOR'], defaultValue: 'OWNER' },
     { key: 'status', label: 'Account Status', type: 'select', options: ['ACTIVE', 'DISABLED', 'LOCKED'], defaultValue: 'ACTIVE' },
     { key: 'description', label: 'Assigned Department & Modules', type: 'textarea', placeholder: 'Full ERP access...' }
+  ],
+  tb_role: [
+    { key: 'name', label: 'Role Title', type: 'text', required: true, placeholder: 'e.g. Finance Operations Head' },
+    { key: 'code', label: 'Role Identifier Code', type: 'text', required: true, placeholder: 'e.g. ROLE-FIN-HEAD' },
+    { key: 'department', label: 'Department Assignment', type: 'select', options: ['Finance & Accounts', 'Operations & Plants', 'Human Resources', 'Supply Chain', 'Sales & Marketing', 'IT & Security'], defaultValue: 'Finance & Accounts' },
+    { key: 'permission_level', label: 'Access Level', type: 'select', options: ['SUPER_ADMIN', 'DEPARTMENT_HEAD', 'MANAGER', 'OPERATOR', 'AUDITOR_READONLY'], defaultValue: 'MANAGER' },
+    { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'INACTIVE'], defaultValue: 'ACTIVE' },
+    { key: 'description', label: 'Role Responsibilities & Scopes', type: 'textarea', placeholder: 'Authorizations for voucher signing and PO approvals...' }
+  ],
+  tb_product_category: [
+    { key: 'name', label: 'Category Name', type: 'text', required: true, placeholder: 'e.g. Industrial Fasteners & Bolts' },
+    { key: 'code', label: 'Category Code', type: 'text', required: true, placeholder: 'e.g. CAT-FAST-01' },
+    { key: 'hsn_code', label: 'Statutory HSN Code', type: 'text', placeholder: 'e.g. 7318' },
+    { key: 'gst_rate', label: 'Standard GST Slab', type: 'select', options: ['0%', '5%', '12%', '18%', '28%'], defaultValue: '18%' },
+    { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'INACTIVE'], defaultValue: 'ACTIVE' },
+    { key: 'description', label: 'Category Hierarchy & Description', type: 'textarea', placeholder: 'Specifications for procurement and inventory classification...' }
+  ],
+  tb_department: [
+    { key: 'name', label: 'Department Name', type: 'text', required: true, placeholder: 'e.g. Quality Assurance & Testing' },
+    { key: 'code', label: 'Department Code', type: 'text', required: true, placeholder: 'e.g. DEPT-QA-01' },
+    { key: 'head_name', label: 'Head of Department (HOD)', type: 'text', placeholder: 'e.g. Ramesh Kumar' },
+    { key: 'cost_center', label: 'Cost Center Code', type: 'text', placeholder: 'e.g. CC-104' },
+    { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'INACTIVE'], defaultValue: 'ACTIVE' },
+    { key: 'description', label: 'Operational Scope', type: 'textarea', placeholder: 'Plant quality inspection and ISO audit functions...' }
+  ],
+  tb_property_master: [
+    { key: 'name', label: 'Property / Land Asset Name', type: 'text', required: true, placeholder: 'e.g. Ambattur Industrial Plot 4B' },
+    { key: 'code', label: 'Asset Reference Code', type: 'text', required: true, placeholder: 'e.g. PROP-AMB-04B' },
+    { key: 'property_type', label: 'Property Classification', type: 'select', options: ['Freehold Industrial Land', 'Commercial Office Space', 'Factory Shed & Plant', 'Warehouse Facility', 'Leasehold Plot'], defaultValue: 'Factory Shed & Plant' },
+    { key: 'amount', label: 'Book Value / Valuation (INR)', type: 'number', required: true, placeholder: 'e.g. 85000000.00' },
+    { key: 'survey_no', label: 'Survey / Patta Number', type: 'text', placeholder: 'e.g. SF-142/2B' },
+    { key: 'city', label: 'City & Location', type: 'text', placeholder: 'e.g. Chennai, Tamil Nadu' },
+    { key: 'description', label: 'Title Deed & Legal Boundaries', type: 'textarea', placeholder: 'Deed registration details, boundary dimensions...' }
+  ],
+  tb_asset_master: [
+    { key: 'name', label: 'Capital Asset Name', type: 'text', required: true, placeholder: 'e.g. CNC 5-Axis Milling Machine' },
+    { key: 'code', label: 'Asset Tag Number', type: 'text', required: true, placeholder: 'e.g. AST-CNC-004' },
+    { key: 'category', label: 'Asset Category', type: 'select', options: ['Plant & Machinery', 'Electrical & Utilities', 'Heavy Vehicles', 'IT Hardware & Servers', 'Office Furniture'], defaultValue: 'Plant & Machinery' },
+    { key: 'amount', label: 'Purchase Capital Cost (INR)', type: 'number', required: true, placeholder: 'e.g. 4500000.00' },
+    { key: 'serial_no', label: 'Manufacturer Serial No', type: 'text', placeholder: 'e.g. SN-HAAS-2026-99' },
+    { key: 'location', label: 'Factory Bay / Location', type: 'text', placeholder: 'e.g. Bay 3 - Precision Machining Wing' },
+    { key: 'status', label: 'Asset Operational Status', type: 'select', options: ['ACTIVE_RUNNING', 'UNDER_MAINTENANCE', 'IDLE', 'SCRAPPED'], defaultValue: 'ACTIVE_RUNNING' },
+    { key: 'description', label: 'Maintenance Schedule & Warranty', type: 'textarea', placeholder: 'Annual AMC provider and warranty terms...' }
+  ],
+  tb_stock_balance: [
+    { key: 'name', label: 'Product Item Name', type: 'text', required: true, placeholder: 'e.g. Copper Wire Spool 2.5mm' },
+    { key: 'code', label: 'Item SKU Code', type: 'text', required: true, placeholder: 'e.g. SKU-COP-25' },
+    { key: 'warehouse', label: 'Storage Warehouse', type: 'select', options: ['Central Plant Warehouse', 'Raw Material Yard', 'Finished Goods Hub', 'Cold Storage Bay'], defaultValue: 'Central Plant Warehouse' },
+    { key: 'quantity', label: 'Available Stock Quantity', type: 'number', required: true, placeholder: 'e.g. 1500' },
+    { key: 'uom', label: 'Unit of Measure (UOM)', type: 'select', options: ['PCS', 'KG', 'MTR', 'BOX', 'TON'], defaultValue: 'KG' },
+    { key: 'amount', label: 'Valuation Cost (INR)', type: 'number', required: true, placeholder: 'e.g. 480.00' },
+    { key: 'status', label: 'Stock Health', type: 'select', options: ['ADEQUATE', 'REORDER_REQUIRED', 'OVERSTOCKED', 'QUARANTINE'], defaultValue: 'ADEQUATE' },
+    { key: 'description', label: 'Bin & Rack Storage Details', type: 'textarea', placeholder: 'Aisle 4, Rack B2, Bin 12' }
+  ],
+  tb_sales_order: [
+    { key: 'code', label: 'Sales Order Number', type: 'text', required: true, placeholder: 'e.g. SO-2026-4421' },
+    { key: 'name', label: 'Customer Legal Name', type: 'text', required: true, placeholder: 'e.g. Mahindra Automotive Ltd' },
+    { key: 'amount', label: 'Total Order Value (INR)', type: 'number', required: true, placeholder: 'e.g. 350000.00' },
+    { key: 'date', label: 'Expected Dispatch Date', type: 'date' },
+    { key: 'payment_terms', label: 'Payment Terms', type: 'select', options: ['Net 30 Days', 'Net 60 Days', 'LC at Sight', '100% Advance Against PI'], defaultValue: 'Net 30 Days' },
+    { key: 'status', label: 'Order Processing Status', type: 'select', options: ['CONFIRMED', 'IN_PRODUCTION', 'READY_FOR_DISPATCH', 'DELIVERED', 'CANCELLED'], defaultValue: 'CONFIRMED' },
+    { key: 'description', label: 'Customer Purchase Order & Delivery Instructions', type: 'textarea', placeholder: 'Ref Customer PO: MA-PO-992. Gate pass dispatch instructions...' }
+  ],
+  tb_attendance: [
+    { key: 'name', label: 'Employee Full Name', type: 'text', required: true, placeholder: 'e.g. Suresh Patel' },
+    { key: 'code', label: 'Employee ID', type: 'text', required: true, placeholder: 'e.g. EMP-2026-081' },
+    { key: 'date', label: 'Attendance Date', type: 'date' },
+    { key: 'status', label: 'Attendance Status', type: 'select', options: ['PRESENT', 'ABSENT', 'HALF_DAY', 'ON_LEAVE', 'BUSINESS_DUTY'], defaultValue: 'PRESENT' },
+    { key: 'shift', label: 'Assigned Work Shift', type: 'select', options: ['Morning General (09:00 - 18:00)', 'First Shift (06:00 - 14:30)', 'Second Shift (14:30 - 23:00)', 'Night Shift (23:00 - 06:00)'], defaultValue: 'Morning General (09:00 - 18:00)' },
+    { key: 'description', label: 'Biometric Log / Punch Notes', type: 'textarea', placeholder: 'Punch IN: 08:55 AM, Punch OUT: 06:12 PM' }
+  ],
+  tb_work_order: [
+    { key: 'code', label: 'Work Order Number', type: 'text', required: true, placeholder: 'e.g. WO-2026-051' },
+    { key: 'name', label: 'Manufactured Product Item', type: 'text', required: true, placeholder: 'e.g. Hydraulic Actuator Assembly 50kN' },
+    { key: 'quantity', label: 'Production Batch Target (Units)', type: 'number', required: true, placeholder: 'e.g. 200' },
+    { key: 'date', label: 'Scheduled Completion Date', type: 'date' },
+    { key: 'production_line', label: 'Assigned Assembly Line', type: 'select', options: ['Line 1 - Heavy Fabrication', 'Line 2 - Precision Assembly', 'Line 3 - Finishing & Testing'], defaultValue: 'Line 2 - Precision Assembly' },
+    { key: 'status', label: 'Manufacturing Status', type: 'select', options: ['PLANNED', 'IN_PROGRESS', 'QUALITY_HOLD', 'COMPLETED'], defaultValue: 'IN_PROGRESS' },
+    { key: 'description', label: 'BOM Route & Engineering Guidelines', type: 'textarea', placeholder: 'Ensure pressure testing at 250 bar before packaging...' }
   ]
 };
 
@@ -486,7 +565,7 @@ export const ModuleHubPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('created_time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const { user, permissions, addCompany } = useAuth();
+  const { user, permissions, addCompany, isKavin, activeCompany, tenant } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -761,6 +840,30 @@ export const ModuleHubPage: React.FC = () => {
       }
 
       let combined = Array.from(mergedMap.values());
+
+      // STRICT MULTI-TENANT COMPANY ACCESS:
+      // Kavin has full platform rights to access all company details.
+      // Other new users only access their own registered company details.
+      if (!isKavin) {
+        if (selectedTable === 'tb_company') {
+          combined = combined.filter(
+            (c: any) =>
+              c.id === activeCompany?.id ||
+              c.code === activeCompany?.companyCode ||
+              c.company_code === activeCompany?.companyCode ||
+              c.name === activeCompany?.companyName ||
+              c.company_name === activeCompany?.companyName
+          );
+        } else if (selectedTable === 'tb_company_branch') {
+          combined = combined.filter(
+            (b: any) =>
+              !b.company_id ||
+              b.company_id === activeCompany?.id ||
+              b.company_id === activeCompany?.companyCode
+          );
+        }
+      }
+
       if (search) {
         const q = search.toLowerCase();
         combined = combined.filter(
