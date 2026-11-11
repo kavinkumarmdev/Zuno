@@ -575,42 +575,48 @@ export const ModulesOverviewPage: React.FC = () => {
           return (
             <div
               key={mod.id}
-              className={`group relative flex flex-col justify-between bg-white dark:bg-slate-900 rounded-2xl border ${mod.colorScheme.border} p-6 shadow-sm hover:shadow-xl transition-all duration-300 ${mod.colorScheme.bgHover}`}
+              className={`group relative flex flex-col justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border ${mod.colorScheme.border} p-6 shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 ${mod.colorScheme.bgHover} overflow-hidden`}
             >
-              {/* Header: Module Number & Category */}
-              <div>
+              {/* Subtle Ambient Hover Glow */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
+
+              {/* Header: Module Number, Category & Icon */}
+              <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg font-black text-xs bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm">
-                      {mod.number}
+                    <span className="flex items-center justify-center w-7 h-7 rounded-xl font-black text-xs bg-slate-900 text-white dark:bg-slate-800 dark:text-cyan-300 shadow-sm border border-slate-700/60 font-mono">
+                      {mod.number < 10 ? `0${mod.number}` : mod.number}
                     </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${mod.colorScheme.badgeBg} ${mod.colorScheme.badgeText}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider uppercase ${mod.colorScheme.badgeBg} ${mod.colorScheme.badgeText}`}>
                       {mod.category}
                     </span>
                   </div>
 
-                  <div className={`p-2.5 rounded-xl ${mod.colorScheme.iconBg} ${mod.colorScheme.iconColor} group-hover:scale-110 transition-transform duration-200`}>
+                  <div className={`p-2.5 rounded-2xl ${mod.colorScheme.iconBg} ${mod.colorScheme.iconColor} group-hover:scale-110 shadow-sm transition-transform duration-300`}>
                     <IconComponent className="w-5 h-5" />
                   </div>
                 </div>
 
                 {/* Module Title */}
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors">
                   {mod.name}
                 </h3>
 
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                   {mod.phase}
                 </p>
 
                 {/* Submodules Tags */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-2">Smart Submodules</p>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Submodules</p>
+                    <span className="text-[10px] font-mono text-slate-400">{mod.tablesCount} Tables</span>
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {mod.submodules.map((sub, idx) => (
                       <span
                         key={idx}
-                        className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-md text-[11px] font-medium border border-slate-200/60 dark:border-slate-700/60"
+                        className="px-2 py-0.5 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-medium border border-slate-200/60 dark:border-slate-700/60"
                       >
                         {sub}
                       </span>
@@ -620,10 +626,10 @@ export const ModulesOverviewPage: React.FC = () => {
               </div>
 
               {/* Footer: Launch Action */}
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Enterprise Ready</span>
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Enterprise Live</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -634,17 +640,17 @@ export const ModulesOverviewPage: React.FC = () => {
                       e.stopPropagation();
                       setVoiceGuideModule(mod.id);
                     }}
-                    className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800 transition-colors cursor-pointer shadow-2xs"
                     title={`Listen to Voice Guide for ${mod.name}`}
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                   </button>
                   <Link
                     to={mod.path}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-600 hover:text-white text-xs font-bold text-blue-600 dark:text-blue-300 group-hover:translate-x-0.5 transition-all shadow-2xs"
                   >
-                    <span>Open Hub</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>Launch</span>
+                    <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>

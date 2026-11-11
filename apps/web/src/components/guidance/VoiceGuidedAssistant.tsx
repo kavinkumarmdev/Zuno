@@ -1191,20 +1191,22 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
             <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               {/* Speaking State & Animated Wave */}
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="flex items-center gap-1.5 h-6 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+                <div className="flex items-center gap-1 h-7 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-xl shadow-glow-sm">
                   {isSpeaking && !isPaused ? (
                     <>
-                      <span className="w-1 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:0ms]" />
-                      <span className="w-1 h-5 bg-indigo-600 rounded-full animate-bounce [animation-delay:150ms]" />
-                      <span className="w-1 h-2 bg-cyan-600 rounded-full animate-bounce [animation-delay:300ms]" />
-                      <span className="w-1 h-4 bg-blue-600 rounded-full animate-bounce [animation-delay:450ms]" />
+                      <span className="w-1 h-3 bg-cyan-400 rounded-full animate-bounce [animation-delay:0ms] shadow-glow-cyan" />
+                      <span className="w-1 h-5 bg-blue-500 rounded-full animate-bounce [animation-delay:150ms] shadow-glow-sm" />
+                      <span className="w-1 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                      <span className="w-1 h-5 bg-cyan-300 rounded-full animate-bounce [animation-delay:450ms] shadow-glow-cyan" />
+                      <span className="w-1 h-3 bg-blue-400 rounded-full animate-bounce [animation-delay:200ms]" />
                     </>
                   ) : (
                     <>
-                      <span className="w-1 h-2 bg-slate-300 dark:bg-slate-600 rounded-full" />
-                      <span className="w-1 h-2 bg-slate-300 dark:bg-slate-600 rounded-full" />
-                      <span className="w-1 h-2 bg-slate-300 dark:bg-slate-600 rounded-full" />
-                      <span className="w-1 h-2 bg-slate-300 dark:bg-slate-600 rounded-full" />
+                      <span className="w-1 h-2 bg-slate-700 rounded-full" />
+                      <span className="w-1 h-2 bg-slate-700 rounded-full" />
+                      <span className="w-1 h-2 bg-slate-700 rounded-full" />
+                      <span className="w-1 h-2 bg-slate-700 rounded-full" />
+                      <span className="w-1 h-2 bg-slate-700 rounded-full" />
                     </>
                   )}
                 </div>

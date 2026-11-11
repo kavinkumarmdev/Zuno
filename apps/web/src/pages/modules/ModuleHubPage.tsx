@@ -1159,30 +1159,37 @@ export const ModuleHubPage: React.FC = () => {
         </div>
       )}
 
-      {/* Module Header */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Futuristic Module Header Banner */}
+      <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl p-6 sm:p-7 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        {/* Subtle Ambient Glow */}
+        <div className="absolute top-0 right-0 w-80 h-40 bg-gradient-to-b from-blue-500/10 to-transparent dark:from-blue-600/10 blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
-              <ModuleIcon className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shrink-0 shadow-glow-sm">
+              <ModuleIcon className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                <span className="text-[10px] font-extrabold font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-cyan-300 border border-blue-200 dark:border-blue-800">
                   {moduleInfo.phase}
                 </span>
+                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {moduleInfo.tables.length} Tables Connected
+                </span>
               </div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{moduleInfo.title}</h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Manage operational records, approvals, and documents across your company entities and branches.
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1 tracking-tight">{moduleInfo.title}</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                Centralized operational cloud workspace for managing verified records, dual-layer validations, approvals, and audit trails.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+          <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0">
             <button
               onClick={() => setVoiceGuideModule(moduleKey || 'products')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
               title="Listen to interactive voice narration for this module"
             >
               <Volume2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
@@ -1192,9 +1199,10 @@ export const ModuleHubPage: React.FC = () => {
         </div>
 
         {/* Submodule Table Selector Tabs */}
-        <div className="mt-6 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-4 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
+        <div className="mt-6 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-4 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap relative z-10">
           {moduleInfo.tables.map((t) => {
             const TabIcon = getTableIcon(t.name);
+            const isSelected = selectedTable === t.name;
             return (
               <button
                 key={t.name}
@@ -1202,10 +1210,10 @@ export const ModuleHubPage: React.FC = () => {
                   setSelectedTable(t.name);
                   setPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                  selectedTable === t.name
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-2 shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-glow-sm'
+                    : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60'
                 }`}
               >
                 <TabIcon className="w-3.5 h-3.5 shrink-0" />

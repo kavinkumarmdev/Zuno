@@ -160,27 +160,32 @@ export function DataGrid<T extends { id: string }>({
   const displayedColumns = columns.filter((c) => visibleColumns.has(c.key));
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+    <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm flex flex-col overflow-hidden transition-all duration-200">
       {/* Header Bar */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-50/40 dark:bg-slate-950/30">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">{title}</h2>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300">
+              {total} Records
+            </span>
+          </div>
           {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {/* Search Box */}
           <div className="relative w-full sm:w-auto sm:min-w-[220px] flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Filter records..."
+              placeholder="Search in grid..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 onSearchChange?.(e.target.value);
               }}
-              className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100 shadow-2xs"
             />
           </div>
 
@@ -188,10 +193,10 @@ export function DataGrid<T extends { id: string }>({
           <div className="relative" ref={columnPickerRef}>
             <button
               onClick={() => setShowColumnPicker(!showColumnPicker)}
-              className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1.5 px-3 cursor-pointer"
+              className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 px-3 cursor-pointer shadow-2xs"
               title="Select columns"
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-3.5 h-3.5" />
               <span>Columns</span>
             </button>
             {showColumnPicker && (
@@ -200,10 +205,10 @@ export function DataGrid<T extends { id: string }>({
                   className="fixed inset-0 z-30 bg-transparent"
                   onClick={() => setShowColumnPicker(false)}
                 />
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 px-2 py-1">Toggle Columns</p>
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 px-2 py-1">Toggle Columns</p>
                   {columns.map((c) => (
-                    <label key={c.key} className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg cursor-pointer transition-colors">
+                    <label key={c.key} className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl cursor-pointer transition-colors font-medium">
                       <input
                         type="checkbox"
                         checked={visibleColumns.has(c.key)}
@@ -213,9 +218,9 @@ export function DataGrid<T extends { id: string }>({
                           else if (next.size > 1) next.delete(c.key);
                           setVisibleColumns(next);
                         }}
-                        className="rounded text-blue-600 focus:ring-blue-500"
+                        className="rounded text-blue-600 focus:ring-blue-500 accent-blue-600"
                       />
-                      <span className="text-slate-700 dark:text-slate-300">{c.header}</span>
+                      <span className="text-slate-700 dark:text-slate-300 truncate">{c.header}</span>
                     </label>
                   ))}
                 </div>
@@ -226,10 +231,10 @@ export function DataGrid<T extends { id: string }>({
           {/* Export Button */}
           <button
             onClick={exportToCSV}
-            className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1.5 px-3"
+            className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 px-3 cursor-pointer shadow-2xs"
             title="Export CSV"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span>Export</span>
           </button>
 
@@ -237,15 +242,15 @@ export function DataGrid<T extends { id: string }>({
           {onToggleArchived && (
             <button
               onClick={() => onToggleArchived(!showArchived)}
-              className={`p-1.5 border rounded-lg text-xs font-semibold flex items-center gap-1.5 px-2.5 transition-all cursor-pointer ${
+              className={`p-1.5 border rounded-xl text-xs font-semibold flex items-center gap-1.5 px-3 transition-all cursor-pointer shadow-2xs ${
                 showArchived
-                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
               }`}
               title="Toggle archived/soft-deleted records"
             >
               <Archive className="w-3.5 h-3.5" />
-              <span>{showArchived ? 'Show Active' : `Archived (${archivedCount})`}</span>
+              <span>{showArchived ? 'Active Records' : `Archived (${archivedCount})`}</span>
             </button>
           )}
 
@@ -296,7 +301,7 @@ export function DataGrid<T extends { id: string }>({
       <div className="overflow-x-auto flex-1">
         <table className="w-full text-left text-sm border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <tr className="bg-slate-50/90 dark:bg-slate-950/70 border-b border-slate-200/90 dark:border-slate-800 text-[11px] font-bold font-mono uppercase tracking-wider text-slate-600 dark:text-slate-400">
               <th className="p-3 w-10 text-center">
                 <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
                   {selectedIds.size === data.length && data.length > 0 ? (
@@ -380,13 +385,22 @@ export function DataGrid<T extends { id: string }>({
                           col.render(row)
                         ) : col.key === 'status' ? (
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                              STATUS_BADGE_STYLES[(row as any).status]
-                                ? `${STATUS_BADGE_STYLES[(row as any).status].bg} ${STATUS_BADGE_STYLES[(row as any).status].text} ${STATUS_BADGE_STYLES[(row as any).status].border}`
-                                : 'bg-slate-100 text-slate-700 border-slate-300'
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider border shadow-2xs ${
+                              String((row as any).status).toUpperCase() === 'ACTIVE'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                : String((row as any).status).toUpperCase() === 'PENDING'
+                                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                                : String((row as any).status).toUpperCase() === 'ARCHIVED' || (row as any).is_deleted
+                                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                                : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
                             }`}
                           >
-                            {(row as any).status}
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              String((row as any).status).toUpperCase() === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' :
+                              String((row as any).status).toUpperCase() === 'PENDING' ? 'bg-amber-500' :
+                              String((row as any).status).toUpperCase() === 'ARCHIVED' ? 'bg-rose-500' : 'bg-blue-500'
+                            }`} />
+                            <span>{(row as any).status || 'ACTIVE'}</span>
                           </span>
                         ) : (
                           (row as any)[col.key] ?? '-'

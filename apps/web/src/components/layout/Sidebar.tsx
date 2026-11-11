@@ -109,24 +109,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       <aside
         className={`${
           isOpen ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden'
-        } lg:flex w-64 bg-slate-900 text-slate-300 flex-col flex-shrink-0 h-screen border-r border-slate-800 select-none shadow-2xl lg:shadow-none transition-all`}
+        } lg:flex w-64 bg-slate-950/95 backdrop-blur-2xl text-slate-300 flex-col flex-shrink-0 h-screen border-r border-slate-800/80 select-none shadow-2xl lg:shadow-none transition-all relative overflow-hidden`}
       >
-        {/* Brand Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-blue-600/10 via-cyan-500/5 to-transparent pointer-events-none" />
+
+        {/* Futuristic Brand Header */}
+        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <img
-              src="/logo/logo.png"
-              alt="Zuno ERP"
-              className="w-9 h-9 object-contain rounded-lg bg-slate-800/80 p-1 ring-1 ring-slate-700 shadow-md"
-            />
+            <div className="relative p-1 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-glow-sm">
+              <img
+                src="/logo/logo.png"
+                alt="Zuno ERP"
+                className="w-8 h-8 object-contain rounded-lg bg-slate-900 p-0.5"
+              />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-950 animate-pulse" />
+            </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-white text-base tracking-wide">ZUNO</span>
-                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-400 border border-blue-500/30">
-                  ERP
+                <span className="font-extrabold text-white text-base tracking-tight">ZUNO</span>
+                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 border border-blue-400/30 font-mono tracking-wider">
+                  ERP 2.0
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400 font-medium">Enterprise SaaS</span>
+              <span className="text-[10px] text-slate-400 font-medium tracking-wide flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                Next-Gen Cloud OS
+              </span>
             </div>
           </div>
 
@@ -141,39 +150,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         </div>
 
         {/* Navigation Links (Scrollable) */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 relative z-10">
           {/* Top-Level Navigation Links */}
           <div className="space-y-1">
             <NavLink
               to="/dashboard"
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                `flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 group ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-gradient-to-r from-blue-600/30 to-indigo-600/20 text-white border border-blue-500/40 shadow-glow-sm'
+                    : 'text-slate-400 hover:bg-slate-900/80 hover:text-slate-200 border border-transparent'
                 }`
               }
             >
-              <LayoutDashboard className="w-4 h-4 text-blue-400" />
-              <span>Executive Dashboard</span>
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                <span>Executive Dashboard</span>
+              </div>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
             </NavLink>
 
             <NavLink
               to="/modules"
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                `flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 group ${
                   isActive
-                    ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/20 text-cyan-300 border border-cyan-500/40 shadow-glow-cyan'
+                    : 'text-slate-400 hover:bg-slate-900/80 hover:text-slate-200 border border-transparent'
                 }`
               }
             >
               <div className="flex items-center gap-2.5">
-                <Layers className="w-4 h-4 text-cyan-400" />
+                <Layers className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
                 <span>19-Module Matrix</span>
               </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold">19</span>
             </NavLink>
 
             {/* Voice Module Guide Audio Tour Trigger */}
@@ -182,15 +195,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                 if (onClose) onClose();
                 setShowVoiceGuide(true);
               }}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-800/60 transition-all cursor-pointer shadow-xs"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-800/60 transition-all cursor-pointer shadow-glow-sm group"
               title="Listen to interactive voice narration of all modules"
             >
               <div className="flex items-center gap-2.5">
-                <Volume2 className="w-4 h-4 text-indigo-400 animate-pulse" />
+                <Volume2 className="w-4 h-4 text-indigo-400 animate-pulse group-hover:scale-110 transition-transform" />
                 <span>Voice Module Guide</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 uppercase tracking-wider font-mono">
-                Audio
+                AUDIO
               </span>
             </button>
           </div>
@@ -202,9 +215,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               <div key={group.phase} className="space-y-1">
                 <button
                   onClick={() => togglePhase(group.phase)}
-                  className="w-full flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider hover:text-slate-200 transition-colors"
+                  className="w-full flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-200 transition-colors"
                 >
-                  <span>{group.phase}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                    {group.phase}
+                  </span>
                   {isCollapsed ? (
                     <ChevronRight className="w-3 h-3 text-slate-500" />
                   ) : (
@@ -222,17 +238,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                           to={item.path}
                           onClick={onClose}
                           className={({ isActive }) =>
-                            `flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group ${
+                            `flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 group ${
                               isActive
-                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                                ? 'bg-blue-600/25 text-blue-300 border border-blue-500/30 font-semibold shadow-2xs'
+                                : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
                             }`
                           }
                         >
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-3.5 h-3.5 group-hover:text-blue-400 transition-colors" />
-                            <span>{item.name}</span>
+                          <div className="flex items-center gap-2 truncate">
+                            <Icon className="w-3.5 h-3.5 group-hover:text-cyan-400 transition-colors shrink-0" />
+                            <span className="truncate">{item.name}</span>
                           </div>
+                          {item.count && (
+                            <span className="text-[10px] font-mono text-slate-600 group-hover:text-slate-400 shrink-0">
+                              {item.count}
+                            </span>
+                          )}
                         </NavLink>
                       );
                     })}
@@ -243,9 +264,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
           })}
         </div>
 
-        {/* Clean Footer */}
-        <div className="p-3 bg-slate-950/60 border-t border-slate-800 text-[11px] text-slate-500 text-center font-medium">
-          Zuno Enterprise SaaS
+        {/* Futuristic Mission Control Footer */}
+        <div className="p-3 bg-slate-950 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="font-mono text-[10px] tracking-wider text-slate-400">POSTGRES CLUSTER</span>
+          </div>
+          <span className="text-[10px] font-mono text-cyan-400 font-bold">LIVE 99.99%</span>
         </div>
       </aside>
 

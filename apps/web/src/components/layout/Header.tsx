@@ -186,7 +186,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       )}
 
-      <header className="h-14 sm:h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/90 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 relative z-30 transition-colors">
+      <header className="h-14 sm:h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-b border-slate-200/70 dark:border-slate-800/80 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 relative z-30 transition-colors shadow-2xs">
         {/* Left: Mobile Toggle & Clean Unified Organization Switcher */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Mobile Sidebar Hamburger Toggle */}
@@ -199,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </button>
 
           {/* Clean Unified Organization Switcher */}
-          <div className="flex items-center bg-slate-50/90 dark:bg-slate-800/70 border border-slate-200/90 dark:border-slate-700/80 rounded-xl p-0.5 shadow-sm">
+          <div className="flex items-center bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-0.5 shadow-2xs">
             {/* Company Selector */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs max-w-[150px] sm:max-w-[210px] md:max-w-[240px]">
               <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
