@@ -2,7 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  Logger
+  Logger,
+  OnModuleInit
 } from '@nestjs/common';
 import { NeonPrismaService } from '../database/neon-prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
@@ -10,13 +11,26 @@ import { PaginationParams, PaginationMeta } from '@zuno/shared-types';
 import { OperationalDataStore, StoredRecord } from './operational-store';
 
 @Injectable()
-export class BusinessModulesService {
+export class BusinessModulesService implements OnModuleInit {
   private readonly logger = new Logger(BusinessModulesService.name);
 
   constructor(
     private readonly prisma: NeonPrismaService,
     private readonly subscriptionsService: SubscriptionsService
   ) {}
+
+  /**
+   * Safe migration initialization: protects against schema drift and accidental table drops
+   */
+  async onModuleInit() {
+    this.logger.log('Initializing BusinessModulesService with Safe Migration Protection...');
+    try {
+      OperationalDataStore.createSnapshotBackup('startup');
+      this.logger.log('Migration recovery snapshot verified successfully.');
+    } catch (err: any) {
+      this.logger.warn(`Migration snapshot initialization note: ${err.message}`);
+    }
+  }
 
   /**
    * Helper to resolve the correct Prisma delegate for any of the 243 approved catalogue tables

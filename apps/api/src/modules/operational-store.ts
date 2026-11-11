@@ -59,6 +59,9 @@ export class OperationalDataStore {
     return this.memoryCache;
   }
 
+  private static backupsDir: string = path.join(path.dirname(OperationalDataStore.filePath), 'backups');
+  private static lastBackupTime: number = 0;
+
   private static writeData(data: Record<string, StoredRecord[]>): void {
     this.memoryCache = data;
     try {
@@ -67,9 +70,84 @@ export class OperationalDataStore {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(this.filePath, JSON.stringify(data, null, 2), 'utf-8');
+
+      // Auto-create snapshot backup if 5 minutes have elapsed or if newly populated
+      const now = Date.now();
+      if (now - this.lastBackupTime > 5 * 60 * 1000) {
+        this.createSnapshotBackup('auto');
+        this.lastBackupTime = now;
+      }
     } catch (err: any) {
       console.error('[OperationalDataStore] Failed to write store to disk:', err.message);
     }
+  }
+
+  /**
+   * Create a timestamped backup snapshot to protect against accidental migration drops or schema resets
+   */
+  static createSnapshotBackup(tag: string = 'manual'): string | null {
+    try {
+      if (!fs.existsSync(this.backupsDir)) {
+        fs.mkdirSync(this.backupsDir, { recursive: true });
+      }
+      const data = this.readData();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupFile = path.join(this.backupsDir, `snapshot-${tag}-${timestamp}.json`);
+      fs.writeFileSync(backupFile, JSON.stringify(data, null, 2), 'utf-8');
+
+      // Prune old backups, keeping latest 25
+      const files = fs.readdirSync(this.backupsDir)
+        .filter((f) => f.startsWith('snapshot-') && f.endsWith('.json'))
+        .map((f) => path.join(this.backupsDir, f))
+        .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+
+      if (files.length > 25) {
+        for (const fileToDelete of files.slice(25)) {
+          try {
+            fs.unlinkSync(fileToDelete);
+          } catch {}
+        }
+      }
+
+      console.log(`[OperationalDataStore] Created migration protection snapshot: ${path.basename(backupFile)}`);
+      return backupFile;
+    } catch (err: any) {
+      console.error('[OperationalDataStore] Backup snapshot creation failed:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Restore store from the most recent backup snapshot
+   */
+  static restoreLatestBackup(): boolean {
+    try {
+      if (!fs.existsSync(this.backupsDir)) return false;
+      const files = fs.readdirSync(this.backupsDir)
+        .filter((f) => f.startsWith('snapshot-') && f.endsWith('.json'))
+        .map((f) => path.join(this.backupsDir, f))
+        .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+
+      if (files.length === 0) return false;
+
+      const latest = files[0];
+      const raw = fs.readFileSync(latest, 'utf-8');
+      const parsed = JSON.parse(raw);
+      this.memoryCache = parsed;
+      this.writeData(parsed);
+      console.log(`[OperationalDataStore] Restored data from snapshot: ${path.basename(latest)}`);
+      return true;
+    } catch (err: any) {
+      console.error('[OperationalDataStore] Failed to restore latest backup:', err.message);
+      return false;
+    }
+  }
+
+  /**
+   * Return full map of all stored records across all tenants and tables
+   */
+  static getAllStoredData(): Record<string, StoredRecord[]> {
+    return this.readData();
   }
 
   private static getStoreKey(tenantId: string, tableName: string): string {

@@ -5,6 +5,7 @@ import { apiClient } from '../../services/api';
 import { useAuth } from '../../stores/auth-store';
 import { DataGrid, ColumnDef } from '../../components/ui/DataGrid';
 import { TABLE_SCHEMAS, FormFieldConfig } from './tableSchemas';
+import { VoiceGuidedAssistant } from '../../components/guidance/VoiceGuidedAssistant';
 import {
   Package,
   Layers,
@@ -44,6 +45,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Phone,
+  Volume2,
   Table
 } from 'lucide-react';
 
@@ -391,6 +393,7 @@ export const ModuleHubPage: React.FC = () => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [voiceGuideModule, setVoiceGuideModule] = useState<string | null>(null);
 
   // Check if current user has permission to edit records in this module
   const canEdit = useMemo(() => {
@@ -1175,6 +1178,17 @@ export const ModuleHubPage: React.FC = () => {
               </p>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+            <button
+              onClick={() => setVoiceGuideModule(moduleKey || 'products')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+              title="Listen to interactive voice narration for this module"
+            >
+              <Volume2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+              <span>Listen: Module Voice Guide</span>
+            </button>
+          </div>
         </div>
 
         {/* Submodule Table Selector Tabs */}
@@ -1472,6 +1486,13 @@ export const ModuleHubPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Voice-Guided Module Assistant Deep Dive */}
+      <VoiceGuidedAssistant
+        isOpen={!!voiceGuideModule}
+        initialModuleId={voiceGuideModule || undefined}
+        onClose={() => setVoiceGuideModule(null)}
+      />
     </div>
   );
 };

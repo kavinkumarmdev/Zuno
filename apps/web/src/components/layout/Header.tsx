@@ -20,11 +20,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  Plus
+  Plus,
+  Volume2
 } from 'lucide-react';
 import { useAuth } from '../../stores/auth-store';
 import { OnboardingGuide } from '../guidance/OnboardingGuide';
 import { DemoDataManager } from '../demo/DemoDataManager';
+import { VoiceGuidedAssistant } from '../guidance/VoiceGuidedAssistant';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -40,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showVoiceGuide, setShowVoiceGuide] = useState(false);
   const [showDemoManager, setShowDemoManager] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showSwitchOrgModal, setShowSwitchOrgModal] = useState(false);
@@ -271,6 +274,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
         {/* Right: Clean Minimal Utility Controls & Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Interactive Voice Guided Assistant Button */}
+          <button
+            onClick={() => setShowVoiceGuide(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+            title="Open Voice-Guided Module Assistant (Audio Walkthrough)"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+            <span className="hidden md:inline">Voice Guide</span>
+          </button>
+
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleDarkMode}
@@ -531,7 +544,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   />
                   <input
                     type="text"
-                    placeholder="Code (e.g. KAVIN-LOG)"
+                    placeholder="Code (e.g. APEX-LOG)"
                     value={newCompanyCode}
                     onChange={(e) => setNewCompanyCode(e.target.value)}
                     className="px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase font-mono"
@@ -699,6 +712,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
       {/* Gamified First-Time Walkthrough Guide Modal */}
       <OnboardingGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
+
+      {/* Voice-Guided Assistant & Module Deep Dive Navigator */}
+      <VoiceGuidedAssistant isOpen={showVoiceGuide} onClose={() => setShowVoiceGuide(false)} />
 
       {/* Sample / Demo Data Manager Modal */}
       <DemoDataManager isOpen={showDemoManager} onClose={() => setShowDemoManager(false)} />

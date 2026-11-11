@@ -27,8 +27,10 @@ import {
   History,
   Layers,
   Laptop,
+  Volume2,
   X
 } from 'lucide-react';
+import { VoiceGuidedAssistant } from '../guidance/VoiceGuidedAssistant';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -88,6 +90,7 @@ export const ERP_MODULES = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+  const [showVoiceGuide, setShowVoiceGuide] = useState(false);
 
   const togglePhase = (phase: string) => {
     setCollapsedPhases((prev) => ({ ...prev, [phase]: !prev[phase] }));
@@ -172,6 +175,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                 <span>19-Module Matrix</span>
               </div>
             </NavLink>
+
+            {/* Voice Module Guide Audio Tour Trigger */}
+            <button
+              onClick={() => {
+                if (onClose) onClose();
+                setShowVoiceGuide(true);
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-800/60 transition-all cursor-pointer shadow-xs"
+              title="Listen to interactive voice narration of all modules"
+            >
+              <div className="flex items-center gap-2.5">
+                <Volume2 className="w-4 h-4 text-indigo-400 animate-pulse" />
+                <span>Voice Module Guide</span>
+              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 uppercase tracking-wider font-mono">
+                Audio
+              </span>
+            </button>
           </div>
 
           {/* Phase Groups */}
@@ -227,6 +248,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
           Zuno Enterprise SaaS
         </div>
       </aside>
+
+      {/* Voice-Guided Assistant Audio Walkthrough Modal */}
+      <VoiceGuidedAssistant isOpen={showVoiceGuide} onClose={() => setShowVoiceGuide(false)} />
     </>
   );
 };

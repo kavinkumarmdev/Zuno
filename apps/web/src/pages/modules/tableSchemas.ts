@@ -16,20 +16,20 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Company Legal Name",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Global Industries Ltd"
+      "placeholder": "e.g. Apex Global Industries Ltd"
     },
     {
       "key": "code",
       "label": "Company Identifier Code",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. KAVIN-HQ"
+      "placeholder": "e.g. APEX-HQ-01"
     },
     {
       "key": "legal_name",
       "label": "Trade / Registration Name",
       "type": "text",
-      "placeholder": "e.g. Kavin Technologies Pvt Ltd"
+      "placeholder": "e.g. Apex Technologies Pvt Ltd"
     },
     {
       "key": "gstin",
@@ -55,7 +55,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "key": "email",
       "label": "Corporate Contact Email",
       "type": "email",
-      "placeholder": "contact@kavin.com"
+      "placeholder": "contact@company.com"
     },
     {
       "key": "phone",
@@ -101,7 +101,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "key": "manager_name",
       "label": "Branch Head / Manager",
       "type": "text",
-      "placeholder": "e.g. Kavin"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "phone",
@@ -343,21 +343,21 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "User Full Name",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Kumar"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "code",
       "label": "Username",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. kavin"
+      "placeholder": "e.g. admin"
     },
     {
       "key": "email",
       "label": "Corporate Work Email",
       "type": "email",
       "required": true,
-      "placeholder": "kavin@zuno.com"
+      "placeholder": "admin@company.com"
     },
     {
       "key": "phone",
@@ -586,7 +586,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "User Full Name / Login",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Kumar"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "code",
@@ -3579,7 +3579,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "key": "description",
       "label": "Authorized Signatories & Limits",
       "type": "textarea",
-      "placeholder": "Joint signatory authorization: Platform Owner Kavin & Finance Head..."
+      "placeholder": "Joint signatory authorization: Managing Director & Finance Head..."
     }
   ],
   "tb_bank_statement": [
@@ -4213,7 +4213,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Designated Compliance Officer",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Kumar"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "date",
@@ -4417,7 +4417,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Registered Government Portal User ID",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. KAVIN_GST_33"
+      "placeholder": "e.g. GST_PORTAL_USER_01"
     },
     {
       "key": "status",
@@ -4676,7 +4676,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Shareholder / Partner Legal Name",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Kumar"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "amount",
@@ -4953,7 +4953,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Deciding Approver Name",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Kumar"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "date",
@@ -5085,7 +5085,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Evaluating Manager Full Name",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin Kumar"
+      "placeholder": "e.g. Rajesh Sharma"
     },
     {
       "key": "status",

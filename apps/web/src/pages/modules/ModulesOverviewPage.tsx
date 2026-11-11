@@ -30,8 +30,10 @@ import {
   Zap,
   Cloud,
   CheckCircle2,
-  Eye
+  Eye,
+  Volume2
 } from 'lucide-react';
+import { VoiceGuidedAssistant } from '../../components/guidance/VoiceGuidedAssistant';
 
 export interface ModuleCardData {
   number: number;
@@ -441,6 +443,7 @@ export const ModulesOverviewPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [showPosterModal, setShowPosterModal] = useState(false);
+  const [voiceGuideModule, setVoiceGuideModule] = useState<string | null>(null);
 
   const filteredModules = useMemo(() => {
     return OFFICIAL_19_MODULES.filter((mod) => {
@@ -511,6 +514,13 @@ export const ModulesOverviewPage: React.FC = () => {
 
           {/* Quick Action & Poster Preview Button */}
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+            <button
+              onClick={() => setVoiceGuideModule('company')}
+              className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border border-blue-400/40 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/25 cursor-pointer active:scale-95"
+            >
+              <Volume2 className="w-4 h-4 text-cyan-200 animate-pulse" />
+              <span>🎙️ Voice Guided Tour</span>
+            </button>
             <button
               onClick={() => setShowPosterModal(true)}
               className="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-lg backdrop-blur-sm"
@@ -616,13 +626,27 @@ export const ModulesOverviewPage: React.FC = () => {
                   <span>Enterprise Ready</span>
                 </div>
 
-                <Link
-                  to={mod.path}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform"
-                >
-                  <span>Open Hub</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setVoiceGuideModule(mod.id);
+                    }}
+                    className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800 transition-colors cursor-pointer"
+                    title={`Listen to Voice Guide for ${mod.name}`}
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                  <Link
+                    to={mod.path}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform"
+                  >
+                    <span>Open Hub</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           );
@@ -666,6 +690,13 @@ export const ModulesOverviewPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Voice-Guided Assistant & Module Deep Dive Navigator */}
+      <VoiceGuidedAssistant
+        isOpen={!!voiceGuideModule}
+        initialModuleId={voiceGuideModule || undefined}
+        onClose={() => setVoiceGuideModule(null)}
+      />
     </div>
   );
 };

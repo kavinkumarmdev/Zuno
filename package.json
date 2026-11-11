@@ -22,8 +22,11 @@
     "lint": "npm run lint --workspaces --if-present",
     "postinstall": "npm run db:generate || true",
     "db:generate": "npm run db:generate --workspace=@zuno/api",
-    "db:migrate": "npm run db:migrate --workspace=@zuno/api",
-    "db:seed": "npm run db:seed --workspace=@zuno/api"
+    "db:migrate": "npm run db:backup && npm run db:migrate --workspace=@zuno/api",
+    "db:seed": "npm run db:seed --workspace=@zuno/api",
+    "db:backup": "node apps/api/scripts/backup-db.js backup pre-migration",
+    "db:restore": "node apps/api/scripts/backup-db.js restore",
+    "db:snapshots": "node apps/api/scripts/backup-db.js list"
   },
   "keywords": [
     "erp",

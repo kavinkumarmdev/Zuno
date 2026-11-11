@@ -37,4 +37,6 @@ Thumbs.db
 scratch_*.txt
 *.tmp
 database_catalogue_parsed.json
+apps/api/data/backups/
+data/backups/
 
