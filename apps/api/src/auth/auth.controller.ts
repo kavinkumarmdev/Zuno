@@ -14,8 +14,30 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Post('register-send-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send 6-digit OTP email for tenant signup' })
+  async registerSendOtp(@Body() body: { email: string }) {
+    if (!body?.email) {
+      throw new BadRequestException('Corporate email address is required');
+    }
+    return this.authService.sendRegistrationOtp(body.email);
+  }
+
+  @Public()
+  @Post('register-verify-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify 6-digit OTP for tenant signup' })
+  async registerVerifyOtp(@Body() body: { email: string; otp: string }) {
+    if (!body?.email || !body?.otp) {
+      throw new BadRequestException('Email and OTP code are required');
+    }
+    return this.authService.verifyRegistrationOtp(body.email, body.otp);
+  }
+
+  @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register a new enterprise tenant and primary owner account' })
+  @ApiOperation({ summary: 'Register a new enterprise tenant and primary admin account' })
   @SwaggerApiResponse({ status: 201, description: 'Tenant successfully registered and logged in' })
   async register(@Body() dto: RegisterTenantDto) {
     return this.authService.registerTenant(dto);

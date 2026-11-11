@@ -46,7 +46,8 @@ import {
   AlertCircle,
   Phone,
   Volume2,
-  Table
+  Table,
+  Loader2
 } from 'lucide-react';
 
 const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
@@ -1481,13 +1482,16 @@ export const ModuleHubPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 disabled:opacity-50 cursor-pointer transition-all"
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 disabled:opacity-50 cursor-pointer transition-all flex items-center gap-1.5"
                 >
-                  {createMutation.isPending
-                    ? 'Saving...'
-                    : editingRecord
-                    ? `Update ${singleLabel}`
-                    : `Save ${singleLabel}`}
+                  {createMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>
+                    {createMutation.isPending
+                      ? (editingRecord ? 'Updating Record...' : 'Saving Record...')
+                      : editingRecord
+                      ? `Update ${singleLabel}`
+                      : `Save ${singleLabel}`}
+                  </span>
                 </button>
               </div>
             </form>

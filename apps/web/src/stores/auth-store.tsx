@@ -463,7 +463,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: tenantData.ownerName || 'admin',
         fullName: tenantData.ownerName || 'Enterprise Administrator',
         email: tenantData.email || 'admin@company.com',
-        userType: UserType.OWNER,
+        userType: UserType.ADMIN,
         userStatus: 'ACTIVE' as any,
       },
       tenant: {

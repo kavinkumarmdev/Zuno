@@ -17,7 +17,8 @@ import {
   FileSpreadsheet,
   Pencil,
   RotateCcw,
-  Archive
+  Archive,
+  Loader2
 } from 'lucide-react';
 import { STATUS_BADGE_STYLES } from '@zuno/ui';
 
@@ -88,6 +89,8 @@ export function DataGrid<T extends { id: string }>({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [recordToDelete, setRecordToDelete] = useState<T | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | number | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(columns.map((c) => c.key))
   );
@@ -413,15 +416,31 @@ export function DataGrid<T extends { id: string }>({
                           {(row as any).is_deleted || (row as any).status === 'ARCHIVED' ? (
                             onRestore && (
                               <button
-                                onClick={(e) => {
+                                disabled={restoringId === ((row as any).id || (row as any).code)}
+                                onClick={async (e) => {
                                   e.stopPropagation();
-                                  onRestore(row);
+                                  const rowKey = (row as any).id || (row as any).code;
+                                  setRestoringId(rowKey);
+                                  try {
+                                    await onRestore(row);
+                                  } finally {
+                                    setRestoringId(null);
+                                  }
                                 }}
-                                className="px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                className="px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs disabled:opacity-50"
                                 title="Restore Archived Record"
                               >
-                                <RotateCcw className="w-3 h-3 shrink-0" />
-                                <span>Restore</span>
+                                {restoringId === ((row as any).id || (row as any).code) ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                                    <span>Restoring...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <RotateCcw className="w-3 h-3 shrink-0" />
+                                    <span>Restore</span>
+                                  </>
+                                )}
                               </button>
                             )
                           ) : (
@@ -567,16 +586,33 @@ export function DataGrid<T extends { id: string }>({
               </button>
               <button
                 type="button"
-                onClick={() => {
+                disabled={isDeleting}
+                onClick={async () => {
                   if (onSoftDelete && recordToDelete) {
-                    onSoftDelete(recordToDelete);
+                    setIsDeleting(true);
+                    try {
+                      await onSoftDelete(recordToDelete);
+                    } finally {
+                      setIsDeleting(false);
+                      setRecordToDelete(null);
+                    }
+                  } else {
+                    setRecordToDelete(null);
                   }
-                  setRecordToDelete(null);
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Confirm Soft Delete</span>
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Soft Delete</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

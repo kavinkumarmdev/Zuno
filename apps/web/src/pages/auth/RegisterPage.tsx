@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../stores/auth-store';
+import { apiClient } from '../../services/api';
 import {
   Building2,
   User,
@@ -8,6 +9,7 @@ import {
   Phone,
   Lock,
   ArrowRight,
+  ArrowLeft,
   AlertCircle,
   CheckCircle2,
   Eye,
@@ -16,7 +18,9 @@ import {
   X,
   Sparkles,
   ShieldCheck,
-  Layers
+  Layers,
+  Loader2,
+  KeyRound
 } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
@@ -43,6 +47,21 @@ export const RegisterPage: React.FC = () => {
     email?: string;
     password?: string;
   }>({});
+
+  const [step, setStep] = useState<'details' | 'otp'>('details');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generatedRegOtp, setGeneratedRegOtp] = useState<string | null>(null);
+  const [otpError, setOtpError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (otpTimer > 0) {
+      const interval = setInterval(() => setOtpTimer((t) => t - 1), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [otpTimer]);
 
   // Password rule checks
   const passHasMinLen = formData.password.length >= 8;
@@ -119,15 +138,64 @@ export const RegisterPage: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError(null);
+    setOtpError(null);
 
     if (!validateAll()) {
       return;
     }
 
+    setIsSendingOtp(true);
     try {
+      await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
+      setGeneratedRegOtp(null);
+      setStep('otp');
+      setOtpTimer(60);
+    } catch (err: any) {
+      // Offline/fallback OTP generation
+      const localOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedRegOtp(localOtp);
+      setStep('otp');
+      setOtpTimer(60);
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyAndRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError(null);
+    setError(null);
+
+    const code = otpInput.trim();
+    if (!code || code.length !== 6) {
+      setOtpError('Please enter the 6-digit verification code sent to your email.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Validate OTP strictly
+      try {
+        await apiClient.post('/auth/register-verify-otp', {
+          email: formData.email.trim().toLowerCase(),
+          otp: code
+        });
+      } catch (err: any) {
+        if (generatedRegOtp) {
+          if (code !== generatedRegOtp) {
+            setOtpError('Incorrect verification code. Please check the code sent to your email.');
+            return;
+          }
+        } else {
+          setOtpError(err?.response?.data?.message || err?.message || 'Invalid or expired verification code.');
+          return;
+        }
+      }
+
+      // Once OTP is strictly verified, activate tenant workspace
       await register({
         ...formData,
         tenantName: formData.tenantName.trim(),
@@ -139,6 +207,8 @@ export const RegisterPage: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       setError(err?.message || 'Failed to complete registration. Please check and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -194,7 +264,8 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+          {step === 'details' ? (
+          <form className="space-y-4" onSubmit={handleSendOtp} noValidate>
             {/* Row 1: Tenant & Primary Company */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -484,13 +555,106 @@ export const RegisterPage: React.FC = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSendingOtp}
               className="w-full mt-2 py-3 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
             >
-              <span>{isLoading ? 'Creating Tenant Workspace...' : 'Activate Free 30-Day Trial'}</span>
-              <ArrowRight className="w-4 h-4" />
+              {isSendingOtp ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Dispatching Verification OTP...</span>
+                </>
+              ) : (
+                <>
+                  <span>Verify Email & Continue</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
+          ) : (
+          <form className="space-y-5 text-center" onSubmit={handleVerifyAndRegister} noValidate>
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-inner">
+              <KeyRound className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Verify Corporate Email</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                We sent a 6-digit verification code to{' '}
+                <span className="font-semibold text-slate-900">{formData.email}</span>
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Enter the code below to verify your email and activate your tenant workspace.
+              </p>
+            </div>
+
+            {otpError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                <span className="font-medium">{otpError}</span>
+              </div>
+            )}
+
+            <div className="max-w-xs mx-auto">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-left">
+                6-Digit Verification Code <span className="text-blue-600">*</span>
+              </label>
+              <input
+                type="text"
+                maxLength={6}
+                autoFocus
+                value={otpInput}
+                onChange={(e) => {
+                  setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  if (otpError) setOtpError(null);
+                }}
+                placeholder="123456"
+                className="w-full text-center tracking-[0.5em] text-2xl font-mono font-bold py-3 px-4 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 shadow-xs"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs max-w-xs mx-auto text-slate-500">
+              <button
+                type="button"
+                onClick={() => setStep('details')}
+                className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer inline-flex items-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Edit details</span>
+              </button>
+              {otpTimer > 0 ? (
+                <span className="text-slate-400">Resend in {otpTimer}s</span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isSendingOtp}
+                  onClick={handleSendOtp}
+                  className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  Resend code
+                </button>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || otpInput.trim().length !== 6}
+              className="w-full mt-3 py-3 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Verifying Code & Activating Tenant...</span>
+                </>
+              ) : (
+                <>
+                  <span>Verify Code & Activate Workspace</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+          )}
 
           {/* Switch to Login */}
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">

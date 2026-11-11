@@ -295,7 +295,58 @@ export class AuthService implements OnModuleInit {
   }
 
   /**
-   * Register a new Tenant, Primary Owner, Default Company, Branch, Admin Role and Starter Subscription
+   * Dispatch genuine 6-digit OTP email to user for tenant sign up
+   */
+  async sendRegistrationOtp(email: string) {
+    const normalized = email.toLowerCase().trim();
+
+    // Check if email already registered
+    try {
+      const existingUser = await (this.prisma as any).tbUser.findFirst({
+        where: { email: { equals: normalized, mode: 'insensitive' } }
+      });
+      if (existingUser) {
+        throw new BadRequestException(`Corporate email "${normalized}" is already registered. Please sign in or use another email.`);
+      }
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const key = `reg:${normalized}`;
+    this.otpStore.set(key, {
+      code: otp,
+      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+    });
+
+    await this.mailService.sendOtpEmail(normalized, otp, 'Tenant Registration');
+    return {
+      success: true,
+      message: `Verification code successfully sent to ${normalized}`
+    };
+  }
+
+  /**
+   * Verify Registration OTP
+   */
+  async verifyRegistrationOtp(email: string, otp: string) {
+    const normalized = email.toLowerCase().trim();
+    const key = `reg:${normalized}`;
+    const entry = this.otpStore.get(key);
+
+    const isValid = entry && entry.code === otp.trim() && entry.expiresAt > Date.now();
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired verification OTP code.');
+    }
+
+    return {
+      success: true,
+      message: 'Email OTP code verified successfully.'
+    };
+  }
+
+  /**
+   * Register a new Tenant, Primary Admin, Default Company, Branch, Admin Role and Starter Subscription
    */
   async registerTenant(dto: RegisterTenantDto): Promise<AuthSessionResponse> {
     // Check if email or mobile is already registered in database
@@ -377,7 +428,7 @@ export class AuthService implements OnModuleInit {
         full_name: dto.ownerName,
         email: dto.email,
         mobile: dto.mobile,
-        user_type: UserType.OWNER,
+        user_type: UserType.ADMIN,
         user_status: UserStatus.ACTIVE,
         email_verified: true,
         mobile_verified: true

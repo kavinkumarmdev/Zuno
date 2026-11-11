@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Sparkles,
   KeyRound,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -88,6 +89,7 @@ export const LoginPage: React.FC = () => {
   };
 
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Handle sending OTP for Forgot Password
   const handleSendForgotOtp = async () => {
@@ -104,6 +106,7 @@ export const LoginPage: React.FC = () => {
       await apiClient.post('/auth/forgot-password', { email: trimmed });
       setForgotOtpSent(true);
       setForgotTimer(60);
+      setGeneratedForgotOtp(null);
     } catch (err: any) {
       // Fallback local OTP generation for offline/standalone execution so user is not blocked
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -142,38 +145,50 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
-    // Attempt verification and password reset with backend
+    setIsResetting(true);
     try {
-      await apiClient.post('/auth/reset-password', {
-        email: forgotEmail.trim(),
-        otp: forgotOtpInput.trim(),
-        newPassword: forgotNewPassword
-      });
-    } catch (err: any) {
-      // If backend failed and local generated OTP is present, check local OTP
-      if (generatedForgotOtp && forgotOtpInput.trim() !== generatedForgotOtp) {
-        setForgotErrors({ otp: 'Incorrect OTP code provided. Please check the code sent to your email.' });
-        return;
-      }
-    }
-
-    // Success! Update password in local credential store as well
-    try {
-      const rawUser = localStorage.getItem('zuno_records_tb_user');
-      if (rawUser) {
-        const users = JSON.parse(rawUser);
-        const match = users.find((u: any) => u.email === forgotEmail.trim());
-        if (match) {
-          match.password = forgotNewPassword;
-          localStorage.setItem('zuno_records_tb_user', JSON.stringify(users));
+      // Attempt verification and password reset with backend
+      try {
+        await apiClient.post('/auth/reset-password', {
+          email: forgotEmail.trim(),
+          otp: forgotOtpInput.trim(),
+          newPassword: forgotNewPassword
+        });
+      } catch (err: any) {
+        // If backend failed, check whether local fallback was used
+        if (generatedForgotOtp) {
+          if (forgotOtpInput.trim() !== generatedForgotOtp) {
+            setForgotErrors({ otp: 'Incorrect OTP code provided. Please enter the valid code sent to your email.' });
+            return;
+          }
+        } else {
+          // Strict validation failure from backend
+          const errorMsg = err?.response?.data?.message || err?.message || 'Invalid or expired OTP code. Please try again.';
+          setForgotErrors({ otp: errorMsg });
+          return;
         }
       }
-    } catch {}
 
-    setShowForgotModal(false);
-    setUsernameOrEmail(forgotEmail.trim());
-    setPassword(forgotNewPassword);
-    setSuccessMsg('Password updated successfully! You can now sign in with your new password.');
+      // Success! Update password in local credential store as well
+      try {
+        const rawUser = localStorage.getItem('zuno_records_tb_user');
+        if (rawUser) {
+          const users = JSON.parse(rawUser);
+          const match = users.find((u: any) => u.email === forgotEmail.trim());
+          if (match) {
+            match.password = forgotNewPassword;
+            localStorage.setItem('zuno_records_tb_user', JSON.stringify(users));
+          }
+        }
+      } catch {}
+
+      setShowForgotModal(false);
+      setUsernameOrEmail(forgotEmail.trim());
+      setPassword(forgotNewPassword);
+      setSuccessMsg('Password updated successfully! You can now sign in with your new password.');
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   return (
@@ -354,8 +369,17 @@ export const LoginPage: React.FC = () => {
               disabled={isLoading}
               className="w-full mt-1.5 py-2.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
             >
-              <span>{isLoading ? 'Authenticating...' : 'Sign In to Workspace'}</span>
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Authenticating...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In to Workspace</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
@@ -537,9 +561,19 @@ export const LoginPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer"
+                  disabled={isSendingOtp || isResetting}
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
-                  {forgotOtpSent ? 'Verify OTP & Reset Password' : 'Send Verification OTP'}
+                  {(isSendingOtp || isResetting) && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>
+                    {isResetting
+                      ? 'Verifying & Updating...'
+                      : isSendingOtp
+                      ? 'Sending OTP...'
+                      : forgotOtpSent
+                      ? 'Verify OTP & Reset Password'
+                      : 'Send Verification OTP'}
+                  </span>
                 </button>
               </div>
             </form>

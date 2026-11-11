@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -28,7 +28,15 @@ import {
   Layers,
   Laptop,
   Volume2,
-  X
+  X,
+  Settings,
+  Sliders,
+  Check,
+  CheckSquare,
+  Square,
+  Search,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { VoiceGuidedAssistant } from '../guidance/VoiceGuidedAssistant';
 
@@ -91,6 +99,112 @@ export const ERP_MODULES = [
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
   const [showVoiceGuide, setShowVoiceGuide] = useState(false);
+
+  // Modular Workspace Architecture: Read user/tenant configured active modules
+  const [enabledModules, setEnabledModules] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('zuno_enabled_modules');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    // Initial core defaults
+    return [
+      'company',
+      'subscriptions',
+      'admin',
+      'products',
+      'hr',
+      'purchase',
+      'inventory',
+      'sales',
+      'banking',
+      'statutory',
+      'reports',
+      'history'
+    ];
+  });
+
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [pendingModules, setPendingModules] = useState<string[]>([]);
+  const [moduleSearch, setModuleSearch] = useState('');
+  const [isSavingModules, setIsSavingModules] = useState(false);
+
+  useEffect(() => {
+    const handler = () => {
+      try {
+        const saved = localStorage.getItem('zuno_enabled_modules');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setEnabledModules(parsed);
+        }
+      } catch {}
+    };
+    window.addEventListener('zuno_modules_updated', handler);
+    return () => window.removeEventListener('zuno_modules_updated', handler);
+  }, []);
+
+  const filteredPhaseGroups = useMemo(() => {
+    return ERP_MODULES.filter((group: any) => group.phase && Array.isArray(group.items))
+      .map((group: any) => ({
+        ...group,
+        items: group.items.filter((item: any) => enabledModules.includes(item.id))
+      }))
+      .filter((group: any) => group.items.length > 0);
+  }, [enabledModules]);
+
+  const allAvailableModules = useMemo(() => {
+    const list: Array<{ id: string; name: string; phase: string; icon: any; count?: number; table?: string }> = [];
+    ERP_MODULES.forEach((g: any) => {
+      if (g.phase && Array.isArray(g.items)) {
+        g.items.forEach((item: any) => {
+          list.push({ ...item, phase: g.phase });
+        });
+      }
+    });
+    return list;
+  }, []);
+
+  const handleToggleModule = (id: string) => {
+    setPendingModules((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setPendingModules(allAvailableModules.map((m) => m.id));
+  };
+
+  const handleSelectCore = () => {
+    setPendingModules([
+      'company',
+      'subscriptions',
+      'admin',
+      'products',
+      'hr',
+      'purchase',
+      'inventory',
+      'sales',
+      'banking',
+      'statutory'
+    ]);
+  };
+
+  const handleClearAll = () => {
+    setPendingModules(['company']);
+  };
+
+  const handleSaveModules = () => {
+    setIsSavingModules(true);
+    setTimeout(() => {
+      localStorage.setItem('zuno_enabled_modules', JSON.stringify(pendingModules));
+      setEnabledModules(pendingModules);
+      window.dispatchEvent(new Event('zuno_modules_updated'));
+      setIsSavingModules(false);
+      setShowUpdateModal(false);
+    }, 250);
+  };
 
   const togglePhase = (phase: string) => {
     setCollapsedPhases((prev) => ({ ...prev, [phase]: !prev[phase] }));
@@ -208,8 +322,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             </button>
           </div>
 
-          {/* Phase Groups */}
-          {ERP_MODULES.filter((group: any) => group.phase && Array.isArray(group.items)).map((group: any) => {
+          {/* Phase Groups (Filtered by Enabled Modules) */}
+          {filteredPhaseGroups.map((group: any) => {
             const isCollapsed = collapsedPhases[group.phase];
             return (
               <div key={group.phase} className="space-y-1">
@@ -264,6 +378,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
           })}
         </div>
 
+        {/* Update Modules Button at Sidebar Bottom */}
+        <div className="p-2.5 border-t border-slate-800/80 bg-slate-950/90 relative z-10 shrink-0">
+          <button
+            onClick={() => {
+              setPendingModules([...enabledModules]);
+              setModuleSearch('');
+              setShowUpdateModal(true);
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-slate-900/60 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/30 hover:border-blue-400 text-blue-200 transition-all duration-200 shadow-sm cursor-pointer group"
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4 text-cyan-400 group-hover:rotate-90 transition-transform duration-300" />
+              <span>Update Modules</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              {enabledModules.length} Active
+            </span>
+          </button>
+        </div>
+
         {/* Futuristic Mission Control Footer */}
         <div className="p-3 bg-slate-950 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-1.5">
@@ -276,6 +410,184 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
       {/* Voice-Guided Assistant Audio Walkthrough Modal */}
       <VoiceGuidedAssistant isOpen={showVoiceGuide} onClose={() => setShowVoiceGuide(false)} />
+
+      {/* Update Modules Modal Dialog */}
+      {showUpdateModal && (
+        <div
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setShowUpdateModal(false)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full shadow-2xl p-6 relative max-h-[90vh] flex flex-col text-slate-200 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-cyan-400 shadow-glow-sm">
+                  <Sliders className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-100 text-lg">Update Active ERP Modules</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Select which modules to display in your navigation sidebar ({pendingModules.length} of {allAvailableModules.length} enabled)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUpdateModal(false)}
+                className="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Filter & Search Bar */}
+            <div className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-b border-slate-800/80 shrink-0">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+                <input
+                  type="text"
+                  value={moduleSearch}
+                  onChange={(e) => setModuleSearch(e.target.value)}
+                  placeholder="Search modules (e.g. Sales, HR, Banking)..."
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-blue-300 bg-blue-900/30 hover:bg-blue-900/50 border border-blue-500/30 rounded-lg transition-colors cursor-pointer"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectCore}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-emerald-300 bg-emerald-900/30 hover:bg-emerald-900/50 border border-emerald-500/30 rounded-lg transition-colors cursor-pointer"
+                >
+                  Core Only
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            {/* Modules Checkbox Grid */}
+            <div className="flex-1 overflow-y-auto py-3 space-y-4 pr-1">
+              {ERP_MODULES.filter((group: any) => group.phase && Array.isArray(group.items)).map((group: any) => {
+                const groupItems = group.items.filter((item: any) =>
+                  !moduleSearch ||
+                  item.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
+                  group.phase.toLowerCase().includes(moduleSearch.toLowerCase())
+                );
+
+                if (groupItems.length === 0) return null;
+
+                return (
+                  <div key={group.phase} className="space-y-2">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>{group.phase}</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {groupItems.map((item: any) => {
+                        const Icon = item.icon;
+                        const isChecked = pendingModules.includes(item.id);
+
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleToggleModule(item.id)}
+                            className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                              isChecked
+                                ? 'bg-blue-950/40 border-blue-500/40 text-blue-100 shadow-sm'
+                                : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:bg-slate-900/80 hover:text-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                                  isChecked
+                                    ? 'bg-blue-600/30 border-blue-400/50 text-cyan-300'
+                                    : 'bg-slate-900 border-slate-800 text-slate-500'
+                                }`}
+                              >
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-semibold truncate">{item.name}</div>
+                                {item.table && (
+                                  <div className="text-[10px] font-mono text-slate-500 truncate">
+                                    {item.table}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="shrink-0">
+                              {isChecked ? (
+                                <div className="w-5 h-5 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-lg border border-slate-700 bg-slate-900/80" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="pt-4 border-t border-slate-800 flex items-center justify-between shrink-0">
+              <span className="text-xs text-slate-400">
+                <span className="text-cyan-400 font-bold font-mono">{pendingModules.length}</span> modules selected
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUpdateModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isSavingModules || pendingModules.length === 0}
+                  onClick={handleSaveModules}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 transition-all"
+                >
+                  {isSavingModules ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating Modules...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save & Update Modules</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
