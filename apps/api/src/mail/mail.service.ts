@@ -105,7 +105,7 @@ export class MailService {
         return { success: true, message: `Verification code sent to ${toEmail}` };
       } catch (err: any) {
         this.logger.error(`Failed to send email via Gmail SMTP: ${err.message}`);
-        // Fall through to fallback
+        throw new Error(`Failed to dispatch email via Gmail SMTP: ${err.message}`);
       }
     }
 

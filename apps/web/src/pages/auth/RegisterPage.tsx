@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../../stores/auth-store';
 import { apiClient } from '../../services/api';
 import {
@@ -149,16 +150,21 @@ export const RegisterPage: React.FC = () => {
 
     setIsSendingOtp(true);
     try {
-      await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
+      try {
+        await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
+      } catch (postErr: any) {
+        // Also attempt direct localhost:4000
+        await axios.post('http://localhost:4000/api/v1/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
+      }
       setGeneratedRegOtp(null);
       setStep('otp');
       setOtpTimer(60);
     } catch (err: any) {
-      // Offline/fallback OTP generation
-      const localOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedRegOtp(localOtp);
-      setStep('otp');
-      setOtpTimer(60);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to dispatch registration OTP to your Gmail. Please verify your email and network.';
+      setError(errMsg);
     } finally {
       setIsSendingOtp(false);
     }
@@ -177,20 +183,25 @@ export const RegisterPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // Validate OTP strictly
+      // Validate OTP strictly with backend or Vite engine
       try {
         await apiClient.post('/auth/register-verify-otp', {
           email: formData.email.trim().toLowerCase(),
           otp: code
         });
       } catch (err: any) {
-        if (generatedRegOtp) {
-          if (code !== generatedRegOtp) {
-            setOtpError('Incorrect verification code. Please check the code sent to your email.');
-            return;
-          }
-        } else {
-          setOtpError(err?.response?.data?.message || err?.message || 'Invalid or expired verification code.');
+        try {
+          await axios.post('http://localhost:4000/api/v1/auth/register-verify-otp', {
+            email: formData.email.trim().toLowerCase(),
+            otp: code
+          });
+        } catch (innerErr: any) {
+          const errMsg =
+            innerErr?.response?.data?.message ||
+            err?.response?.data?.message ||
+            err?.message ||
+            'Invalid or expired verification code. Please check your Gmail.';
+          setOtpError(errMsg);
           return;
         }
       }

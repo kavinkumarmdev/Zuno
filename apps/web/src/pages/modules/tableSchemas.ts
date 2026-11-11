@@ -660,7 +660,7 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "User Full Name / Login",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. Kavin"
+      "placeholder": "e.g. Alex Morgan"
     },
     {
       "key": "code",

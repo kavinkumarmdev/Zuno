@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../../stores/auth-store';
 import { apiClient } from '../../services/api';
 import {
@@ -102,17 +103,22 @@ export const LoginPage: React.FC = () => {
     setForgotErrors({});
 
     try {
-      // 1. Dispatch real email via backend API from kavimkumarm6383@gmail.com
-      await apiClient.post('/auth/forgot-password', { email: trimmed });
+      // 1. Dispatch real email via backend API / Vite middleware from kavimkumarm6383@gmail.com
+      try {
+        await apiClient.post('/auth/forgot-password', { email: trimmed });
+      } catch (err: any) {
+        // Fallback attempt direct localhost:4000
+        await axios.post('http://localhost:4000/api/v1/auth/forgot-password', { email: trimmed });
+      }
       setForgotOtpSent(true);
       setForgotTimer(60);
       setGeneratedForgotOtp(null);
     } catch (err: any) {
-      // Fallback local OTP generation for offline/standalone execution so user is not blocked
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedForgotOtp(otp);
-      setForgotOtpSent(true);
-      setForgotTimer(60);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to dispatch verification OTP to your Gmail. Please verify your connection or email.';
+      setForgotErrors({ email: errMsg });
     } finally {
       setIsSendingOtp(false);
     }
@@ -147,7 +153,7 @@ export const LoginPage: React.FC = () => {
 
     setIsResetting(true);
     try {
-      // Attempt verification and password reset with backend
+      // Attempt verification and password reset with backend / dev engine
       try {
         await apiClient.post('/auth/reset-password', {
           email: forgotEmail.trim(),
@@ -155,15 +161,18 @@ export const LoginPage: React.FC = () => {
           newPassword: forgotNewPassword
         });
       } catch (err: any) {
-        // If backend failed, check whether local fallback was used
-        if (generatedForgotOtp) {
-          if (forgotOtpInput.trim() !== generatedForgotOtp) {
-            setForgotErrors({ otp: 'Incorrect OTP code provided. Please enter the valid code sent to your email.' });
-            return;
-          }
-        } else {
-          // Strict validation failure from backend
-          const errorMsg = err?.response?.data?.message || err?.message || 'Invalid or expired OTP code. Please try again.';
+        try {
+          await axios.post('http://localhost:4000/api/v1/auth/reset-password', {
+            email: forgotEmail.trim(),
+            otp: forgotOtpInput.trim(),
+            newPassword: forgotNewPassword
+          });
+        } catch (innerErr: any) {
+          const errorMsg =
+            innerErr?.response?.data?.message ||
+            err?.response?.data?.message ||
+            err?.message ||
+            'Invalid or expired OTP code. Please enter the valid code sent to your email.';
           setForgotErrors({ otp: errorMsg });
           return;
         }

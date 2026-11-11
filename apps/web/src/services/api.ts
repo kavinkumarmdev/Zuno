@@ -8,7 +8,7 @@ const isLocalhost =
     window.location.hostname.startsWith('192.168.'));
 
 export const PRODUCTION_API_URL = 'https://zuno-erp-api.onrender.com/api/v1';
-export const LOCAL_API_URL = 'http://localhost:4000/api/v1';
+export const LOCAL_API_URL = '/api/v1';
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
