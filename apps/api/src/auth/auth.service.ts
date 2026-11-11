@@ -3,7 +3,8 @@ import {
   UnauthorizedException,
   BadRequestException,
   ConflictException,
-  Logger
+  Logger,
+  OnModuleInit
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -15,7 +16,7 @@ import { AuthSessionResponse, JwtPayload, UserType, UserStatus } from '@zuno/sha
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
 
   private readonly otpStore = new Map<string, { code: string; expiresAt: number }>();
@@ -26,6 +27,217 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly mailService: MailService
   ) {}
+
+  async onModuleInit() {
+    await this.ensureMasterUserInDatabase();
+  }
+
+  /**
+   * Ensure master accounts (kavinkumarm987@zuno.in, admin987@zuno.in, kavin) exist in tb_user
+   * with their passwords encrypted via bcrypt and stored in tb_user_credential table
+   */
+  async ensureMasterUserInDatabase(preferredIdentifier?: string): Promise<any> {
+    try {
+      // 1. Ensure master tenant exists in tb_tenant table
+      let tenant = await (this.prisma as any).tbTenant.findUnique({
+        where: { id: '30000000-0000-0000-0000-000000000001' }
+      }).catch(() => null);
+
+      if (!tenant) {
+        tenant = await (this.prisma as any).tbTenant.create({
+          data: {
+            id: '30000000-0000-0000-0000-000000000001',
+            tenant_code: 'KAVIN-CORP',
+            tenant_name: 'Kavin Global Enterprises Ltd',
+            account_status: 'ACTIVE',
+            registration_source: 'SYSTEM_SEED',
+            registered_time: new Date(),
+            activated_time: new Date()
+          }
+        }).catch(() => null);
+      }
+
+      if (!tenant) {
+        tenant = {
+          id: '30000000-0000-0000-0000-000000000001',
+          tenant_code: 'KAVIN-CORP',
+          tenant_name: 'Kavin Global Enterprises Ltd',
+          account_status: 'ACTIVE'
+        };
+      }
+
+      // 2. Ensure default company exists in tb_company table
+      let company = await (this.prisma as any).tbCompany.findUnique({
+        where: { id: '40000000-0000-0000-0000-000000000001' }
+      }).catch(() => null);
+
+      if (!company) {
+        company = await (this.prisma as any).tbCompany.create({
+          data: {
+            id: '40000000-0000-0000-0000-000000000001',
+            tenant_id: tenant.id,
+            company_code: 'KAVIN-HQ',
+            company_name: 'Kavin Industries Private Limited',
+            legal_name: 'Kavin Industries Private Limited',
+            business_type: 'Manufacturing & Export',
+            ownership_type: 'Private Limited',
+            pan_number: 'AAACK1234F',
+            gstin: '33AAACK1234F1Z5',
+            currency_code: 'INR',
+            country_code: 'IN',
+            company_status: 'ACTIVE'
+          }
+        }).catch(() => null);
+      }
+
+      // Ensure second company exists in tb_company table (for Kavin multi-company switching)
+      const company2 = await (this.prisma as any).tbCompany.findUnique({
+        where: { id: '40000000-0000-0000-0000-000000000002' }
+      }).catch(() => null);
+
+      if (!company2) {
+        await (this.prisma as any).tbCompany.create({
+          data: {
+            id: '40000000-0000-0000-0000-000000000002',
+            tenant_id: tenant.id,
+            company_code: 'KAVIN-LOG',
+            company_name: 'Kavin Logistics & Tech Ltd',
+            legal_name: 'Kavin Logistics & Tech Ltd',
+            business_type: 'Logistics & Supply Chain',
+            currency_code: 'INR',
+            country_code: 'IN',
+            company_status: 'ACTIVE'
+          }
+        }).catch(() => null);
+      }
+
+      // 3. Ensure branch exists in tb_company_branch table
+      let branch = await (this.prisma as any).tbCompanyBranch.findUnique({
+        where: { id: '50000000-0000-0000-0000-000000000001' }
+      }).catch(() => null);
+
+      if (!branch) {
+        branch = await (this.prisma as any).tbCompanyBranch.create({
+          data: {
+            id: '50000000-0000-0000-0000-000000000001',
+            tenant_id: tenant.id,
+            name: 'Chennai Central Plant & HQ',
+            description: 'Primary corporate office and industrial plant',
+            status: 'ACTIVE'
+          }
+        }).catch(() => null);
+      }
+
+      // 4. Encrypt password using bcrypt for database table storage
+      const passwordHash = await bcrypt.hash('Kavin@987', 10);
+
+      // 5. Seed master accounts in tb_user and encrypted passwords in tb_user_credential
+      const masterAccounts = [
+        {
+          id: '60000000-0000-0000-0000-000000000001',
+          username: 'kavin',
+          full_name: 'Kavin',
+          email: 'kavinkumarm987@zuno.in',
+          mobile: '+919876543210',
+          user_type: UserType.OWNER
+        },
+        {
+          id: '60000000-0000-0000-0000-000000000002',
+          username: 'admin',
+          full_name: 'Administrator',
+          email: 'admin987@zuno.in',
+          mobile: '+919876543211',
+          user_type: UserType.OWNER
+        },
+        {
+          id: '60000000-0000-0000-0000-000000000003',
+          username: 'kavin.corp',
+          full_name: 'Kavin Kumar',
+          email: 'kavimkumarm6383@gmail.com',
+          mobile: '+919876543210',
+          user_type: UserType.OWNER
+        },
+        {
+          id: '60000000-0000-0000-0000-000000000004',
+          username: 'kavin.admin',
+          full_name: 'Kavin',
+          email: 'kavin@zuno.com',
+          mobile: '+919876543210',
+          user_type: UserType.OWNER
+        }
+      ];
+
+      let targetUser = null;
+
+      for (const acc of masterAccounts) {
+        let u = await (this.prisma as any).tbUser.findFirst({
+          where: {
+            OR: [
+              { id: acc.id },
+              { email: acc.email },
+              { username: acc.username }
+            ]
+          }
+        }).catch(() => null);
+
+        if (!u) {
+          u = await (this.prisma as any).tbUser.create({
+            data: {
+              id: acc.id,
+              tenant_id: tenant.id,
+              username: acc.username,
+              full_name: acc.full_name,
+              email: acc.email,
+              mobile: acc.mobile,
+              user_type: acc.user_type,
+              user_status: UserStatus.ACTIVE,
+              email_verified: true,
+              mobile_verified: true
+            }
+          }).catch(() => null);
+        }
+
+        if (u) {
+          const existingCred = await (this.prisma as any).tbUserCredential.findFirst({
+            where: { user_id: u.id }
+          }).catch(() => null);
+
+          if (!existingCred) {
+            await (this.prisma as any).tbUserCredential.create({
+              data: {
+                user_id: u.id,
+                tenant_id: tenant.id,
+                password_hash: passwordHash,
+                failed_attempts: 0
+              }
+            }).catch(() => null);
+          } else {
+            await (this.prisma as any).tbUserCredential.update({
+              where: { id: existingCred.id },
+              data: { password_hash: passwordHash, failed_attempts: 0 }
+            }).catch(() => null);
+          }
+        }
+
+        const norm = (preferredIdentifier || '').toLowerCase();
+        if (
+          u &&
+          (norm === acc.email.toLowerCase() ||
+            norm === acc.username.toLowerCase() ||
+            (norm === 'kavin' && acc.username === 'kavin') ||
+            (norm === 'admin' && acc.username === 'admin'))
+        ) {
+          targetUser = u;
+        }
+      }
+
+      this.logger.log('✅ Verified master user tables and encrypted credentials in database');
+      return targetUser || masterAccounts[0];
+    } catch (err: any) {
+      this.logger.warn(`Master user table setup note: ${err.message}`);
+      return null;
+    }
+  }
 
   /**
    * Dispatch real 6-digit OTP email to user from kavimkumarm6383@gmail.com
@@ -225,7 +437,8 @@ export class AuthService {
   }
 
   /**
-   * Step 1 of Sign-In: Validate credentials strictly and dispatch 6-digit OTP to user's registered email
+   * Step 1 of Sign-In: Validate credentials against tb_user & tb_user_credential tables
+   * and dispatch 6-digit OTP to user's registered email
    */
   async loginRequestOtp(dto: LoginDto): Promise<{ success: boolean; email: string; message: string }> {
     const rawInput = (dto.usernameOrEmail || '').trim();
@@ -234,13 +447,7 @@ export class AuthService {
     }
     const normalizedInput = rawInput.toLowerCase();
 
-    // 1. Verify credentials first
-    const isMasterUser =
-      (normalizedInput === 'kavin' ||
-        normalizedInput === 'kavin@zuno.com' ||
-        normalizedInput === 'admin') &&
-      dto.password === 'Kavin@987';
-
+    // 1. Fetch user directly from database table tb_user
     let user: any = null;
     try {
       user = await (this.prisma as any).tbUser.findFirst({
@@ -253,31 +460,60 @@ export class AuthService {
           ]
         }
       });
-    } catch {}
-
-    if (!user) {
-      if (!isMasterUser) {
-        throw new UnauthorizedException('Invalid username or password. Please verify your credentials.');
-      }
-      user = {
-        email: 'kavimkumarm6383@gmail.com',
-        username: 'Kavin'
-      };
-    } else if (!isMasterUser) {
-      // Verify password in tbUserCredential
-      const credential = await (this.prisma as any).tbUserCredential.findFirst({
-        where: { user_id: user.id }
-      });
-      if (!credential) {
-        throw new UnauthorizedException('Invalid username or password.');
-      }
-      const isPasswordValid = await bcrypt.compare(dto.password, credential.password_hash);
-      if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid username or password.');
-      }
+    } catch (err: any) {
+      this.logger.warn(`Database user query error: ${err.message}`);
     }
 
-    // Credentials are valid! Dispatch real 6-digit OTP
+    // Master accounts check
+    const isMasterUser =
+      normalizedInput === 'kavinkumarm987@zuno.in' ||
+      normalizedInput === 'admin987@zuno.in' ||
+      normalizedInput === 'kavimkumarm6383@gmail.com' ||
+      normalizedInput === 'kavin@zuno.com' ||
+      normalizedInput === 'kavin' ||
+      normalizedInput === 'admin';
+
+    // If master user not in database table, ensure it is created in tb_user with encrypted password in tb_user_credential
+    if (!user && isMasterUser) {
+      user = await this.ensureMasterUserInDatabase(rawInput);
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid username or password. Please verify your credentials.');
+    }
+
+    if (user.user_status === 'LOCKED' || user.user_status === 'DISABLED') {
+      throw new UnauthorizedException(`Account is ${user.user_status}. Please contact system administrator.`);
+    }
+
+    // 2. Fetch encrypted password hash directly from database table tb_user_credential
+    let credential = await (this.prisma as any).tbUserCredential.findFirst({
+      where: { user_id: user.id }
+    });
+
+    if (!credential && isMasterUser) {
+      const passwordHash = await bcrypt.hash('Kavin@987', 10);
+      credential = await (this.prisma as any).tbUserCredential.create({
+        data: {
+          user_id: user.id,
+          tenant_id: user.tenant_id,
+          password_hash: passwordHash,
+          failed_attempts: 0
+        }
+      }).catch(() => null);
+    }
+
+    if (!credential || !credential.password_hash) {
+      throw new UnauthorizedException('Invalid username or password.');
+    }
+
+    // 3. Verify password against encrypted bcrypt hash stored in tb_user_credential table
+    const isPasswordValid = await bcrypt.compare(dto.password, credential.password_hash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid username or password. Please verify your credentials.');
+    }
+
+    // 4. Credentials strictly validated from database tables! Dispatch 6-digit OTP
     const targetEmail = user.email || 'kavimkumarm6383@gmail.com';
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpKey = `${targetEmail.toLowerCase()}:login`;
@@ -287,6 +523,20 @@ export class AuthService {
       expiresAt: Date.now() + 10 * 60 * 1000
     });
 
+    // Save OTP record into database table tb_user_otp
+    try {
+      await (this.prisma as any).tbUserOtp.create({
+        data: {
+          tenant_id: user.tenant_id,
+          name: `${user.username}:login`,
+          description: otp,
+          status: 'ACTIVE',
+          created_by: user.id
+        }
+      });
+    } catch {}
+
+    // Dispatch real email via MailService (kavimkumarm6383@gmail.com)
     await this.mailService.sendOtpEmail(targetEmail, otp, 'Sign-In Authentication');
 
     const [local, domain] = targetEmail.split('@');
@@ -307,20 +557,24 @@ export class AuthService {
     const normalizedInput = rawInput.toLowerCase();
 
     let targetEmail = normalizedInput;
+    try {
+      const u = await (this.prisma as any).tbUser.findFirst({
+        where: {
+          OR: [
+            { email: { equals: rawInput, mode: 'insensitive' } },
+            { username: { equals: rawInput, mode: 'insensitive' } },
+            { email: rawInput },
+            { username: rawInput }
+          ]
+        }
+      });
+      if (u?.email) targetEmail = u.email.toLowerCase();
+    } catch {}
+
     if (normalizedInput === 'kavin' || normalizedInput === 'admin') {
-      targetEmail = 'kavimkumarm6383@gmail.com';
-    } else {
-      try {
-        const u = await (this.prisma as any).tbUser.findFirst({
-          where: {
-            OR: [
-              { email: { equals: rawInput, mode: 'insensitive' } },
-              { username: { equals: rawInput, mode: 'insensitive' } }
-            ]
-          }
-        });
-        if (u?.email) targetEmail = u.email.toLowerCase();
-      } catch {}
+      if (!targetEmail.includes('@')) {
+        targetEmail = 'kavinkumarm987@zuno.in';
+      }
     }
 
     const otpKey = `${targetEmail}:login`;
@@ -334,25 +588,18 @@ export class AuthService {
     // Consume OTP
     this.otpStore.delete(otpKey);
 
-    // Call login to complete session issuance
+    // Call login with database lookup and validation
     return this.login(dto, ipAddress, userAgent);
   }
 
   /**
-   * Authenticate user with credentials and issue tokens
+   * Authenticate user with credentials from database tables and issue tokens
    */
   async login(dto: LoginDto, ipAddress = '127.0.0.1', userAgent = 'Unknown'): Promise<AuthSessionResponse> {
     const rawInput = (dto.usernameOrEmail || '').trim();
     const normalizedInput = rawInput.toLowerCase();
 
-    // Check for default master user "Kavin" / "Kavin@987"
-    const isMasterUser =
-      (normalizedInput === 'kavin' ||
-        normalizedInput === 'kavin@zuno.com' ||
-        normalizedInput === 'admin') &&
-      dto.password === 'Kavin@987';
-
-    // 1. Find user by email or username
+    // 1. Find user from database table tb_user
     let user: any = null;
     try {
       user = await (this.prisma as any).tbUser.findFirst({
@@ -369,36 +616,19 @@ export class AuthService {
       this.logger.warn(`Database user lookup fallback: ${err}`);
     }
 
+    const isMasterUser =
+      normalizedInput === 'kavinkumarm987@zuno.in' ||
+      normalizedInput === 'admin987@zuno.in' ||
+      normalizedInput === 'kavimkumarm6383@gmail.com' ||
+      normalizedInput === 'kavin@zuno.com' ||
+      normalizedInput === 'kavin' ||
+      normalizedInput === 'admin';
+
+    if (!user && isMasterUser) {
+      user = await this.ensureMasterUserInDatabase(rawInput);
+    }
+
     if (!user) {
-      if (isMasterUser) {
-        const dummyUser = {
-          id: '60000000-0000-0000-0000-000000000001',
-          tenant_id: '30000000-0000-0000-0000-000000000001',
-          username: 'Kavin',
-          full_name: 'Kavin',
-          email: 'kavin@zuno.com',
-          user_type: UserType.OWNER,
-          user_status: UserStatus.ACTIVE,
-        };
-        const dummyTenant = {
-          id: '30000000-0000-0000-0000-000000000001',
-          tenant_code: 'KAVIN-CORP',
-          tenant_name: 'Kavin Global Enterprises Ltd',
-          account_status: 'ACTIVE',
-        };
-        const dummyCompany = {
-          id: '40000000-0000-0000-0000-000000000001',
-          company_code: 'KAVIN-HQ',
-          company_name: 'Kavin Industries Private Limited',
-          currency_code: 'INR',
-        };
-        const dummyBranch = {
-          id: '50000000-0000-0000-0000-000000000001',
-          name: 'Chennai Central Plant & HQ',
-          branch_name: 'Chennai Central Plant & HQ',
-        };
-        return this.buildAuthSession(dummyUser, dummyTenant, dummyCompany, dummyBranch);
-      }
       throw new UnauthorizedException('Invalid credentials provided');
     }
 
@@ -406,37 +636,31 @@ export class AuthService {
       throw new UnauthorizedException(`Account is ${user.user_status}. Please contact system administrator.`);
     }
 
-    // If master user matches master password, allow immediate login with master credentials!
-    if (isMasterUser) {
-      let tenant = null;
-      let company = null;
-      let branch = null;
-      try {
-        tenant = await (this.prisma as any).tbTenant.findUnique({ where: { id: user.tenant_id } });
-        company = await (this.prisma as any).tbCompany.findFirst({ where: { tenant_id: user.tenant_id } });
-        branch = await (this.prisma as any).tbCompanyBranch.findFirst({ where: { tenant_id: user.tenant_id } });
-      } catch {}
-      return this.buildAuthSession(
-        user,
-        tenant || { id: user.tenant_id, tenant_code: 'KAVIN-CORP', tenant_name: 'Kavin Global Enterprises Ltd', account_status: 'ACTIVE' },
-        company || { id: '40000000-0000-0000-0000-000000000001', company_code: 'KAVIN-HQ', company_name: 'Kavin Industries Private Limited', currency_code: 'INR' },
-        branch || { id: '50000000-0000-0000-0000-000000000001', name: 'Chennai Central Plant & HQ', branch_name: 'Chennai Central Plant & HQ' }
-      );
-    }
-
-    // 2. Fetch credential
-    const credential = await (this.prisma as any).tbUserCredential.findFirst({
+    // 2. Fetch encrypted password from database table tb_user_credential
+    let credential = await (this.prisma as any).tbUserCredential.findFirst({
       where: { user_id: user.id }
     });
 
-    if (!credential) {
+    if (!credential && isMasterUser) {
+      const passwordHash = await bcrypt.hash('Kavin@987', 10);
+      credential = await (this.prisma as any).tbUserCredential.create({
+        data: {
+          user_id: user.id,
+          tenant_id: user.tenant_id,
+          password_hash: passwordHash,
+          failed_attempts: 0
+        }
+      }).catch(() => null);
+    }
+
+    if (!credential || !credential.password_hash) {
       throw new UnauthorizedException('Account credential record missing');
     }
 
-    // 3. Verify password
+    // 3. Verify password against encrypted bcrypt hash in database table
     const isPasswordValid = await bcrypt.compare(dto.password, credential.password_hash);
     if (!isPasswordValid) {
-      // Record failed attempt
+      // Record failed attempt in tb_user_credential
       const failed = (credential.failed_attempts || 0) + 1;
       const shouldLock = failed >= 5;
       try {
@@ -457,7 +681,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials provided');
     }
 
-    // Reset failed attempts & update last login
+    // Reset failed attempts & update last login in tb_user_credential and tb_user
     try {
       await (this.prisma as any).tbUserCredential.update({
         where: { id: credential.id },
@@ -469,7 +693,7 @@ export class AuthService {
       });
     } catch {}
 
-    // 4. Log in tb_login_history
+    // 4. Log in tb_login_history database table
     try {
       await (this.prisma as any).tbLoginHistory.create({
         data: {
@@ -483,7 +707,7 @@ export class AuthService {
       });
     } catch {}
 
-    // 5. Fetch Tenant
+    // 5. Fetch Tenant from database table tb_tenant
     let tenant = null;
     try {
       tenant = await (this.prisma as any).tbTenant.findUnique({
@@ -491,19 +715,28 @@ export class AuthService {
       });
     } catch {}
 
-    // 6. Fetch Active Company & Branch
-    let company = null;
-    let branch = null;
+    // 6. Fetch all companies for this tenant from database table tb_company
+    let companies: any[] = [];
     try {
-      company = await (this.prisma as any).tbCompany.findFirst({
-        where: { tenant_id: user.tenant_id }
-      });
-      branch = await (this.prisma as any).tbCompanyBranch.findFirst({
+      companies = await (this.prisma as any).tbCompany.findMany({
         where: { tenant_id: user.tenant_id }
       });
     } catch {}
 
-    return this.buildAuthSession(user, tenant, company, branch);
+    const company = companies[0] || null;
+
+    // 7. Fetch all branches for this tenant from database table tb_company_branch
+    let branches: any[] = [];
+    try {
+      branches = await (this.prisma as any).tbCompanyBranch.findMany({
+        where: { tenant_id: user.tenant_id }
+      });
+    } catch {}
+
+    const branch = branches[0] || null;
+
+    // Return authenticated session from real database entities
+    return this.buildAuthSession(user, tenant, company, branch, companies, branches);
   }
 
   /**
@@ -562,7 +795,14 @@ export class AuthService {
   /**
    * Build complete AuthSession response with tokens and scopes
    */
-  private async buildAuthSession(user: any, tenant: any, company: any, branch: any): Promise<AuthSessionResponse> {
+  private async buildAuthSession(
+    user: any,
+    tenant: any,
+    company: any,
+    branch: any,
+    allCompanies: any[] = [],
+    allBranches: any[] = []
+  ): Promise<AuthSessionResponse> {
     const payload: JwtPayload = {
       sub: user.id,
       tenantId: user.tenant_id,
@@ -600,12 +840,44 @@ export class AuthService {
 
     const branchName = branch?.branch_name || branch?.name || 'Main Branch / Headquarters';
 
+    const companiesList = allCompanies.length > 0
+      ? allCompanies.map((c) => ({
+          id: c.id,
+          companyCode: c.company_code || c.code || 'COMP-HQ',
+          companyName: c.company_name || c.name,
+          currencyCode: c.currency_code || 'INR',
+          role: 'Administrator'
+        }))
+      : company
+      ? [{
+          id: company.id,
+          companyCode: company.company_code || company.code || 'COMP-HQ',
+          companyName: company.company_name || company.name,
+          currencyCode: company.currency_code || 'INR',
+          role: 'Administrator'
+        }]
+      : [];
+
+    const branchesList = allBranches.length > 0
+      ? allBranches.map((b) => ({
+          id: b.id,
+          companyId: b.company_id || company?.id || '40000000-0000-0000-0000-000000000001',
+          branchName: b.name || b.branch_name || 'Main Branch'
+        }))
+      : branch
+      ? [{
+          id: branch.id,
+          companyId: company?.id || '40000000-0000-0000-0000-000000000001',
+          branchName: branchName
+        }]
+      : [];
+
     return {
       user: {
         id: user.id,
         tenantId: user.tenant_id,
         username: user.username,
-        fullName: user.full_name,
+        fullName: user.full_name || user.username,
         email: user.email,
         userType: user.user_type,
         userStatus: user.user_status
@@ -618,26 +890,16 @@ export class AuthService {
       },
       activeCompany: company ? {
         id: company.id,
-        companyCode: company.company_code,
-        companyName: company.company_name,
+        companyCode: company.company_code || company.code || 'COMP-HQ',
+        companyName: company.company_name || company.name,
         currencyCode: company.currency_code || 'INR'
       } : undefined,
       activeBranch: branch ? {
         id: branch.id,
         branchName: branchName
       } : undefined,
-      companies: company ? [{
-        id: company.id,
-        companyCode: company.company_code,
-        companyName: company.company_name,
-        currencyCode: company.currency_code || 'INR',
-        role: 'Administrator'
-      }] : [],
-      branches: branch ? [{
-        id: branch.id,
-        companyId: company?.id,
-        branchName: branchName
-      }] : [],
+      companies: companiesList,
+      branches: branchesList,
       permissions: ['*'],
       accessToken,
       refreshToken,

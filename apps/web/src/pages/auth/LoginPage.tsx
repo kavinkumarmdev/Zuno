@@ -313,7 +313,7 @@ export const LoginPage: React.FC = () => {
                           setFieldErrors((prev) => ({ ...prev, usernameOrEmail: undefined }));
                         }
                       }}
-                      placeholder="e.g. admin@acme.com or Kavin"
+                      placeholder="e.g. kavinkumarm987@zuno.in or admin987@zuno.in"
                       className={`w-full pl-9 pr-3.5 py-2 text-xs sm:text-sm bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-xs ${
                         fieldErrors.usernameOrEmail
                           ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'

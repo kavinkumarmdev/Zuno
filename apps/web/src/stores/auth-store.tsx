@@ -206,7 +206,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const rawPass = credentials.password || '';
 
       const isMasterUser =
-        (rawInput === 'kavin' || rawInput === 'kavin@zuno.com' || rawInput === 'admin') &&
+        (rawInput === 'kavinkumarm987@zuno.in' ||
+          rawInput === 'admin987@zuno.in' ||
+          rawInput === 'kavin' ||
+          rawInput === 'admin' ||
+          rawInput === 'kavin@zuno.com' ||
+          rawInput === 'kavimkumarm6383@gmail.com') &&
         rawPass === 'Kavin@987';
 
       if (isMasterUser) {
@@ -277,9 +282,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Offline fallback: strictly verify credentials
       const normalizedInput = rawInput.toLowerCase();
       const isMasterUser =
-        (normalizedInput === 'kavin' ||
+        (normalizedInput === 'kavinkumarm987@zuno.in' ||
+          normalizedInput === 'admin987@zuno.in' ||
+          normalizedInput === 'kavin' ||
+          normalizedInput === 'admin' ||
           normalizedInput === 'kavin@zuno.com' ||
-          normalizedInput === 'admin') &&
+          normalizedInput === 'kavimkumarm6383@gmail.com') &&
         rawPass === 'Kavin@987';
 
       const rawUser = localStorage.getItem('zuno_records_tb_user');
@@ -531,6 +539,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return (
       raw === 'kavin' ||
       raw === 'kavin kumar' ||
+      raw === 'admin' ||
+      email === 'kavinkumarm987@zuno.in' ||
+      email === 'admin987@zuno.in' ||
       email === 'kavin@zuno.com' ||
       email === 'kavimkumarm6383@gmail.com'
     );

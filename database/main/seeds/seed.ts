@@ -142,36 +142,90 @@ async function main() {
     }
   });
 
-  const demoUser = await (prisma as any).tbUser.upsert({
-    where: { id: '60000000-0000-0000-0000-000000000001' },
-    update: {
+  const masterUsers = [
+    {
+      id: '60000000-0000-0000-0000-000000000001',
       username: 'kavin',
       full_name: 'Kavin',
-      email: 'kavin@zuno.com',
+      email: 'kavinkumarm987@zuno.in',
+      mobile: '+919876543210',
+      user_type: 'OWNER'
     },
-    create: {
-      id: '60000000-0000-0000-0000-000000000001',
-      tenant_id: demoTenant.id,
-      username: 'kavin',
+    {
+      id: '60000000-0000-0000-0000-000000000002',
+      username: 'admin',
+      full_name: 'Administrator',
+      email: 'admin987@zuno.in',
+      mobile: '+919876543211',
+      user_type: 'OWNER'
+    },
+    {
+      id: '60000000-0000-0000-0000-000000000003',
+      username: 'kavin.corp',
+      full_name: 'Kavin Kumar',
+      email: 'kavimkumarm6383@gmail.com',
+      mobile: '+919876543210',
+      user_type: 'OWNER'
+    },
+    {
+      id: '60000000-0000-0000-0000-000000000004',
+      username: 'kavin.admin',
       full_name: 'Kavin',
       email: 'kavin@zuno.com',
       mobile: '+919876543210',
-      user_type: 'OWNER',
-      user_status: 'ACTIVE',
-      email_verified: true,
-      mobile_verified: true
+      user_type: 'OWNER'
     }
-  });
+  ];
 
-  await (prisma as any).tbUserCredential.create({
-    data: {
-      user_id: demoUser.id,
-      password_hash: passwordHash,
-      failed_attempts: 0
+  for (const u of masterUsers) {
+    const user = await (prisma as any).tbUser.upsert({
+      where: { id: u.id },
+      update: {
+        username: u.username,
+        full_name: u.full_name,
+        email: u.email,
+        mobile: u.mobile,
+      },
+      create: {
+        id: u.id,
+        tenant_id: demoTenant.id,
+        username: u.username,
+        full_name: u.full_name,
+        email: u.email,
+        mobile: u.mobile,
+        user_type: u.user_type,
+        user_status: 'ACTIVE',
+        email_verified: true,
+        mobile_verified: true
+      }
+    });
+
+    const existingCred = await (prisma as any).tbUserCredential.findFirst({
+      where: { user_id: user.id }
+    }).catch(() => null);
+
+    if (!existingCred) {
+      await (prisma as any).tbUserCredential.create({
+        data: {
+          user_id: user.id,
+          tenant_id: demoTenant.id,
+          password_hash: passwordHash,
+          failed_attempts: 0
+        }
+      }).catch(() => {});
+    } else {
+      await (prisma as any).tbUserCredential.update({
+        where: { id: existingCred.id },
+        data: { password_hash: passwordHash, failed_attempts: 0 }
+      }).catch(() => {});
     }
-  }).catch(() => {});
+  }
 
-  console.log('✅ Seeded Default Master Tenant: kavin / Kavin@987');
+  console.log('✅ Seeded Default Master Tenant Users in tb_user with encrypted passwords in tb_user_credential:');
+  console.log('   - kavinkumarm987@zuno.in / Kavin@987');
+  console.log('   - admin987@zuno.in / Kavin@987');
+  console.log('   - kavimkumarm6383@gmail.com / Kavin@987');
+  console.log('   - kavin / Kavin@987');
   console.log('🎉 Database seeding completed successfully!');
 }
 
