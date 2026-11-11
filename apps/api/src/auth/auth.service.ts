@@ -298,6 +298,23 @@ export class AuthService implements OnModuleInit {
    * Register a new Tenant, Primary Owner, Default Company, Branch, Admin Role and Starter Subscription
    */
   async registerTenant(dto: RegisterTenantDto): Promise<AuthSessionResponse> {
+    // Check if email or mobile is already registered in database
+    try {
+      const existingUser = await (this.prisma as any).tbUser.findFirst({
+        where: {
+          OR: [
+            { email: { equals: dto.email.trim(), mode: 'insensitive' } },
+            { mobile: dto.mobile.trim() }
+          ]
+        }
+      });
+      if (existingUser) {
+        throw new BadRequestException(`Email "${dto.email}" or mobile "${dto.mobile}" is already registered. Please sign in or use another email/mobile.`);
+      }
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+    }
+
     const saltRounds = parseInt(this.configService.get('BCRYPT_SALT_ROUNDS') || '10', 10);
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
 

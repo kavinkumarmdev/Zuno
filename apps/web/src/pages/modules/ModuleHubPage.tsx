@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../services/api';
 import { useAuth } from '../../stores/auth-store';
 import { DataGrid, ColumnDef } from '../../components/ui/DataGrid';
+import { TABLE_SCHEMAS, FormFieldConfig } from './tableSchemas';
 import {
   Package,
   Layers,
@@ -370,190 +371,7 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
   }
 };
 
-interface FormFieldConfig {
-  key: string;
-  label: string;
-  type: 'text' | 'number' | 'email' | 'tel' | 'date' | 'select' | 'textarea';
-  required?: boolean;
-  placeholder?: string;
-  options?: string[];
-  defaultValue?: string;
-}
-
-const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
-  tb_company: [
-    { key: 'name', label: 'Company Legal Name', type: 'text', required: true, placeholder: 'e.g. Kavin Global Industries Ltd' },
-    { key: 'code', label: 'Company Identifier Code', type: 'text', required: true, placeholder: 'e.g. KAVIN-HQ' },
-    { key: 'legal_name', label: 'Trade / Registration Name', type: 'text', placeholder: 'e.g. Kavin Technologies Pvt Ltd' },
-    { key: 'gstin', label: 'GSTIN / Statutory Tax ID', type: 'text', placeholder: 'e.g. 33AAAAA0000A1Z5' },
-    { key: 'currency_code', label: 'Base Operational Currency', type: 'select', options: ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'], defaultValue: 'INR' },
-    { key: 'email', label: 'Corporate Contact Email', type: 'email', placeholder: 'contact@kavin.com' },
-    { key: 'phone', label: 'Corporate Phone', type: 'tel', placeholder: '+91 9876543210' },
-    { key: 'city', label: 'Registered City / State', type: 'text', placeholder: 'e.g. Chennai, Tamil Nadu' },
-    { key: 'description', label: 'Headquarters Address & Details', type: 'textarea', placeholder: 'Registered corporate office location...' }
-  ],
-  tb_company_branch: [
-    { key: 'name', label: 'Branch / Plant Name', type: 'text', required: true, placeholder: 'e.g. Chennai Central Plant & Warehouse' },
-    { key: 'code', label: 'Branch Code', type: 'text', required: true, placeholder: 'e.g. CHN-PLANT-01' },
-    { key: 'city', label: 'City / Region', type: 'text', placeholder: 'e.g. Chennai, Tamil Nadu' },
-    { key: 'manager_name', label: 'Branch Head / Manager', type: 'text', placeholder: 'e.g. Kavin' },
-    { key: 'phone', label: 'Branch Contact Phone', type: 'tel', placeholder: '+91 9876543210' },
-    { key: 'description', label: 'Branch Operational Notes', type: 'textarea', placeholder: 'Warehouse capacity, production lines...' }
-  ],
-  tb_product_master: [
-    { key: 'name', label: 'Product / Material Name', type: 'text', required: true, placeholder: 'e.g. Stainless Steel Rod 12mm' },
-    { key: 'code', label: 'SKU / Part Code', type: 'text', required: true, placeholder: 'e.g. SKU-SSR-12' },
-    { key: 'category', label: 'Product Category', type: 'select', options: ['Raw Materials', 'Finished Goods', 'Sub-Assemblies', 'Consumables', 'Packaging'], defaultValue: 'Raw Materials' },
-    { key: 'uom', label: 'Unit of Measure (UOM)', type: 'select', options: ['PCS', 'KG', 'MTR', 'LTR', 'BOX', 'NOS', 'TON'], defaultValue: 'PCS' },
-    { key: 'amount', label: 'Unit Selling Price (INR)', type: 'number', required: true, placeholder: 'e.g. 1250.00' },
-    { key: 'gst_rate', label: 'Statutory GST Rate', type: 'select', options: ['0%', '5%', '12%', '18%', '28%'], defaultValue: '18%' },
-    { key: 'reorder_level', label: 'Min Safety Reorder Level', type: 'number', placeholder: 'e.g. 50' },
-    { key: 'description', label: 'Technical Specifications', type: 'textarea', placeholder: 'Material grade, tolerance, storage specs...' }
-  ],
-  tb_customer_master: [
-    { key: 'name', label: 'Customer / Business Name', type: 'text', required: true, placeholder: 'e.g. Tata Motors Engineering Ltd' },
-    { key: 'code', label: 'Customer Account Code', type: 'text', required: true, placeholder: 'e.g. CUST-TM-001' },
-    { key: 'contact_person', label: 'Primary Contact Person', type: 'text', placeholder: 'e.g. Ramesh Kumar' },
-    { key: 'email', label: 'Billing Email Address', type: 'email', placeholder: 'accounts@tatamotors.com' },
-    { key: 'phone', label: 'Contact Phone Number', type: 'tel', placeholder: '+91 9876543210' },
-    { key: 'gstin', label: 'Customer GSTIN', type: 'text', placeholder: 'e.g. 27AAACT2727Q1ZW' },
-    { key: 'amount', label: 'Approved Credit Limit (INR)', type: 'number', placeholder: 'e.g. 1000000' },
-    { key: 'city', label: 'City / State', type: 'text', placeholder: 'e.g. Pune, Maharashtra' },
-    { key: 'description', label: 'Billing Address & Terms', type: 'textarea', placeholder: 'Registered delivery address...' }
-  ],
-  tb_supplier_master: [
-    { key: 'name', label: 'Supplier / Vendor Name', type: 'text', required: true, placeholder: 'e.g. Jindal Steel & Power Ltd' },
-    { key: 'code', label: 'Vendor Code', type: 'text', required: true, placeholder: 'e.g. VEND-JS-01' },
-    { key: 'contact_person', label: 'Vendor Representative', type: 'text', placeholder: 'e.g. Suresh Patel' },
-    { key: 'email', label: 'Vendor Email', type: 'email', placeholder: 'sales@jindalsteel.com' },
-    { key: 'phone', label: 'Contact Mobile', type: 'tel', placeholder: '+91 9876543210' },
-    { key: 'gstin', label: 'Vendor GSTIN', type: 'text', placeholder: 'e.g. 06AAACJ0123P1Z1' },
-    { key: 'payment_terms', label: 'Payment Terms', type: 'select', options: ['Immediate', 'Net 15 Days', 'Net 30 Days', 'Net 60 Days', '100% Advance'], defaultValue: 'Net 30 Days' },
-    { key: 'description', label: 'Warehouse / Factory Address', type: 'textarea', placeholder: 'Supplier factory location...' }
-  ],
-  tb_employee_master: [
-    { key: 'name', label: 'Employee Full Name', type: 'text', required: true, placeholder: 'e.g. Anand Venkatesh' },
-    { key: 'code', label: 'Employee ID Code', type: 'text', required: true, placeholder: 'e.g. EMP-2026-042' },
-    { key: 'department', label: 'Department', type: 'select', options: ['Operations', 'Engineering & Production', 'Accounts & Finance', 'Sales & Marketing', 'Human Resources', 'Supply Chain', 'Quality Assurance'], defaultValue: 'Operations' },
-    { key: 'designation', label: 'Job Title / Role', type: 'text', required: true, placeholder: 'e.g. Senior Production Engineer' },
-    { key: 'email', label: 'Work Email Address', type: 'email', placeholder: 'anand@company.com' },
-    { key: 'phone', label: 'Mobile Number', type: 'tel', placeholder: '+91 9876543210' },
-    { key: 'amount', label: 'Monthly Basic Salary (INR)', type: 'number', required: true, placeholder: 'e.g. 65000.00' },
-    { key: 'description', label: 'Emergency Contact & Notes', type: 'textarea', placeholder: 'Blood group, emergency contact details...' }
-  ],
-  tb_sales_invoice: [
-    { key: 'code', label: 'Invoice Number', type: 'text', required: true, placeholder: 'e.g. INV-2026-0891' },
-    { key: 'name', label: 'Customer / Client Name', type: 'text', required: true, placeholder: 'e.g. Apex Industries Pvt Ltd' },
-    { key: 'amount', label: 'Invoice Gross Value (INR)', type: 'number', required: true, placeholder: 'e.g. 85000.00' },
-    { key: 'tax_amount', label: 'GST Tax Amount (INR)', type: 'number', placeholder: 'e.g. 15300.00' },
-    { key: 'date', label: 'Invoice Date', type: 'date' },
-    { key: 'status', label: 'Payment Status', type: 'select', options: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'PAID', 'OVERDUE'], defaultValue: 'PENDING_APPROVAL' },
-    { key: 'description', label: 'Terms of Delivery & Payment', type: 'textarea', placeholder: 'Delivery dispatch terms...' }
-  ],
-  tb_purchase_order: [
-    { key: 'code', label: 'PO Number', type: 'text', required: true, placeholder: 'e.g. PO-2026-1049' },
-    { key: 'name', label: 'Supplier / Vendor Name', type: 'text', required: true, placeholder: 'e.g. Bharat Heavy Metals Ltd' },
-    { key: 'amount', label: 'Total PO Value (INR)', type: 'number', required: true, placeholder: 'e.g. 124000.00' },
-    { key: 'date', label: 'Expected Delivery Date', type: 'date' },
-    { key: 'status', label: 'Order Status', type: 'select', options: ['DRAFT', 'ISSUED_TO_VENDOR', 'GOODS_RECEIVED', 'CLOSED', 'CANCELLED'], defaultValue: 'ISSUED_TO_VENDOR' },
-    { key: 'description', label: 'PO Delivery Instructions', type: 'textarea', placeholder: 'Dispatch gate pass instructions...' }
-  ],
-  tb_accounting_voucher: [
-    { key: 'code', label: 'Voucher Number', type: 'text', required: true, placeholder: 'e.g. VCH-PAY-0082' },
-    { key: 'voucher_type', label: 'Voucher Type', type: 'select', options: ['Payment Voucher', 'Receipt Voucher', 'Journal Voucher', 'Contra Voucher'], defaultValue: 'Payment Voucher' },
-    { key: 'name', label: 'Debit Account Head', type: 'text', required: true, placeholder: 'e.g. Machine Maintenance & Repairs' },
-    { key: 'credit_account', label: 'Credit Account Head', type: 'text', required: true, placeholder: 'e.g. HDFC Bank Current A/c' },
-    { key: 'amount', label: 'Voucher Amount (INR)', type: 'number', required: true, placeholder: 'e.g. 24500.00' },
-    { key: 'description', label: 'Statutory Narration', type: 'textarea', placeholder: 'Being payment made towards factory repairs...' }
-  ],
-  tb_user: [
-    { key: 'name', label: 'User Full Name', type: 'text', required: true, placeholder: 'e.g. Kavin Kumar' },
-    { key: 'code', label: 'Username', type: 'text', required: true, placeholder: 'e.g. kavin' },
-    { key: 'email', label: 'Corporate Work Email', type: 'email', required: true, placeholder: 'kavin@zuno.com' },
-    { key: 'user_type', label: 'Access Role', type: 'select', options: ['OWNER', 'ADMIN', 'MANAGER', 'USER', 'AUDITOR'], defaultValue: 'OWNER' },
-    { key: 'status', label: 'Account Status', type: 'select', options: ['ACTIVE', 'DISABLED', 'LOCKED'], defaultValue: 'ACTIVE' },
-    { key: 'description', label: 'Assigned Department & Modules', type: 'textarea', placeholder: 'Full ERP access...' }
-  ],
-  tb_role: [
-    { key: 'name', label: 'Role Title', type: 'text', required: true, placeholder: 'e.g. Finance Operations Head' },
-    { key: 'code', label: 'Role Identifier Code', type: 'text', required: true, placeholder: 'e.g. ROLE-FIN-HEAD' },
-    { key: 'department', label: 'Department Assignment', type: 'select', options: ['Finance & Accounts', 'Operations & Plants', 'Human Resources', 'Supply Chain', 'Sales & Marketing', 'IT & Security'], defaultValue: 'Finance & Accounts' },
-    { key: 'permission_level', label: 'Access Level', type: 'select', options: ['SUPER_ADMIN', 'DEPARTMENT_HEAD', 'MANAGER', 'OPERATOR', 'AUDITOR_READONLY'], defaultValue: 'MANAGER' },
-    { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'INACTIVE'], defaultValue: 'ACTIVE' },
-    { key: 'description', label: 'Role Responsibilities & Scopes', type: 'textarea', placeholder: 'Authorizations for voucher signing and PO approvals...' }
-  ],
-  tb_product_category: [
-    { key: 'name', label: 'Category Name', type: 'text', required: true, placeholder: 'e.g. Industrial Fasteners & Bolts' },
-    { key: 'code', label: 'Category Code', type: 'text', required: true, placeholder: 'e.g. CAT-FAST-01' },
-    { key: 'hsn_code', label: 'Statutory HSN Code', type: 'text', placeholder: 'e.g. 7318' },
-    { key: 'gst_rate', label: 'Standard GST Slab', type: 'select', options: ['0%', '5%', '12%', '18%', '28%'], defaultValue: '18%' },
-    { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'INACTIVE'], defaultValue: 'ACTIVE' },
-    { key: 'description', label: 'Category Hierarchy & Description', type: 'textarea', placeholder: 'Specifications for procurement and inventory classification...' }
-  ],
-  tb_department: [
-    { key: 'name', label: 'Department Name', type: 'text', required: true, placeholder: 'e.g. Quality Assurance & Testing' },
-    { key: 'code', label: 'Department Code', type: 'text', required: true, placeholder: 'e.g. DEPT-QA-01' },
-    { key: 'head_name', label: 'Head of Department (HOD)', type: 'text', placeholder: 'e.g. Ramesh Kumar' },
-    { key: 'cost_center', label: 'Cost Center Code', type: 'text', placeholder: 'e.g. CC-104' },
-    { key: 'status', label: 'Status', type: 'select', options: ['ACTIVE', 'INACTIVE'], defaultValue: 'ACTIVE' },
-    { key: 'description', label: 'Operational Scope', type: 'textarea', placeholder: 'Plant quality inspection and ISO audit functions...' }
-  ],
-  tb_property_master: [
-    { key: 'name', label: 'Property / Land Asset Name', type: 'text', required: true, placeholder: 'e.g. Ambattur Industrial Plot 4B' },
-    { key: 'code', label: 'Asset Reference Code', type: 'text', required: true, placeholder: 'e.g. PROP-AMB-04B' },
-    { key: 'property_type', label: 'Property Classification', type: 'select', options: ['Freehold Industrial Land', 'Commercial Office Space', 'Factory Shed & Plant', 'Warehouse Facility', 'Leasehold Plot'], defaultValue: 'Factory Shed & Plant' },
-    { key: 'amount', label: 'Book Value / Valuation (INR)', type: 'number', required: true, placeholder: 'e.g. 85000000.00' },
-    { key: 'survey_no', label: 'Survey / Patta Number', type: 'text', placeholder: 'e.g. SF-142/2B' },
-    { key: 'city', label: 'City & Location', type: 'text', placeholder: 'e.g. Chennai, Tamil Nadu' },
-    { key: 'description', label: 'Title Deed & Legal Boundaries', type: 'textarea', placeholder: 'Deed registration details, boundary dimensions...' }
-  ],
-  tb_asset_master: [
-    { key: 'name', label: 'Capital Asset Name', type: 'text', required: true, placeholder: 'e.g. CNC 5-Axis Milling Machine' },
-    { key: 'code', label: 'Asset Tag Number', type: 'text', required: true, placeholder: 'e.g. AST-CNC-004' },
-    { key: 'category', label: 'Asset Category', type: 'select', options: ['Plant & Machinery', 'Electrical & Utilities', 'Heavy Vehicles', 'IT Hardware & Servers', 'Office Furniture'], defaultValue: 'Plant & Machinery' },
-    { key: 'amount', label: 'Purchase Capital Cost (INR)', type: 'number', required: true, placeholder: 'e.g. 4500000.00' },
-    { key: 'serial_no', label: 'Manufacturer Serial No', type: 'text', placeholder: 'e.g. SN-HAAS-2026-99' },
-    { key: 'location', label: 'Factory Bay / Location', type: 'text', placeholder: 'e.g. Bay 3 - Precision Machining Wing' },
-    { key: 'status', label: 'Asset Operational Status', type: 'select', options: ['ACTIVE_RUNNING', 'UNDER_MAINTENANCE', 'IDLE', 'SCRAPPED'], defaultValue: 'ACTIVE_RUNNING' },
-    { key: 'description', label: 'Maintenance Schedule & Warranty', type: 'textarea', placeholder: 'Annual AMC provider and warranty terms...' }
-  ],
-  tb_stock_balance: [
-    { key: 'name', label: 'Product Item Name', type: 'text', required: true, placeholder: 'e.g. Copper Wire Spool 2.5mm' },
-    { key: 'code', label: 'Item SKU Code', type: 'text', required: true, placeholder: 'e.g. SKU-COP-25' },
-    { key: 'warehouse', label: 'Storage Warehouse', type: 'select', options: ['Central Plant Warehouse', 'Raw Material Yard', 'Finished Goods Hub', 'Cold Storage Bay'], defaultValue: 'Central Plant Warehouse' },
-    { key: 'quantity', label: 'Available Stock Quantity', type: 'number', required: true, placeholder: 'e.g. 1500' },
-    { key: 'uom', label: 'Unit of Measure (UOM)', type: 'select', options: ['PCS', 'KG', 'MTR', 'BOX', 'TON'], defaultValue: 'KG' },
-    { key: 'amount', label: 'Valuation Cost (INR)', type: 'number', required: true, placeholder: 'e.g. 480.00' },
-    { key: 'status', label: 'Stock Health', type: 'select', options: ['ADEQUATE', 'REORDER_REQUIRED', 'OVERSTOCKED', 'QUARANTINE'], defaultValue: 'ADEQUATE' },
-    { key: 'description', label: 'Bin & Rack Storage Details', type: 'textarea', placeholder: 'Aisle 4, Rack B2, Bin 12' }
-  ],
-  tb_sales_order: [
-    { key: 'code', label: 'Sales Order Number', type: 'text', required: true, placeholder: 'e.g. SO-2026-4421' },
-    { key: 'name', label: 'Customer Legal Name', type: 'text', required: true, placeholder: 'e.g. Mahindra Automotive Ltd' },
-    { key: 'amount', label: 'Total Order Value (INR)', type: 'number', required: true, placeholder: 'e.g. 350000.00' },
-    { key: 'date', label: 'Expected Dispatch Date', type: 'date' },
-    { key: 'payment_terms', label: 'Payment Terms', type: 'select', options: ['Net 30 Days', 'Net 60 Days', 'LC at Sight', '100% Advance Against PI'], defaultValue: 'Net 30 Days' },
-    { key: 'status', label: 'Order Processing Status', type: 'select', options: ['CONFIRMED', 'IN_PRODUCTION', 'READY_FOR_DISPATCH', 'DELIVERED', 'CANCELLED'], defaultValue: 'CONFIRMED' },
-    { key: 'description', label: 'Customer Purchase Order & Delivery Instructions', type: 'textarea', placeholder: 'Ref Customer PO: MA-PO-992. Gate pass dispatch instructions...' }
-  ],
-  tb_attendance: [
-    { key: 'name', label: 'Employee Full Name', type: 'text', required: true, placeholder: 'e.g. Suresh Patel' },
-    { key: 'code', label: 'Employee ID', type: 'text', required: true, placeholder: 'e.g. EMP-2026-081' },
-    { key: 'date', label: 'Attendance Date', type: 'date' },
-    { key: 'status', label: 'Attendance Status', type: 'select', options: ['PRESENT', 'ABSENT', 'HALF_DAY', 'ON_LEAVE', 'BUSINESS_DUTY'], defaultValue: 'PRESENT' },
-    { key: 'shift', label: 'Assigned Work Shift', type: 'select', options: ['Morning General (09:00 - 18:00)', 'First Shift (06:00 - 14:30)', 'Second Shift (14:30 - 23:00)', 'Night Shift (23:00 - 06:00)'], defaultValue: 'Morning General (09:00 - 18:00)' },
-    { key: 'description', label: 'Biometric Log / Punch Notes', type: 'textarea', placeholder: 'Punch IN: 08:55 AM, Punch OUT: 06:12 PM' }
-  ],
-  tb_work_order: [
-    { key: 'code', label: 'Work Order Number', type: 'text', required: true, placeholder: 'e.g. WO-2026-051' },
-    { key: 'name', label: 'Manufactured Product Item', type: 'text', required: true, placeholder: 'e.g. Hydraulic Actuator Assembly 50kN' },
-    { key: 'quantity', label: 'Production Batch Target (Units)', type: 'number', required: true, placeholder: 'e.g. 200' },
-    { key: 'date', label: 'Scheduled Completion Date', type: 'date' },
-    { key: 'production_line', label: 'Assigned Assembly Line', type: 'select', options: ['Line 1 - Heavy Fabrication', 'Line 2 - Precision Assembly', 'Line 3 - Finishing & Testing'], defaultValue: 'Line 2 - Precision Assembly' },
-    { key: 'status', label: 'Manufacturing Status', type: 'select', options: ['PLANNED', 'IN_PROGRESS', 'QUALITY_HOLD', 'COMPLETED'], defaultValue: 'IN_PROGRESS' },
-    { key: 'description', label: 'BOM Route & Engineering Guidelines', type: 'textarea', placeholder: 'Ensure pressure testing at 250 bar before packaging...' }
-  ]
-};
+// Table schemas imported from ./tableSchemas
 
 export const ModuleHubPage: React.FC = () => {
   const { moduleKey } = useParams<{ moduleKey: string }>();
@@ -742,7 +560,7 @@ export const ModuleHubPage: React.FC = () => {
     setShowCreateModal(true);
   };
 
-  // Validate all record fields and enforce uniqueness & statutory formats
+  // Validate all record fields and enforce uniqueness & statutory formats across A to Z
   const validateRecordForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -763,8 +581,8 @@ export const ModuleHubPage: React.FC = () => {
 
     // 1. Primary Code / Identifier Field Validation & Uniqueness
     const codeField = currentSchema.find(
-      (f) => f.key === 'code' || f.key === 'sku_code' || f.key === 'company_code' || f.key === 'branch_code'
-    );
+      (f) => ['code', 'sku_code', 'company_code', 'branch_code', 'account_code', 'vendor_code', 'employee_code', 'voucher_no', 'po_number', 'invoice_number', 'receipt_number', 'quotation_number', 'grn_number', 'order_number', 'task_code', 'project_code', 'licence_number', 'subscription_code', 'payment_id', 'plan_code'].includes(f.key)
+    ) || currentSchema.find((f) => f.key === 'code');
     const codeKey = codeField?.key;
 
     if (codeKey) {
@@ -773,21 +591,25 @@ export const ModuleHubPage: React.FC = () => {
         errors[codeKey] = `${codeField.label} is required.`;
       } else if (codeVal.length < 2) {
         errors[codeKey] = `${codeField.label} must be at least 2 characters.`;
+      } else if (codeVal.length > 35) {
+        errors[codeKey] = `${codeField.label} cannot exceed 35 characters.`;
+      } else if (!/^[A-Z0-9\-_]+$/i.test(codeVal)) {
+        errors[codeKey] = `${codeField.label} can only contain letters, numbers, hyphens, and underscores.`;
       } else {
         const normalizedCode = codeVal.toUpperCase();
         const isDuplicateCode = allExisting.some((rec: any) => {
           if (isCurrentRecord(rec)) return false;
-          const otherCode = String(rec.code || rec.sku_code || rec.company_code || rec.branch_code || rec.id || '').toUpperCase();
+          const otherCode = String(rec[codeKey] || rec.code || rec.sku_code || rec.company_code || rec.branch_code || rec.id || '').toUpperCase();
           return otherCode === normalizedCode;
         });
 
         if (isDuplicateCode) {
-          errors[codeKey] = `Unique ID Violation: Code "${codeVal}" is already registered. Please provide a unique code.`;
+          errors[codeKey] = `Unique ID Violation: Identifier "${codeVal}" is already registered. Please provide a unique code.`;
         }
       }
     }
 
-    // 2. Validate all other schema fields
+    // 2. Validate all other schema fields from A to Z
     for (const field of currentSchema) {
       if (field.key === codeKey) continue;
       const val = formData[field.key];
@@ -801,7 +623,7 @@ export const ModuleHubPage: React.FC = () => {
 
       if (!strVal) continue; // Optional field is empty, skip format validation
 
-      // A. Corporate Phone / Mobile Number
+      // A. Corporate Phone / Mobile Number (Strict 10 digits starting with 6, 7, 8, or 9)
       if (field.type === 'tel' || field.key.includes('phone') || field.key.includes('mobile')) {
         const digits = strVal.replace(/\D/g, '');
         if (digits.length !== 10) {
@@ -809,10 +631,10 @@ export const ModuleHubPage: React.FC = () => {
         } else if (!/^[6-9][0-9]{9}$/.test(digits)) {
           errors[field.key] = `${field.label} must start with 6, 7, 8, or 9 (standard Indian telecom format).`;
         } else {
-          // Uniqueness check for phone
+          // Cross-record uniqueness check for phone
           const isDuplicatePhone = allExisting.some((rec: any) => {
             if (isCurrentRecord(rec)) return false;
-            const otherPhone = String(rec[field.key] || rec.phone || rec.mobile || '').replace(/\D/g, '');
+            const otherPhone = String(rec[field.key] || rec.phone || rec.mobile || rec.contact_phone || '').replace(/\D/g, '');
             return otherPhone.length === 10 && otherPhone === digits;
           });
           if (isDuplicatePhone) {
@@ -821,14 +643,13 @@ export const ModuleHubPage: React.FC = () => {
         }
       }
 
-      // B. GSTIN / Tax ID
+      // B. GSTIN / Tax ID (Strict 15 chars statutory Indian regex)
       else if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
         const gstinUpper = strVal.toUpperCase();
         const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
         if (!gstinRegex.test(gstinUpper)) {
-          errors[field.key] = `Invalid GSTIN format: Must be 15 alphanumeric characters (e.g. 33AAAAA0000A1Z5).`;
+          errors[field.key] = `Invalid GSTIN format: Must be 15 alphanumeric characters matching Indian GST statutory format (e.g. 33AAAAA0000A1Z5).`;
         } else {
-          // Uniqueness check for GSTIN
           const isDuplicateGstin = allExisting.some((rec: any) => {
             if (isCurrentRecord(rec)) return false;
             const otherGst = String(rec[field.key] || rec.gstin || rec.tax_id || '').trim().toUpperCase();
@@ -840,7 +661,7 @@ export const ModuleHubPage: React.FC = () => {
         }
       }
 
-      // C. PAN Number
+      // C. PAN Number (Strict 10 chars statutory regex)
       else if (field.key === 'pan' || field.key === 'pan_number') {
         const panUpper = strVal.toUpperCase();
         const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
@@ -858,13 +679,12 @@ export const ModuleHubPage: React.FC = () => {
         }
       }
 
-      // D. Corporate / Billing Email
+      // D. Corporate / Billing Email (RFC standard regex)
       else if (field.type === 'email' || field.key.includes('email')) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(strVal)) {
-          errors[field.key] = `Please enter a valid email address format (e.g. name@company.com).`;
+          errors[field.key] = `Please enter a valid RFC email address format (e.g. name@company.com).`;
         } else {
-          // Uniqueness check for email
           const isDuplicateEmail = allExisting.some((rec: any) => {
             if (isCurrentRecord(rec)) return false;
             const otherEmail = String(rec[field.key] || rec.email || '').trim().toLowerCase();
@@ -876,14 +696,116 @@ export const ModuleHubPage: React.FC = () => {
         }
       }
 
-      // E. Amount / Numeric Fields
-      else if (field.type === 'number' || field.key === 'amount' || field.key.includes('price')) {
+      // E. Bank Account Number (9 to 18 numeric digits & unique)
+      else if (['account_number', 'bank_account', 'bank_account_no', 'loan_account_no'].includes(field.key)) {
+        const digitsOnly = strVal.replace(/\D/g, '');
+        if (digitsOnly.length < 9 || digitsOnly.length > 18) {
+          errors[field.key] = `${field.label} must be between 9 and 18 numeric digits.`;
+        } else {
+          const isDuplicateAcc = allExisting.some((rec: any) => {
+            if (isCurrentRecord(rec)) return false;
+            const otherAcc = String(rec[field.key] || rec.account_number || rec.bank_account || '').trim();
+            return otherAcc && otherAcc === strVal;
+          });
+          if (isDuplicateAcc) {
+            errors[field.key] = `Unique Bank Account Violation: Account number "${strVal}" is already registered.`;
+          }
+        }
+      }
+
+      // F. Bank IFSC Code (11 characters)
+      else if (field.key === 'ifsc' || field.key === 'ifsc_code') {
+        const ifscUpper = strVal.toUpperCase();
+        const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+        if (!ifscRegex.test(ifscUpper)) {
+          errors[field.key] = `Invalid IFSC code: Must be 11 characters (e.g. HDFC0001234, 5th char must be 0).`;
+        }
+      }
+
+      // G. HSN / SAC Code (2 to 8 numeric digits)
+      else if (field.key === 'hsn' || field.key === 'hsn_code' || field.key === 'sac_code') {
+        if (!/^\d{2,8}$/.test(strVal)) {
+          errors[field.key] = `${field.label} must be 2 to 8 numeric digits (e.g. 7318 or 998311).`;
+        }
+      }
+
+      // H. Postal PIN Code (6 digits starting with 1-9)
+      else if (field.key === 'postal_code' || field.key === 'pincode' || field.key === 'pin_code') {
+        if (!/^[1-9][0-9]{5}$/.test(strVal)) {
+          errors[field.key] = `${field.label} must be a valid 6-digit Indian PIN code (e.g. 600058).`;
+        }
+      }
+
+      // I. UAN (12 digits) & ESIC IP (17 digits)
+      else if (field.key === 'uan') {
+        if (!/^\d{12}$/.test(strVal)) {
+          errors[field.key] = `UAN must be exactly 12 numeric digits.`;
+        }
+      } else if (field.key === 'ip_number') {
+        if (!/^\d{17}$/.test(strVal)) {
+          errors[field.key] = `ESIC IP Number must be exactly 17 numeric digits.`;
+        }
+      }
+
+      // J. Amount / Numeric Fields (>= 0)
+      else if (field.type === 'number' || ['amount', 'price', 'cost', 'salary', 'basic_salary', 'gross_salary', 'hra', 'allowances', 'tax_amount', 'budget', 'credit_limit', 'valuation', 'balance', 'gross_amount', 'spent_amount', 'emi_amount'].includes(field.key)) {
         const num = Number(strVal);
         if (isNaN(num)) {
-          errors[field.key] = `${field.label} must be a valid numeric amount.`;
+          errors[field.key] = `${field.label} must be a valid numeric value.`;
         } else if (num < 0) {
           errors[field.key] = `${field.label} cannot be negative.`;
         }
+      }
+
+      // K. Percentages and Slabs (0 - 100)
+      else if (field.key.includes('percentage') || field.key.includes('rate') || field.key === 'progress_percentage' || field.key === 'yield_percentage' || field.key === 'gst_rate' || field.key === 'tax_rate' || field.key === 'interest_rate') {
+        const num = parseFloat(strVal.replace('%', ''));
+        if (isNaN(num) || num < 0 || num > 100) {
+          errors[field.key] = `${field.label} must be between 0% and 100%.`;
+        }
+      }
+
+      // L. Quantities (>= 0)
+      else if (['quantity', 'qty', 'stock_qty', 'target_output', 'balance_qty', 'scrap_quantity', 'user_limit', 'storage_limit'].includes(field.key)) {
+        const num = Number(strVal);
+        if (isNaN(num) || num < 0) {
+          errors[field.key] = `${field.label} must be a non-negative quantity.`;
+        }
+      }
+
+      // M. Dates & Date Range Comparisons
+      else if (field.type === 'date' || field.key.includes('date')) {
+        const d = new Date(strVal);
+        if (isNaN(d.getTime())) {
+          errors[field.key] = `Please select a valid date.`;
+        }
+      }
+
+      // N. URL / Webhook
+      else if (field.key === 'url' || field.key === 'portal_url' || field.key === 'webhook_url') {
+        if (!/^https?:\/\/.+/i.test(strVal)) {
+          errors[field.key] = `${field.label} must be a valid HTTP or HTTPS URL (e.g. https://example.com).`;
+        }
+      }
+
+      // O. Name / Title Length & Script Sanitization
+      else if (['name', 'legal_name', 'company_name', 'full_name', 'customer_name', 'supplier_name'].includes(field.key)) {
+        if (strVal.length < 2) {
+          errors[field.key] = `${field.label} must be at least 2 characters.`;
+        } else if (/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(strVal)) {
+          errors[field.key] = `${field.label} contains invalid characters.`;
+        }
+      }
+    }
+
+    // Cross-field date check (End Date >= Start Date)
+    const startDate = formData.start_date || formData.from_date || formData.mfg_date;
+    const endDate = formData.end_date || formData.to_date || formData.expiry_date;
+    if (startDate && endDate) {
+      const d1 = new Date(startDate).getTime();
+      const d2 = new Date(endDate).getTime();
+      if (!isNaN(d1) && !isNaN(d2) && d2 < d1) {
+        errors.end_date = `End / Expiry date cannot be earlier than Start date (${startDate}).`;
       }
     }
 
@@ -1425,24 +1347,46 @@ export const ModuleHubPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="relative group">
+                        {/* Currency Prefix Icon */}
+                        {(field.type === 'number' && (field.key === 'amount' || field.key.includes('price') || field.key.includes('salary') || field.key.includes('cost') || field.key.includes('budget') || field.key.includes('revenue') || field.key.includes('balance') || field.key.includes('credit_limit') || field.key.includes('gross') || field.key.includes('net'))) && (
+                          <div className="absolute left-3 top-2 text-xs font-bold text-slate-400 select-none pointer-events-none">
+                            ₹
+                          </div>
+                        )}
                         <input
                           type={field.type}
                           value={formData[field.key] || ''}
                           onChange={(e) => {
                             let val = e.target.value;
-                            if (field.key === 'gstin' || field.key.includes('gst')) {
+                            if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
                               val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
                             } else if (field.key === 'pan' || field.key === 'pan_number') {
                               val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-                            } else if (field.key === 'code' || field.key === 'sku_code' || field.key === 'company_code') {
-                              val = val.toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 20);
+                            } else if (field.key === 'ifsc' || field.key === 'ifsc_code') {
+                              val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
+                            } else if (field.key === 'postal_code' || field.key === 'pincode' || field.key === 'pin_code') {
+                              val = val.replace(/\D/g, '').slice(0, 6);
+                            } else if (field.key === 'hsn' || field.key === 'hsn_code' || field.key === 'sac_code') {
+                              val = val.replace(/\D/g, '').slice(0, 8);
+                            } else if (field.key === 'account_number' || field.key === 'bank_account' || field.key === 'loan_account_no') {
+                              val = val.replace(/\D/g, '').slice(0, 18);
+                            } else if (field.key === 'uan') {
+                              val = val.replace(/\D/g, '').slice(0, 12);
+                            } else if (field.key === 'ip_number') {
+                              val = val.replace(/\D/g, '').slice(0, 17);
+                            } else if (field.key === 'code' || field.key === 'sku_code' || field.key === 'company_code' || field.key === 'branch_code') {
+                              val = val.toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 35);
                             }
                             setFormData({ ...formData, [field.key]: val });
                             if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
                           }}
                           placeholder={field.placeholder}
                           className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
-                            field.key === 'gstin' || field.key === 'code' || field.key === 'sku_code' || field.key === 'pan'
+                            (field.type === 'number' && (field.key === 'amount' || field.key.includes('price') || field.key.includes('salary') || field.key.includes('cost') || field.key.includes('budget') || field.key.includes('revenue') || field.key.includes('balance') || field.key.includes('credit_limit') || field.key.includes('gross') || field.key.includes('net')))
+                              ? 'pl-7 font-mono'
+                              : ''
+                          } ${
+                            field.key === 'gstin' || field.key === 'code' || field.key === 'sku_code' || field.key === 'pan' || field.key === 'ifsc' || field.key === 'ifsc_code'
                               ? 'font-mono tracking-wider uppercase'
                               : ''
                           } ${
@@ -1451,9 +1395,45 @@ export const ModuleHubPage: React.FC = () => {
                               : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
                           }`}
                         />
-                        {(field.key === 'gstin' || field.key.includes('gst')) && (
+                        {/* Real-time Character Counter & Indicator Badges */}
+                        {(field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') && (
                           <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
                             {(formData[field.key] || '').length}/15
+                          </span>
+                        )}
+                        {(field.key === 'pan' || field.key === 'pan_number') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/10
+                          </span>
+                        )}
+                        {(field.key === 'ifsc' || field.key === 'ifsc_code') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/11
+                          </span>
+                        )}
+                        {(field.key === 'postal_code' || field.key === 'pincode' || field.key === 'pin_code') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/6
+                          </span>
+                        )}
+                        {(field.key === 'hsn' || field.key === 'hsn_code' || field.key === 'sac_code') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/8
+                          </span>
+                        )}
+                        {(field.key === 'uan') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/12
+                          </span>
+                        )}
+                        {(field.key === 'ip_number') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                            {(formData[field.key] || '').length}/17
+                          </span>
+                        )}
+                        {(field.key.includes('percentage') || field.key.includes('rate') || field.key === 'progress_percentage' || field.key === 'yield_percentage') && (
+                          <span className="absolute right-2.5 top-2 text-[10px] font-bold text-slate-400 pointer-events-none">
+                            %
                           </span>
                         )}
                       </div>

@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   // Auto-close dropdowns when clicking outside
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setShowProfileMenu(false);
@@ -101,7 +101,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
   }, []);
 
   const toggleDarkMode = () => {
@@ -279,8 +283,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           {/* Notification Bell */}
           <div className="relative shrink-0" ref={notificationsRef}>
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors"
+              onClick={() => {
+                setShowNotifications((prev) => {
+                  const next = !prev;
+                  if (next) setShowProfileMenu(false);
+                  return next;
+                });
+              }}
+              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors cursor-pointer"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />
@@ -335,7 +345,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           {/* User Profile Pill Menu */}
           <div className="relative shrink-0" ref={profileMenuRef}>
             <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              onClick={() => {
+                setShowProfileMenu((prev) => {
+                  const next = !prev;
+                  if (next) setShowNotifications(false);
+                  return next;
+                });
+              }}
               className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700/80 cursor-pointer"
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-slate-900 to-slate-700 dark:from-blue-600 dark:to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 shrink-0">

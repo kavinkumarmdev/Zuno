@@ -94,18 +94,20 @@ export function DataGrid<T extends { id: string }>({
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const columnPickerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-close column picker on outside click
+  // Auto-close column picker on outside click / tap / scroll
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (columnPickerRef.current && !columnPickerRef.current.contains(event.target as Node)) {
         setShowColumnPicker(false);
       }
     };
     if (showColumnPicker) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showColumnPicker]);
 
@@ -186,32 +188,38 @@ export function DataGrid<T extends { id: string }>({
           <div className="relative" ref={columnPickerRef}>
             <button
               onClick={() => setShowColumnPicker(!showColumnPicker)}
-              className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1.5 px-3"
+              className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1.5 px-3 cursor-pointer"
               title="Select columns"
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span>Columns</span>
             </button>
             {showColumnPicker && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-20">
-                <p className="text-xs font-medium text-slate-500 px-2 py-1">Toggle Columns</p>
-                {columns.map((c) => (
-                  <label key={c.key} className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.has(c.key)}
-                      onChange={(e) => {
-                        const next = new Set(visibleColumns);
-                        if (e.target.checked) next.add(c.key);
-                        else if (next.size > 1) next.delete(c.key);
-                        setVisibleColumns(next);
-                      }}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-slate-700 dark:text-slate-300">{c.header}</span>
-                  </label>
-                ))}
-              </div>
+              <>
+                <div
+                  className="fixed inset-0 z-30 bg-transparent"
+                  onClick={() => setShowColumnPicker(false)}
+                />
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 px-2 py-1">Toggle Columns</p>
+                  {columns.map((c) => (
+                    <label key={c.key} className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.has(c.key)}
+                        onChange={(e) => {
+                          const next = new Set(visibleColumns);
+                          if (e.target.checked) next.add(c.key);
+                          else if (next.size > 1) next.delete(c.key);
+                          setVisibleColumns(next);
+                        }}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-slate-700 dark:text-slate-300">{c.header}</span>
+                    </label>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
