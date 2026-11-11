@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, UseGuards, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards, Get, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshTokenDto } from './dto/login.dto';
@@ -38,6 +38,28 @@ export class AuthController {
   @ApiOperation({ summary: 'Rotate refresh token and retrieve a fresh access token' })
   async refreshToken(@Body() dto: RefreshTokenDto) {
     return this.authService.refreshToken(dto);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send 6-digit OTP verification email for password reset' })
+  async forgotPassword(@Body() body: { email: string }) {
+    if (!body?.email) {
+      throw new BadRequestException('Corporate email address is required');
+    }
+    return this.authService.sendForgotPasswordOtp(body.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify OTP code and reset password' })
+  async resetPassword(@Body() body: { email: string; otp: string; newPassword: string }) {
+    if (!body?.email || !body?.otp || !body?.newPassword) {
+      throw new BadRequestException('Email, OTP verification code, and new password are required');
+    }
+    return this.authService.resetPasswordWithOtp(body.email, body.otp, body.newPassword);
   }
 
   @Get('me')

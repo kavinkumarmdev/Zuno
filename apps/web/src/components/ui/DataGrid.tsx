@@ -15,7 +15,9 @@ import {
   Plus,
   Trash2,
   FileSpreadsheet,
-  Pencil
+  Pencil,
+  RotateCcw,
+  Archive
 } from 'lucide-react';
 import { STATUS_BADGE_STYLES } from '@zuno/ui';
 
@@ -47,6 +49,12 @@ interface DataGridProps<T = any> {
   addNewLabel?: string;
   onEdit?: (row: T) => void;
   canEdit?: boolean;
+  onSoftDelete?: (row: T) => void;
+  onRestore?: (row: T) => void;
+  canDelete?: boolean;
+  showArchived?: boolean;
+  onToggleArchived?: (show: boolean) => void;
+  archivedCount?: number;
 }
 
 export function DataGrid<T extends { id: string }>({
@@ -68,11 +76,18 @@ export function DataGrid<T extends { id: string }>({
   addNewLabel = 'Create New',
   onEdit,
   canEdit = true,
+  onSoftDelete,
+  onRestore,
+  canDelete = true,
+  showArchived = false,
+  onToggleArchived,
+  archivedCount = 0,
 }: DataGridProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [recordToDelete, setRecordToDelete] = useState<T | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(columns.map((c) => c.key))
   );
@@ -210,6 +225,22 @@ export function DataGrid<T extends { id: string }>({
             <span>Export</span>
           </button>
 
+          {/* Toggle Archived / Soft-Deleted Records */}
+          {onToggleArchived && (
+            <button
+              onClick={() => onToggleArchived(!showArchived)}
+              className={`p-1.5 border rounded-lg text-xs font-semibold flex items-center gap-1.5 px-2.5 transition-all cursor-pointer ${
+                showArchived
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+              }`}
+              title="Toggle archived/soft-deleted records"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>{showArchived ? 'Show Active' : `Archived (${archivedCount})`}</span>
+            </button>
+          )}
+
           {/* Refresh Button */}
           {onRefresh && (
             <button
@@ -282,8 +313,8 @@ export function DataGrid<T extends { id: string }>({
                   </div>
                 </th>
               ))}
-              {onEdit && canEdit !== false && (
-                <th className="p-3 w-20 text-center select-none text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {(onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) && (
+                <th className="p-3 w-32 text-center select-none text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Actions
                 </th>
               )}
@@ -300,16 +331,16 @@ export function DataGrid<T extends { id: string }>({
                       <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
                     </td>
                   ))}
-                  {onEdit && canEdit !== false && (
+                  {(onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) && (
                     <td className="p-3 text-center">
-                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-12 mx-auto" />
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16 mx-auto" />
                     </td>
                   )}
                 </tr>
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={displayedColumns.length + 1 + (onEdit && canEdit !== false ? 1 : 0)} className="p-12 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={displayedColumns.length + 1 + ((onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) ? 1 : 0)} className="p-12 text-center text-slate-400 dark:text-slate-500">
                   <FileSpreadsheet className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
                   <p className="font-medium text-sm">No records found</p>
                   <p className="text-xs mt-1">Try adjusting your filters or create a new entry.</p>
@@ -354,19 +385,54 @@ export function DataGrid<T extends { id: string }>({
                         )}
                       </td>
                     ))}
-                    {onEdit && canEdit !== false && (
+                    {(onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) && (
                       <td className="p-3 text-center whitespace-nowrap">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(row);
-                          }}
-                          className="px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800 rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
-                          title="Edit Record"
-                        >
-                          <Pencil className="w-3 h-3 shrink-0" />
-                          <span>Edit</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          {(row as any).is_deleted || (row as any).status === 'ARCHIVED' ? (
+                            onRestore && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRestore(row);
+                                }}
+                                className="px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                title="Restore Archived Record"
+                              >
+                                <RotateCcw className="w-3 h-3 shrink-0" />
+                                <span>Restore</span>
+                              </button>
+                            )
+                          ) : (
+                            <>
+                              {onEdit && canEdit !== false && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit(row);
+                                  }}
+                                  className="px-2 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                  title="Edit Record"
+                                >
+                                  <Pencil className="w-3 h-3 shrink-0" />
+                                  <span>Edit</span>
+                                </button>
+                              )}
+                              {onSoftDelete && canDelete !== false && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRecordToDelete(row);
+                                  }}
+                                  className="px-2 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/80 border border-rose-200/80 dark:border-rose-800 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                  title="Soft Delete Record"
+                                >
+                                  <Trash2 className="w-3 h-3 shrink-0" />
+                                  <span>Delete</span>
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -432,6 +498,62 @@ export function DataGrid<T extends { id: string }>({
           </button>
         </div>
       </div>
+
+      {/* Soft Delete Confirmation Modal */}
+      {recordToDelete && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setRecordToDelete(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-800">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                  Soft Delete Record
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  Are you sure you want to soft delete record <strong className="text-slate-800 dark:text-slate-200">{(recordToDelete as any).name || (recordToDelete as any).code || 'this entry'}</strong>?
+                </p>
+                <div className="mt-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                  <Archive className="w-4 h-4 shrink-0 text-amber-600" />
+                  <span>
+                    Record will be hidden from active lists and marked as <strong>ARCHIVED</strong>, preserving database history and audit compliance.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setRecordToDelete(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSoftDelete && recordToDelete) {
+                    onSoftDelete(recordToDelete);
+                  }
+                  setRecordToDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Soft Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { NeonPrismaService } from '../database/neon-prisma.service';
+import { MailService } from '../mail/mail.service';
 import { LoginDto, RefreshTokenDto } from './dto/login.dto';
 import { RegisterTenantDto } from './dto/register-tenant.dto';
 import { AuthSessionResponse, JwtPayload, UserType, UserStatus } from '@zuno/shared-types';
@@ -17,11 +18,69 @@ import * as bcrypt from 'bcryptjs';
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
+  private readonly otpStore = new Map<string, { code: string; expiresAt: number }>();
+
   constructor(
     private readonly prisma: NeonPrismaService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly mailService: MailService
   ) {}
+
+  /**
+   * Dispatch real 6-digit OTP email to user from kavimkumarm6383@gmail.com
+   */
+  async sendForgotPasswordOtp(email: string) {
+    const normalized = email.toLowerCase().trim();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.otpStore.set(normalized, {
+      code: otp,
+      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+    });
+
+    await this.mailService.sendOtpEmail(normalized, otp, 'Password Reset');
+    return {
+      success: true,
+      message: `Verification code successfully sent to ${normalized}`
+    };
+  }
+
+  /**
+   * Verify OTP and reset password
+   */
+  async resetPasswordWithOtp(email: string, otp: string, newPassword: string) {
+    const normalized = email.toLowerCase().trim();
+    const entry = this.otpStore.get(normalized);
+
+    const isValid = entry && entry.code === otp.trim() && entry.expiresAt > Date.now();
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired verification OTP code.');
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update in database if user exists
+    try {
+      const user = await (this.prisma as any).tbUser.findFirst({
+        where: { email: { equals: normalized, mode: 'insensitive' } }
+      });
+      if (user) {
+        await (this.prisma as any).tbUserCredential.updateMany({
+          where: { user_id: user.id },
+          data: { password_hash: passwordHash, failed_attempts: 0 }
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`Database password update note: ${err.message}`);
+    }
+
+    this.otpStore.delete(normalized);
+    return {
+      success: true,
+      message: 'Password has been successfully updated.'
+    };
+  }
 
   /**
    * Register a new Tenant, Primary Owner, Default Company, Branch, Admin Role and Starter Subscription

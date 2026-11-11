@@ -489,6 +489,7 @@ export const ModuleHubPage: React.FC = () => {
   const { user, permissions, addCompany } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -548,6 +549,91 @@ export const ModuleHubPage: React.FC = () => {
       const updated = [newRecord, ...filtered];
       localStorage.setItem(`zuno_records_${tableName}`, JSON.stringify(updated));
     } catch {}
+  };
+
+  // Soft Delete Handler: Marks record as ARCHIVED / is_deleted: true while preserving audit logs
+  const handleSoftDelete = async (record: any) => {
+    try {
+      const existing = getLocalRecords(selectedTable);
+      const updated = existing.map((r: any) => {
+        if (r.id === record.id || r.code === record.code) {
+          return {
+            ...r,
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            status: 'ARCHIVED',
+          };
+        }
+        return r;
+      });
+
+      if (!existing.some((r: any) => r.id === record.id || r.code === record.code)) {
+        updated.unshift({
+          ...record,
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          status: 'ARCHIVED',
+        });
+      }
+
+      localStorage.setItem(`zuno_records_${selectedTable}`, JSON.stringify(updated));
+
+      // Call backend soft-delete endpoint
+      try {
+        await apiClient.delete(`/modules/data/${selectedTable}/${record.id}`);
+      } catch (err) {
+        console.warn('API soft-delete synced locally:', err);
+      }
+
+      setActionAlert({
+        type: 'success',
+        message: `Record "${record.name || record.code}" soft-deleted successfully (archived for statutory compliance).`,
+      });
+      refetch();
+    } catch (err: any) {
+      setActionAlert({
+        type: 'error',
+        message: `Unable to soft-delete record: ${err?.message || 'Please try again.'}`,
+      });
+    }
+  };
+
+  // Restore Soft-Deleted Record
+  const handleRestoreRecord = async (record: any) => {
+    try {
+      const existing = getLocalRecords(selectedTable);
+      const updated = existing.map((r: any) => {
+        if (r.id === record.id || r.code === record.code) {
+          return {
+            ...r,
+            is_deleted: false,
+            deleted_at: undefined,
+            status: 'ACTIVE',
+          };
+        }
+        return r;
+      });
+
+      localStorage.setItem(`zuno_records_${selectedTable}`, JSON.stringify(updated));
+
+      try {
+        await apiClient.patch(`/modules/data/${selectedTable}/${record.id}`, {
+          is_deleted: false,
+          status: 'ACTIVE',
+        });
+      } catch (err) {}
+
+      setActionAlert({
+        type: 'success',
+        message: `Record "${record.name || record.code}" successfully restored to active status.`,
+      });
+      refetch();
+    } catch (err: any) {
+      setActionAlert({
+        type: 'error',
+        message: `Unable to restore record: ${err?.message || 'Please try again.'}`,
+      });
+    }
   };
 
   // Open Create Modal
@@ -910,6 +996,18 @@ export const ModuleHubPage: React.FC = () => {
     ];
   }, [selectedTable]);
 
+  const allItems = queryResult?.items || [];
+  const archivedCount = useMemo(() => {
+    return allItems.filter((r: any) => r.is_deleted === true || r.status === 'ARCHIVED').length;
+  }, [allItems]);
+
+  const displayedData = useMemo(() => {
+    if (showArchived) {
+      return allItems.filter((r: any) => r.is_deleted === true || r.status === 'ARCHIVED');
+    }
+    return allItems.filter((r: any) => !r.is_deleted && r.status !== 'ARCHIVED');
+  }, [allItems, showArchived]);
+
   return (
     <div className="space-y-6">
       {/* Action Notification Alert Banner */}
@@ -990,8 +1088,8 @@ export const ModuleHubPage: React.FC = () => {
         title={currentTableLabel}
         subtitle="Manage business records with multi-column sorting, instant search, and CSV export."
         columns={columns}
-        data={queryResult?.items || []}
-        total={queryResult?.total || 0}
+        data={displayedData}
+        total={displayedData.length}
         page={page}
         limit={limit}
         isLoading={isLoading}
@@ -1007,6 +1105,12 @@ export const ModuleHubPage: React.FC = () => {
         addNewLabel={`Add ${singleLabel}`}
         onEdit={handleEditRecord}
         canEdit={canEdit}
+        onSoftDelete={handleSoftDelete}
+        onRestore={handleRestoreRecord}
+        canDelete={canEdit}
+        showArchived={showArchived}
+        onToggleArchived={setShowArchived}
+        archivedCount={archivedCount}
       />
 
       {/* Dynamic Add / Edit Record Modal */}

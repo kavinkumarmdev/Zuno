@@ -12,6 +12,7 @@ import { HistoryModule } from './history/history.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { BusinessModulesModule } from './modules/business-modules.module';
 import { HealthModule } from './health/health.module';
+import { MailModule } from './mail/mail.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
 import { ResponseTransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -34,6 +35,7 @@ import { GlobalHttpExceptionFilter } from './common/filters/http-exception.filte
     DashboardModule,
     BusinessModulesModule,
     HealthModule,
+    MailModule,
   ],
   providers: [
     {
