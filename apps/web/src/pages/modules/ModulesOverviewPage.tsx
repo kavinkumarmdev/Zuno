@@ -471,18 +471,18 @@ export const ModulesOverviewPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-12">
       {/* Hero Banner with Official Branding */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-8 md:p-10 shadow-2xl border border-slate-700/60 mt-1">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-5 sm:p-8 md:p-10 shadow-2xl border border-slate-700/60 mt-1">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-16 w-80 h-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="space-y-4 max-w-3xl">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
+          <div className="space-y-3 sm:space-y-4 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Zuno ERP — Architecture Matrix</span>
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
               Run Your Entire Business in One Powerful Platform
             </h1>
 
@@ -568,8 +568,8 @@ export const ModulesOverviewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 19 Modules Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* 19 Modules Grid (Adaptive for PC, Laptop, Tablet & Mobile) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
         {filteredModules.map((mod) => {
           const IconComponent = mod.icon;
           return (

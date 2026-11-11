@@ -47,6 +47,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showSwitchOrgModal, setShowSwitchOrgModal] = useState(false);
   const [showErrorLogsModal, setShowErrorLogsModal] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [mobileSearchText, setMobileSearchText] = useState('');
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newCompanyCode, setNewCompanyCode] = useState('');
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -201,7 +203,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           {/* Clean Unified Organization Switcher */}
           <div className="flex items-center bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-0.5 shadow-2xs">
             {/* Company Selector */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs max-w-[150px] sm:max-w-[210px] md:max-w-[240px]">
+            <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs max-w-[110px] xs:max-w-[150px] sm:max-w-[210px] md:max-w-[240px]">
               <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
               {isKavin ? (
                 <select
@@ -273,21 +275,30 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
 
         {/* Right: Clean Minimal Utility Controls & Profile */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Mobile Search Toggle (< md) */}
+          <button
+            onClick={() => setShowMobileSearch(!showMobileSearch)}
+            className="md:hidden p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+            title="Search modules"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
           {/* Interactive Voice Guided Assistant Button */}
           <button
             onClick={() => setShowVoiceGuide(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
             title="Open Voice-Guided Module Assistant (Audio Walkthrough)"
           >
             <Volume2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-            <span className="hidden md:inline">Voice Guide</span>
+            <span className="hidden sm:inline">Voice Guide</span>
           </button>
 
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleDarkMode}
-            className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+            className="p-1.5 sm:p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
             title="Toggle Theme"
           >
             {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
@@ -303,7 +314,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   return next;
                 });
               }}
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors cursor-pointer"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />
@@ -313,7 +324,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             {showNotifications && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-3.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-3.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">Alerts & Actions</span>
@@ -368,11 +379,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700/80 cursor-pointer"
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-slate-900 to-slate-700 dark:from-blue-600 dark:to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 shrink-0">
-                {user?.fullName?.charAt(0) || 'K'}
+                {user?.fullName?.charAt(0) || 'U'}
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight max-w-[120px] truncate">
-                  {user?.fullName || 'Kavin'}
+                  {user?.fullName || 'User'}
                 </span>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="text-[9px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/70 dark:border-blue-800/70 px-1 rounded">
@@ -386,10 +397,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             {showProfileMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700/80">
                     <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{tenant?.tenantName || 'Enterprise Tenant'}</p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{user?.email || 'kavin@zuno.com'}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{user?.email || 'user@company.com'}</p>
                     <div className="mt-1.5 flex items-center gap-1.5">
                       <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
                         {activeCompany?.companyName || 'Main Company'}
@@ -481,6 +492,37 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             )}
           </div>
         </div>
+
+        {/* Mobile Search Expandable Tray */}
+        {showMobileSearch && (
+          <div className="md:hidden px-3 pb-2.5 pt-1 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2 duration-150">
+            <div className="relative w-full">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={mobileSearchText}
+                onChange={(e) => setMobileSearchText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && mobileSearchText.trim()) {
+                    navigate(`/modules?search=${encodeURIComponent(mobileSearchText.trim())}`);
+                    setShowMobileSearch(false);
+                  }
+                }}
+                placeholder="Search modules, vouchers, invoices..."
+                className="w-full pl-8 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+              {mobileSearchText && (
+                <button
+                  onClick={() => setMobileSearchText('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Switch Organization & Entity Modal */}

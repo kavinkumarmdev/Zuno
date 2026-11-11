@@ -260,8 +260,8 @@ export const LoginPage: React.FC = () => {
                       setFieldErrors((prev) => ({ ...prev, usernameOrEmail: undefined }));
                     }
                   }}
-                  placeholder="e.g. admin@company.com or username"
-                  className={`w-full pl-9 pr-3.5 py-2 text-xs sm:text-sm bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-xs ${
+                  placeholder="name@company.com or username"
+                  className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-xs ${
                     fieldErrors.usernameOrEmail
                       ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
                       : 'border-slate-200/90 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
@@ -447,7 +447,7 @@ export const LoginPage: React.FC = () => {
                         setForgotEmail(e.target.value);
                         if (forgotErrors.email) setForgotErrors((p) => ({ ...p, email: undefined as any }));
                       }}
-                      placeholder="owner@company.com"
+                      placeholder="name@company.com"
                       className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-blue-600 focus:outline-none"
                     />
                   </div>
@@ -479,7 +479,7 @@ export const LoginPage: React.FC = () => {
                         setForgotOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6));
                         if (forgotErrors.otp) setForgotErrors((p) => ({ ...p, otp: undefined as any }));
                       }}
-                      placeholder="e.g. 749210"
+                      placeholder="Enter 6-digit OTP"
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono font-bold tracking-widest text-center focus:border-blue-600 focus:outline-none"
                     />
                     {forgotErrors.otp && (

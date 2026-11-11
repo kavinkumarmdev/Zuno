@@ -211,7 +211,7 @@ export const RegisterPage: React.FC = () => {
                       setFormData({ ...formData, tenantName: e.target.value });
                       if (fieldErrors.tenantName) setFieldErrors((p) => ({ ...p, tenantName: undefined }));
                     }}
-                    placeholder="e.g. Apex Industrial Holdings"
+                    placeholder="e.g. Apex Industrial Enterprises"
                     className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.tenantName
                         ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
@@ -276,7 +276,7 @@ export const RegisterPage: React.FC = () => {
                       setFormData({ ...formData, ownerName: lettersOnly });
                       if (fieldErrors.ownerName) setFieldErrors((p) => ({ ...p, ownerName: undefined }));
                     }}
-                    placeholder="e.g. Ramesh Kumar"
+                    placeholder="Full Name (letters only)"
                     className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.ownerName
                         ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
@@ -363,7 +363,7 @@ export const RegisterPage: React.FC = () => {
                       setFormData({ ...formData, email: e.target.value });
                       if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
                     }}
-                    placeholder="owner@company.com"
+                    placeholder="name@company.com"
                     className={`w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all duration-200 shadow-sm ${
                       fieldErrors.email
                         ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'

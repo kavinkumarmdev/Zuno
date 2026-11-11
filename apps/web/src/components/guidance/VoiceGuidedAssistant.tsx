@@ -35,7 +35,8 @@ import {
   HelpCircle,
   Activity,
   Sliders,
-  Compass
+  Compass,
+  ChevronLeft
 } from 'lucide-react';
 
 export interface ModuleGuideData {
@@ -688,6 +689,7 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
   const [selectedModuleId, setSelectedModuleId] = useState<string>(
     initialModuleId || 'company'
   );
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>(initialModuleId ? 'detail' : 'list');
   const [activeTab, setActiveTab] = useState<'description' | 'why' | 'how'>('description');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhaseFilter, setSelectedPhaseFilter] = useState<string>('ALL');
@@ -733,6 +735,7 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
   useEffect(() => {
     if (initialModuleId) {
       setSelectedModuleId(initialModuleId);
+      setMobileView('detail');
     }
   }, [initialModuleId]);
 
@@ -833,42 +836,42 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-6xl w-full h-[90vh] max-h-[850px] flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl max-w-6xl w-full h-[94dvh] sm:h-[90vh] max-h-[880px] flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-200">
         {/* Top Header */}
-        <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-slate-50 dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-              <Volume2 className="w-5 h-5 animate-pulse" />
+        <div className="px-3.5 sm:px-5 py-3 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-slate-50 dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 shrink-0">
+              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg tracking-tight">
-                  Voice-Guided Module Assistant
+                <h2 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-lg tracking-tight">
+                  Voice-Guided Assistant
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                  19 ERP Modules
+                <span className="hidden xs:inline px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                  19 Modules
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Listen to platform architecture, module capabilities, business ROI, and step-by-step operating workflows.
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                Listen to architecture, business justification, and SOP workflows.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handleGrandTour}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm cursor-pointer transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm cursor-pointer transition-all active:scale-95"
               title="Narrate complete overview of all 19 ERP modules"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Listen: Platform Grand Tour</span>
-              <span className="sm:hidden">Grand Tour</span>
+              <span className="hidden sm:inline">Grand Tour (All 19)</span>
+              <span className="sm:hidden">Tour</span>
             </button>
             <button
               onClick={onClose}
@@ -881,8 +884,8 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
 
         {/* Main Content Layout: Sidebar List (Left) + Detail & Player (Right) */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          {/* Left Panel: Module Navigator & Search */}
-          <div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/60 dark:bg-slate-900/40 shrink-0">
+          {/* Left Panel: Module Navigator & Search (Toggled on mobile) */}
+          <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} md:flex w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex-col bg-slate-50/60 dark:bg-slate-900/40 shrink-0`}>
             {/* Search & Phase Filter */}
             <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
               <div className="relative">
@@ -924,7 +927,7 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
                     key={mod.id}
                     onClick={() => {
                       setSelectedModuleId(mod.id);
-                      // If speaking something else, update
+                      setMobileView('detail');
                     }}
                     className={`w-full text-left p-3 flex items-start gap-3 transition-colors cursor-pointer ${
                       isSelected
@@ -968,7 +971,20 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
           </div>
 
           {/* Right Panel: Module Deep Dive & Controls */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-900">
+          <div className={`${mobileView === 'detail' ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-hidden bg-white dark:bg-slate-900`}>
+            {/* Mobile Back Button to return to module list */}
+            <div className="md:hidden px-3.5 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/60 flex items-center justify-between">
+              <button
+                onClick={() => setMobileView('list')}
+                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-cyan-400 hover:text-blue-700 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>All Modules ({filteredModules.length})</span>
+              </button>
+              <span className="text-[10px] font-mono font-bold text-slate-500">
+                Phase {selectedModule.phaseNumber} / 4
+              </span>
+            </div>
             {/* Module Title Banner & Narration Actions */}
             <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/30 dark:bg-slate-900/20 shrink-0">
               <div className="flex items-start gap-3">
@@ -1188,10 +1204,10 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
             </div>
 
             {/* Persistent Audio Player Bar at Bottom */}
-            <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
               {/* Speaking State & Animated Wave */}
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="flex items-center gap-1 h-7 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-xl shadow-glow-sm">
+              <div className="flex items-center gap-2.5 w-full sm:w-auto min-w-0">
+                <div className="flex items-center gap-1 h-7 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-xl shadow-glow-sm shrink-0">
                   {isSpeaking && !isPaused ? (
                     <>
                       <span className="w-1 h-3 bg-cyan-400 rounded-full animate-bounce [animation-delay:0ms] shadow-glow-cyan" />
@@ -1211,41 +1227,43 @@ export const VoiceGuidedAssistant: React.FC<VoiceGuidedAssistantProps> = ({
                   )}
                 </div>
 
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
                     {isSpeaking ? speakingTextTitle : 'Ready to narrate module guide'}
                   </div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-[10px] text-slate-400 truncate">
                     {isSpeaking ? (isPaused ? 'Audio Paused' : 'Voice is speaking...') : 'Click any Listen button above'}
                   </div>
                 </div>
               </div>
 
               {/* Controls: Play/Pause, Stop, Speed */}
-              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                {isSpeaking && (
-                  <button
-                    onClick={handlePauseResume}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shadow-xs transition-colors"
-                    title={isPaused ? 'Resume narration' : 'Pause narration'}
-                  >
-                    {isPaused ? <Play className="w-4 h-4 fill-current text-blue-600" /> : <Pause className="w-4 h-4" />}
-                  </button>
-                )}
+              <div className="flex items-center justify-between w-full sm:w-auto gap-2 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  {isSpeaking && (
+                    <button
+                      onClick={handlePauseResume}
+                      className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shadow-xs transition-colors"
+                      title={isPaused ? 'Resume narration' : 'Pause narration'}
+                    >
+                      {isPaused ? <Play className="w-4 h-4 fill-current text-blue-600" /> : <Pause className="w-4 h-4" />}
+                    </button>
+                  )}
 
-                {isSpeaking && (
-                  <button
-                    onClick={handleStopSpeech}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer shadow-xs transition-colors"
-                    title="Stop narration"
-                  >
-                    <Square className="w-4 h-4 fill-current" />
-                  </button>
-                )}
+                  {isSpeaking && (
+                    <button
+                      onClick={handleStopSpeech}
+                      className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer shadow-xs transition-colors"
+                      title="Stop narration"
+                    >
+                      <Square className="w-4 h-4 fill-current" />
+                    </button>
+                  )}
+                </div>
 
                 {/* Speed Selector */}
-                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1 text-xs">
-                  <span className="text-[10px] font-semibold text-slate-400 mr-1">Speed:</span>
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1 text-xs ml-auto sm:ml-0">
+                  <span className="text-[10px] font-semibold text-slate-400 mr-1 hidden xs:inline">Speed:</span>
                   {[0.85, 1.0, 1.25, 1.5].map((rate) => (
                     <button
                       key={rate}

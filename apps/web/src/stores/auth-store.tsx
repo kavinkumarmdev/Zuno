@@ -460,9 +460,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user: {
         id: userId,
         tenantId,
-        username: tenantData.ownerName || 'Kavin',
-        fullName: tenantData.ownerName || 'Kavin',
-        email: tenantData.email || 'kavin@zuno.com',
+        username: tenantData.ownerName || 'admin',
+        fullName: tenantData.ownerName || 'Enterprise Administrator',
+        email: tenantData.email || 'admin@company.com',
         userType: UserType.OWNER,
         userStatus: 'ACTIVE' as any,
       },

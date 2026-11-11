@@ -108,8 +108,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
       <aside
         className={`${
-          isOpen ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden'
-        } lg:flex w-64 bg-slate-950/95 backdrop-blur-2xl text-slate-300 flex-col flex-shrink-0 h-screen border-r border-slate-800/80 select-none shadow-2xl lg:shadow-none transition-all relative overflow-hidden`}
+          isOpen ? 'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw]' : 'hidden'
+        } lg:flex lg:w-64 bg-slate-950/95 backdrop-blur-2xl text-slate-300 flex-col flex-shrink-0 h-screen border-r border-slate-800/80 select-none shadow-2xl lg:shadow-none transition-all relative overflow-hidden`}
       >
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-blue-600/10 via-cyan-500/5 to-transparent pointer-events-none" />
