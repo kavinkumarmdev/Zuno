@@ -13,7 +13,12 @@ export class MailService {
   }
 
   private initTransporter() {
-    const password = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
+    const rawPass =
+      process.env.GMAIL_APP_PASSWORD ||
+      process.env.SMTP_PASS ||
+      process.env.EMAIL_PASSWORD ||
+      'zuvrttbhikhbwilk';
+    const password = rawPass.replace(/\s+/g, '');
 
     if (password) {
       // Production Gmail SMTP with 16-character App Password
@@ -26,10 +31,8 @@ export class MailService {
       });
       this.logger.log(`Initialized real Gmail SMTP transport with sender: ${this.senderEmail}`);
     } else {
-      // Development mode / fallback transport
-      this.logger.warn(
-        `GMAIL_APP_PASSWORD not set. Real emails from ${this.senderEmail} require a Google App Password in environment variables.`
-      );
+      // Fallback log
+      this.logger.warn(`GMAIL_APP_PASSWORD not set. Real emails from ${this.senderEmail} require a Google App Password.`);
     }
   }
 
