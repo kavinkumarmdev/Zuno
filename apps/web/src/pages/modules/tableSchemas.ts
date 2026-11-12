@@ -1197,10 +1197,40 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "defaultValue": "Spouse"
     },
     {
+      "key": "nominee_dob",
+      "label": "Nominee Date of Birth",
+      "type": "date"
+    },
+    {
+      "key": "nominee_age",
+      "label": "Nominee Age (Years)",
+      "type": "number",
+      "placeholder": "e.g. 30"
+    },
+    {
       "key": "nominee_phone",
       "label": "Nominee Mobile Contact",
       "type": "tel",
       "placeholder": "9876543219"
+    },
+    {
+      "key": "guardian_name",
+      "label": "Guardian Full Name (Required if Nominee < 18)",
+      "type": "text",
+      "placeholder": "Required if nominee is minor"
+    },
+    {
+      "key": "guardian_relation",
+      "label": "Guardian Relationship to Minor",
+      "type": "select",
+      "options": ["Mother", "Father", "Legal Guardian", "Grandparent", "Uncle", "Aunt"],
+      "defaultValue": "Mother"
+    },
+    {
+      "key": "guardian_phone",
+      "label": "Guardian Contact Number",
+      "type": "tel",
+      "placeholder": "9876543218"
     },
     {
       "key": "pf_uan",

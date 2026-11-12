@@ -178,18 +178,56 @@ export const StatutoryFormsModal: React.FC<StatutoryFormsModalProps> = ({
                   </div>
                 </div>
 
-                {/* Salary Section for Form B */}
-                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[11px] space-y-1.5">
-                  <span className="text-slate-400 font-bold uppercase text-[10px]">Wage Structure Schedule (Monthly INR)</span>
-                  <div className="grid grid-cols-3 gap-2 font-mono">
-                    <div>Gross CTC: <strong>₹{employee.amount || '75,000'}</strong></div>
-                    <div>Basic (50%): <strong>₹{employee.basic_salary || '37,500'}</strong></div>
-                    <div>HRA (20%): <strong>₹{employee.hra || '15,000'}</strong></div>
-                    <div>DA (15%): <strong>₹{employee.da || '11,250'}</strong></div>
-                    <div>PF Deduct: <strong>₹{employee.pf_deduction || '4,500'}</strong></div>
-                    <div>Net Payable: <strong className="text-emerald-600">₹{employee.net_salary || '69,938'}</strong></div>
+                {/* Form 12: Adult Workers Register Section */}
+                {selectedForm.code === 'FORM-12' && (
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[11px] space-y-2">
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">
+                      Section 62 Factories Act — Worker Classification & Relay Schedule
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
+                      <div>Worker Token: <strong>{employee.code}</strong></div>
+                      <div>Nature of Work: <strong>Mechanical / Skilled</strong></div>
+                      <div>Group & Relay: <strong>Group 1 (Relay A)</strong></div>
+                      <div>Shift Schedule: <strong>09:00 — 18:00</strong></div>
+                      <div>Fitness Cert No: <strong>CERT-FIT-2024-091</strong></div>
+                      <div>Age / DOB: <strong>{employee.dob || '1992-05-18'}</strong></div>
+                      <div>Father&apos;s Name: <strong>Venkatesh Raman</strong></div>
+                      <div>Adult Cert: <strong className="text-emerald-600">CERTIFIED ADULT</strong></div>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Form 25: Overtime Muster Roll Section */}
+                {selectedForm.code === 'FORM-25' && (
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[11px] space-y-2">
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">
+                      Section 59 Factories Act — Overtime Hours & Double-Rate Wages Schedule
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono">
+                      <div>Standard Hours/Day: <strong>8.0 Hours</strong></div>
+                      <div>Normal Wage Rate: <strong>₹{Math.round(Number(employee.amount || 75000) / 208)} / hr</strong></div>
+                      <div>Overtime Rate (2x): <strong className="text-amber-600">₹{Math.round((Number(employee.amount || 75000) / 208) * 2)} / hr</strong></div>
+                      <div>Monthly OT Hours: <strong>8.5 Hours</strong></div>
+                      <div>OT Gross Payable: <strong className="text-emerald-600">₹{Math.round(((Number(employee.amount || 75000) / 208) * 2) * 8.5).toLocaleString('en-IN')}</strong></div>
+                      <div>Payment Date: <strong>Monthly Wage Day (7th)</strong></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Salary Section for Form B */}
+                {selectedForm.code === 'FORM-B' && (
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[11px] space-y-1.5">
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">Wage Structure Schedule (Monthly INR)</span>
+                    <div className="grid grid-cols-3 gap-2 font-mono">
+                      <div>Gross CTC: <strong>₹{Number(employee.amount || 75000).toLocaleString('en-IN')}</strong></div>
+                      <div>Basic (50%): <strong>₹{Number(employee.basic_salary || 37500).toLocaleString('en-IN')}</strong></div>
+                      <div>HRA (20%): <strong>₹{Number(employee.hra || 15000).toLocaleString('en-IN')}</strong></div>
+                      <div>DA (15%): <strong>₹{Number(employee.da || 11250).toLocaleString('en-IN')}</strong></div>
+                      <div>PF Deduct: <strong>₹{Number(employee.pf_deduction || 4500).toLocaleString('en-IN')}</strong></div>
+                      <div>Net Payable: <strong className="text-emerald-600">₹{Number(employee.net_salary || 69938).toLocaleString('en-IN')}</strong></div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Statutory Certification Signature Section */}
                 <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500">

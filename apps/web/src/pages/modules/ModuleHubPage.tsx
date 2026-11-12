@@ -54,7 +54,8 @@ import {
   RefreshCw,
   Fingerprint,
   FileUp,
-  Award
+  Award,
+  UserMinus
 } from 'lucide-react';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import {
@@ -70,6 +71,9 @@ import {
 import { ResumeAutoFillModal } from '../../components/hr/ResumeAutoFillModal';
 import { EmployeeAttendanceModal } from '../../components/hr/EmployeeAttendanceModal';
 import { StatutoryFormsModal } from '../../components/hr/StatutoryFormsModal';
+import { EmployeePayslipModal } from '../../components/hr/EmployeePayslipModal';
+import { EmployeeExitDpdpModal } from '../../components/hr/EmployeeExitDpdpModal';
+import { BonusAuditModal } from '../../components/hr/BonusAuditModal';
 import { canUserAccessModule, getModuleActionPermissions } from '../../utils/permissionManager';
 
 const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
@@ -420,6 +424,9 @@ export const ModuleHubPage: React.FC = () => {
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showStatutoryModal, setShowStatutoryModal] = useState(false);
+  const [showPayslipModal, setShowPayslipModal] = useState(false);
+  const [showExitDpdpModal, setShowExitDpdpModal] = useState(false);
+  const [showBonusAuditModal, setShowBonusAuditModal] = useState(false);
   const [selectedEmployeeForDossier, setSelectedEmployeeForDossier] = useState<any>(null);
   const [resolvedIfscStatus, setResolvedIfscStatus] = useState<{ ifsc: string; bankName: string; branch: string } | null>(null);
 
@@ -929,6 +936,71 @@ export const ModuleHubPage: React.FC = () => {
       }
     }
 
+    // Family Member / Nominee Relationship & Age Statutory Validation
+    if (selectedTable === 'tb_employee_master' && formData.nominee_name && String(formData.nominee_name).trim()) {
+      const rel = formData.nominee_relation || 'Spouse';
+      let nomineeAge = formData.nominee_age ? Number(formData.nominee_age) : undefined;
+
+      // Auto-compute age if nominee_dob is provided
+      if (formData.nominee_dob) {
+        const birthDate = new Date(formData.nominee_dob);
+        const today = new Date();
+        if (!isNaN(birthDate.getTime())) {
+          let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            calculatedAge--;
+          }
+          if (nomineeAge === undefined || isNaN(nomineeAge)) nomineeAge = calculatedAge;
+        }
+      }
+
+      // Compute employee age if employee dob is present
+      let empAge = 0;
+      if (formData.dob) {
+        const empBirth = new Date(formData.dob);
+        const today = new Date();
+        if (!isNaN(empBirth.getTime())) {
+          empAge = today.getFullYear() - empBirth.getFullYear();
+          const m = today.getMonth() - empBirth.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < empBirth.getDate())) {
+            empAge--;
+          }
+        }
+      }
+
+      if (nomineeAge !== undefined && !isNaN(nomineeAge)) {
+        if (nomineeAge < 0 || nomineeAge > 120) {
+          errors.nominee_age = 'Please enter a valid age between 0 and 120 years.';
+        } else {
+          // 1. Father / Mother must be at least 15 years older than employee
+          if ((rel === 'Father' || rel === 'Mother') && empAge > 0 && nomineeAge <= empAge + 15) {
+            errors.nominee_age = `Relationship Age Mismatch: ${rel} must be at least 15 years older than employee (Employee age: ${empAge}, ${rel} age: ${nomineeAge}).`;
+          }
+
+          // 2. Son / Daughter must be at least 15 years younger than employee
+          if ((rel === 'Son' || rel === 'Daughter') && empAge > 0 && nomineeAge >= empAge - 15) {
+            errors.nominee_age = `Relationship Age Mismatch: ${rel} must be at least 15 years younger than employee (Employee age: ${empAge}, ${rel} age: ${nomineeAge}).`;
+          }
+
+          // 3. Spouse must be of legal age (18+)
+          if (rel === 'Spouse' && nomineeAge < 18) {
+            errors.nominee_age = `Statutory Marriage Age: Spouse nominee must be at least 18 years of age.`;
+          }
+
+          // 4. Minor Nominee (< 18 years) requires guardian under EPFO & Payment of Gratuity Act
+          if (nomineeAge < 18) {
+            if (!formData.guardian_name || !String(formData.guardian_name).trim()) {
+              errors.guardian_name = `Statutory Requirement: Nominee is a minor (${nomineeAge} yrs). Guardian Name is required under EPF Scheme & Gratuity Act.`;
+            }
+            if (!formData.guardian_relation) {
+              errors.guardian_relation = `Guardian relationship to minor nominee is required.`;
+            }
+          }
+        }
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1193,11 +1265,24 @@ export const ModuleHubPage: React.FC = () => {
         },
         {
           key: 'compliance_dossier',
-          header: 'Forms & Biometrics',
+          header: 'Operations & Compliance',
           align: 'center',
-          width: '180px',
+          width: '380px',
           render: (r) => (
-            <div className="flex items-center justify-center gap-1.5">
+            <div className="flex items-center justify-center gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedEmployeeForDossier(r);
+                  setShowPayslipModal(true);
+                }}
+                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
+                title="Generate Monthly Salary Payslip (Wages, Deductions, Net Pay)"
+              >
+                <Banknote className="w-3 h-3" />
+                Payslip
+              </button>
               <button
                 type="button"
                 onClick={(e) => {
@@ -1206,7 +1291,7 @@ export const ModuleHubPage: React.FC = () => {
                   setShowStatutoryModal(true);
                 }}
                 className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
-                title="View Statutory Labour Forms (A, B, C, D, 11, 2, F) & Training Dossier"
+                title="View Statutory Labour Forms (A, B, C, D, 11, 12, 25, 2, F) & Training Dossier"
               >
                 <FileText className="w-3 h-3" />
                 Forms
@@ -1218,11 +1303,37 @@ export const ModuleHubPage: React.FC = () => {
                   setSelectedEmployeeForDossier(r);
                   setShowAttendanceModal(true);
                 }}
-                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
+                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
                 title="Mark Biometric Attendance (Thumb/Face + Location)"
               >
                 <Fingerprint className="w-3 h-3" />
                 Punch
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedEmployeeForDossier(r);
+                  setShowBonusAuditModal(true);
+                }}
+                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-yellow-50 hover:bg-yellow-100 text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
+                title="Statutory Bonus Tally (8.33% to 20%) & Form C Labour Audit Register"
+              >
+                <Award className="w-3 h-3" />
+                Bonus
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedEmployeeForDossier(r);
+                  setShowExitDpdpModal(true);
+                }}
+                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
+                title="Employee Left / F&F Settlement & DPDP Act Data Privacy Redaction"
+              >
+                <UserMinus className="w-3 h-3" />
+                Exit/DPDP
               </button>
             </div>
           )
@@ -1561,14 +1672,25 @@ export const ModuleHubPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEmployeeForDossier(displayedData[0] || null);
+                setShowPayslipModal(true);
+              }}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+            >
+              <Banknote className="w-4 h-4" />
+              Monthly Payslip
+            </button>
             <button
               type="button"
               onClick={() => {
                 setSelectedEmployeeForDossier(displayedData[0] || null);
                 setShowAttendanceModal(true);
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
             >
               <Fingerprint className="w-4 h-4" />
               Biometric Punch & Location
@@ -1579,10 +1701,32 @@ export const ModuleHubPage: React.FC = () => {
                 setSelectedEmployeeForDossier(displayedData[0] || null);
                 setShowStatutoryModal(true);
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
             >
               <FileText className="w-4 h-4" />
-              Statutory Forms Dossier
+              Forms (12, 25, A–F)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEmployeeForDossier(displayedData[0] || null);
+                setShowExitDpdpModal(true);
+              }}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+            >
+              <UserMinus className="w-4 h-4" />
+              F&amp;F Exit &amp; DPDP
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEmployeeForDossier(displayedData[0] || null);
+                setShowBonusAuditModal(true);
+              }}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-yellow-600 hover:bg-yellow-700 text-white shadow-md shadow-yellow-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+            >
+              <Award className="w-4 h-4" />
+              Bonus &amp; Form C
             </button>
           </div>
         </div>
@@ -1817,7 +1961,24 @@ export const ModuleHubPage: React.FC = () => {
                             value={formData[field.key] || ''}
                             onChange={(e) => {
                               let val = e.target.value;
-                              if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
+                              if (field.key === 'nominee_dob') {
+                                const birthDate = new Date(val);
+                                const today = new Date();
+                                let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                                const m = today.getMonth() - birthDate.getMonth();
+                                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                                  calculatedAge--;
+                                }
+                                setFormData({
+                                  ...formData,
+                                  nominee_dob: val,
+                                  nominee_age: !isNaN(calculatedAge) && calculatedAge >= 0 ? String(calculatedAge) : formData.nominee_age
+                                });
+                                if (formErrors[field.key] || formErrors.nominee_age) {
+                                  setFormErrors((p) => ({ ...p, [field.key]: undefined as any, nominee_age: undefined as any }));
+                                }
+                                return;
+                              } else if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
                                 val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
                               } else if (field.key === 'pan' || field.key === 'pan_number') {
                                 val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
@@ -2014,6 +2175,36 @@ export const ModuleHubPage: React.FC = () => {
         isOpen={showStatutoryModal}
         onClose={() => setShowStatutoryModal(false)}
         employee={selectedEmployeeForDossier || displayedData[0] || getLocalRecords('tb_employee_master')[0] || { name: 'Employee', code: 'EMP-001', department: 'Operations' }}
+      />
+
+      {/* Monthly Salary Payslip & Wage Slip Modal */}
+      <EmployeePayslipModal
+        isOpen={showPayslipModal}
+        onClose={() => setShowPayslipModal(false)}
+        employee={selectedEmployeeForDossier || displayedData[0] || getLocalRecords('tb_employee_master')[0] || { name: 'Employee', code: 'EMP-001', department: 'Operations' }}
+      />
+
+      {/* Employee Exit / Full & Final (F&F) Settlement & DPDP Act Compliance Modal */}
+      <EmployeeExitDpdpModal
+        isOpen={showExitDpdpModal}
+        onClose={() => setShowExitDpdpModal(false)}
+        employee={selectedEmployeeForDossier || displayedData[0] || getLocalRecords('tb_employee_master')[0] || { name: 'Employee', code: 'EMP-001', department: 'Operations' }}
+        onCompleteExit={(updated) => {
+          saveLocalRecord('tb_employee_master', updated);
+          setActionAlert({
+            type: 'success',
+            message: `Employee "${updated.name}" exit processed: status marked as RELIEVED, PII redacted under DPDP Act 2023, and 7-year audit retention locked.`
+          });
+          refetch();
+          setShowExitDpdpModal(false);
+        }}
+      />
+
+      {/* Statutory Bonus Tally & Form C Labour Audit Modal */}
+      <BonusAuditModal
+        isOpen={showBonusAuditModal}
+        onClose={() => setShowBonusAuditModal(false)}
+        activeEmployee={selectedEmployeeForDossier || displayedData[0] || getLocalRecords('tb_employee_master')[0]}
       />
     </div>
   );
