@@ -1052,65 +1052,276 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "label": "Employee ID Code",
       "type": "text",
       "required": true,
-      "placeholder": "e.g. EMP-2026-042"
+      "placeholder": "e.g. EMP-006"
     },
     {
       "key": "department",
       "label": "Department",
       "type": "select",
       "options": [
-        "Operations",
         "Engineering & Production",
-        "Accounts & Finance",
-        "Sales & Marketing",
-        "Human Resources",
-        "Supply Chain",
-        "Quality Assurance"
+        "Operations & Plant Maintenance",
+        "Accounts & Financial Control",
+        "Human Resources & Talent",
+        "Quality Assurance & ISO Compliance",
+        "Supply Chain & Procurement",
+        "Sales & Client Relations",
+        "Information Technology & Security"
       ],
-      "defaultValue": "Operations"
+      "defaultValue": "Engineering & Production"
     },
     {
       "key": "designation",
       "label": "Job Title / Role",
-      "type": "text",
+      "type": "select",
       "required": true,
-      "placeholder": "e.g. Senior Production Engineer"
+      "placeholder": "e.g. Senior Production Engineer",
+      "options": [
+        "Senior Production Engineer",
+        "Operations Plant Manager",
+        "Quality Assurance Lead",
+        "Senior Accounts Executive",
+        "HR Business Partner",
+        "Supply Chain Specialist",
+        "Principal Enterprise Architect",
+        "Maintenance Technician"
+      ],
+      "defaultValue": "Senior Production Engineer"
     },
     {
       "key": "email",
-      "label": "Work Email Address",
+      "label": "Work Email (Used for Login)",
       "type": "email",
-      "placeholder": "anand@company.com"
+      "required": true,
+      "placeholder": "anand.v@company.com"
     },
     {
       "key": "phone",
-      "label": "Mobile Number",
+      "label": "Work Phone / Mobile",
       "type": "tel",
+      "required": true,
       "placeholder": "9876543210"
+    },
+    {
+      "key": "aadhaar",
+      "label": "Aadhaar Number (12 Digits)",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. 542189031245"
     },
     {
       "key": "pan",
       "label": "PAN Card Number",
       "type": "text",
-      "placeholder": "e.g. AAACK1234F"
+      "required": true,
+      "placeholder": "e.g. ABCDE1234F"
+    },
+    {
+      "key": "driving_licence",
+      "label": "Licence / Passport / Govt ID",
+      "type": "text",
+      "placeholder": "e.g. DL-0420110098231"
+    },
+    {
+      "key": "dob",
+      "label": "Date of Birth",
+      "type": "date"
+    },
+    {
+      "key": "gender",
+      "label": "Gender",
+      "type": "select",
+      "options": ["Male", "Female", "Other"],
+      "defaultValue": "Male"
+    },
+    {
+      "key": "blood_group",
+      "label": "Blood Group",
+      "type": "select",
+      "options": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+      "defaultValue": "O+"
+    },
+    {
+      "key": "personal_email",
+      "label": "Personal Email",
+      "type": "email",
+      "placeholder": "anand.personal@gmail.com"
+    },
+    {
+      "key": "personal_phone",
+      "label": "Personal Mobile Number",
+      "type": "tel",
+      "placeholder": "9876543210"
+    },
+    {
+      "key": "permanent_address",
+      "label": "Permanent Residential Address",
+      "type": "textarea",
+      "placeholder": "Flat / House No, Street, Landmark"
+    },
+    {
+      "key": "permanent_city",
+      "label": "Permanent City",
+      "type": "text",
+      "placeholder": "e.g. Chennai"
+    },
+    {
+      "key": "permanent_pincode",
+      "label": "Permanent PIN Code",
+      "type": "text",
+      "placeholder": "e.g. 600028"
+    },
+    {
+      "key": "current_address",
+      "label": "Current / Temporary Address",
+      "type": "textarea",
+      "placeholder": "Current local address if different from permanent"
+    },
+    {
+      "key": "current_city",
+      "label": "Current City",
+      "type": "text",
+      "placeholder": "e.g. Chennai"
+    },
+    {
+      "key": "nominee_name",
+      "label": "Nominee / Family Member Name",
+      "type": "text",
+      "placeholder": "e.g. Meena Anand"
+    },
+    {
+      "key": "nominee_relation",
+      "label": "Nominee Relationship",
+      "type": "select",
+      "options": ["Spouse", "Father", "Mother", "Son", "Daughter", "Brother", "Sister"],
+      "defaultValue": "Spouse"
+    },
+    {
+      "key": "nominee_phone",
+      "label": "Nominee Mobile Contact",
+      "type": "tel",
+      "placeholder": "9876543219"
+    },
+    {
+      "key": "pf_uan",
+      "label": "EPF Universal Account No (UAN)",
+      "type": "text",
+      "placeholder": "e.g. 100924810294"
+    },
+    {
+      "key": "esi_number",
+      "label": "ESI IP Insurance Number",
+      "type": "text",
+      "placeholder": "e.g. 31092847102938471"
+    },
+    {
+      "key": "highest_qualification",
+      "label": "Highest Education Qualification",
+      "type": "select",
+      "options": [
+        "B.E. / B.Tech",
+        "M.E. / M.Tech",
+        "MBA / PGDM",
+        "MCA / M.Sc",
+        "B.Com / M.Com",
+        "Polytechnic Diploma",
+        "ITI Certificate",
+        "Ph.D / Doctorate"
+      ],
+      "defaultValue": "B.E. / B.Tech"
+    },
+    {
+      "key": "institution",
+      "label": "College / University Name",
+      "type": "text",
+      "placeholder": "e.g. College of Engineering Guindy"
+    },
+    {
+      "key": "total_experience_years",
+      "label": "Prior Work Experience (Years)",
+      "type": "number",
+      "placeholder": "e.g. 5"
+    },
+    {
+      "key": "previous_company",
+      "label": "Immediate Previous Employer",
+      "type": "text",
+      "placeholder": "e.g. Larsen & Toubro Ltd"
+    },
+    {
+      "key": "bank_account",
+      "label": "Salary Bank Account Number",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. 50100294827103"
+    },
+    {
+      "key": "ifsc",
+      "label": "Bank IFSC Code (Auto-fills Bank)",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. HDFC0000240"
+    },
+    {
+      "key": "bank_name",
+      "label": "Bank Name (Auto-Filled from IFSC)",
+      "type": "text",
+      "placeholder": "Auto-filled from IFSC"
+    },
+    {
+      "key": "bank_branch",
+      "label": "Bank Branch Location",
+      "type": "text",
+      "placeholder": "Auto-filled from IFSC"
     },
     {
       "key": "amount",
-      "label": "Monthly Basic Salary (INR)",
+      "label": "Monthly Gross CTC (INR)",
       "type": "number",
       "required": true,
-      "placeholder": "e.g. 65000.00"
+      "placeholder": "e.g. 75000.00"
+    },
+    {
+      "key": "basic_salary",
+      "label": "Basic Salary (50% Auto-Calculated)",
+      "type": "number",
+      "placeholder": "e.g. 37500.00"
+    },
+    {
+      "key": "hra",
+      "label": "House Rent Allowance (HRA 20%)",
+      "type": "number",
+      "placeholder": "e.g. 15000.00"
+    },
+    {
+      "key": "da",
+      "label": "Dearness Allowance (DA 15%)",
+      "type": "number",
+      "placeholder": "e.g. 11250.00"
+    },
+    {
+      "key": "special_allowance",
+      "label": "Special Allowance (15%)",
+      "type": "number",
+      "placeholder": "e.g. 11250.00"
+    },
+    {
+      "key": "net_salary",
+      "label": "Net Take-Home Monthly Salary",
+      "type": "number",
+      "placeholder": "e.g. 69938.00"
     },
     {
       "key": "date",
       "label": "Date of Joining",
-      "type": "date"
+      "type": "date",
+      "required": true
     },
     {
       "key": "description",
-      "label": "Emergency Contact & Notes",
+      "label": "Emergency Contact & Special Notes",
       "type": "textarea",
-      "placeholder": "Blood group, emergency contact details..."
+      "placeholder": "Allergies, emergency contact numbers, special skills..."
     }
   ],
   "tb_department": [
@@ -1467,8 +1678,15 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
     {
       "key": "designation",
       "label": "Designation / Department",
-      "type": "text",
-      "placeholder": "e.g. Procurement Head"
+      "type": "select",
+      "placeholder": "e.g. Procurement Head",
+      "options": [
+        "Procurement Head",
+        "Key Accounts Manager",
+        "General Manager",
+        "Commercial Director",
+        "Purchase Executive"
+      ]
     },
     {
       "key": "email",
@@ -1514,8 +1732,15 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
     {
       "key": "designation",
       "label": "Designation / Role",
-      "type": "text",
-      "placeholder": "e.g. Regional Key Accounts Manager"
+      "type": "select",
+      "placeholder": "e.g. Regional Key Accounts Manager",
+      "options": [
+        "Regional Key Accounts Manager",
+        "Technical Sales Lead",
+        "Commercial Director",
+        "Logistics Coordinator",
+        "Managing Director"
+      ]
     },
     {
       "key": "email",

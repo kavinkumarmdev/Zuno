@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class NeonPrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NeonPrismaService.name);
+  private isDbConnected = false;
 
   constructor(configService: ConfigService) {
     const dbUrl =
@@ -24,11 +25,17 @@ export class NeonPrismaService extends PrismaClient implements OnModuleInit, OnM
     });
   }
 
+  get isConnected(): boolean {
+    return this.isDbConnected;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();
+      this.isDbConnected = true;
       this.logger.log('Connected to Neon Operational PostgreSQL database successfully');
     } catch (err: any) {
+      this.isDbConnected = false;
       this.logger.warn(`Neon DB connection deferred or offline for local build: ${err.message}`);
     }
   }

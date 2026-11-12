@@ -250,6 +250,84 @@ export class OperationalDataStore {
   }
 
   private static generateInitialSeed(tableName: string, tenantId: string): StoredRecord[] {
+    const now = new Date().toISOString();
+
+    if (tableName === 'tb_department') {
+      const depts = [
+        { code: 'DEPT-001', name: 'Engineering & Production', head: 'Anand Venkatesh', cost: 'CC-ENG-101' },
+        { code: 'DEPT-002', name: 'Operations & Plant Maintenance', head: 'Suresh Babu', cost: 'CC-OPS-102' },
+        { code: 'DEPT-003', name: 'Accounts & Financial Control', head: 'Rajesh Iyer', cost: 'CC-ACC-103' },
+        { code: 'DEPT-004', name: 'Human Resources & Talent', head: 'Priya Sundaram', cost: 'CC-HR-104' },
+        { code: 'DEPT-005', name: 'Quality Assurance & ISO Compliance', head: 'Kavitha Raman', cost: 'CC-QA-105' },
+        { code: 'DEPT-006', name: 'Supply Chain & Procurement', head: 'Murugan Pillai', cost: 'CC-SCM-106' },
+        { code: 'DEPT-007', name: 'Sales & Client Relations', head: 'Deepak Sharma', cost: 'CC-SLS-107' },
+        { code: 'DEPT-008', name: 'Information Technology & Security', head: 'Kavin Kumar', cost: 'CC-IT-108' }
+      ];
+      return depts.map((d) => ({
+        id: crypto.randomUUID(),
+        tenant_id: tenantId,
+        code: d.code,
+        name: d.name,
+        head_name: d.head,
+        cost_center: d.cost,
+        description: `Operational department scope for ${d.name}`,
+        status: 'ACTIVE',
+        created_time: now,
+        is_active: true
+      }));
+    }
+
+    if (tableName === 'tb_designation') {
+      const desigs = [
+        { code: 'DESIG-001', name: 'Senior Production Engineer', grade: 'Band T1 (Technical)', ctc: '950000.00' },
+        { code: 'DESIG-002', name: 'Operations Plant Manager', grade: 'Band M1 (Management)', ctc: '1600000.00' },
+        { code: 'DESIG-003', name: 'Senior Accounts Executive', grade: 'Band M1 (Management)', ctc: '850000.00' },
+        { code: 'DESIG-004', name: 'HR Business Partner', grade: 'Band M1 (Management)', ctc: '900000.00' },
+        { code: 'DESIG-005', name: 'Quality Assurance Lead', grade: 'Band T1 (Technical)', ctc: '1100000.00' },
+        { code: 'DESIG-006', name: 'Supply Chain Specialist', grade: 'Band E1 (Executive)', ctc: '750000.00' },
+        { code: 'DESIG-007', name: 'Principal Enterprise Architect', grade: 'Band D1 (Director)', ctc: '2400000.00' },
+        { code: 'DESIG-008', name: 'Maintenance Technician', grade: 'Band O1 (Operator)', ctc: '480000.00' }
+      ];
+      return desigs.map((d) => ({
+        id: crypto.randomUUID(),
+        tenant_id: tenantId,
+        code: d.code,
+        name: d.name,
+        grade: d.grade,
+        amount: d.ctc,
+        description: `Standard responsibilities and grading profile for ${d.name}`,
+        status: 'ACTIVE',
+        created_time: now,
+        is_active: true
+      }));
+    }
+
+    if (tableName === 'tb_employee_master') {
+      const emps = [
+        { code: 'EMP-001', name: 'Anand Venkatesh', dept: 'Engineering & Production', desig: 'Senior Production Engineer', email: 'anand.v@zunoerp.com', phone: '9876543210', sal: '79000.00' },
+        { code: 'EMP-002', name: 'Priya Sundaram', dept: 'Human Resources & Talent', desig: 'HR Business Partner', email: 'priya.s@zunoerp.com', phone: '9876543211', sal: '75000.00' },
+        { code: 'EMP-003', name: 'Rajesh Iyer', dept: 'Accounts & Financial Control', desig: 'Senior Accounts Executive', email: 'rajesh.i@zunoerp.com', phone: '9876543212', sal: '71000.00' },
+        { code: 'EMP-004', name: 'Kavitha Raman', dept: 'Quality Assurance & ISO Compliance', desig: 'Quality Assurance Lead', email: 'kavitha.r@zunoerp.com', phone: '9876543213', sal: '92000.00' },
+        { code: 'EMP-005', name: 'Suresh Babu', dept: 'Operations & Plant Maintenance', desig: 'Operations Plant Manager', email: 'suresh.b@zunoerp.com', phone: '9876543214', sal: '133000.00' }
+      ];
+      return emps.map((e) => ({
+        id: crypto.randomUUID(),
+        tenant_id: tenantId,
+        code: e.code,
+        name: e.name,
+        department: e.dept,
+        designation: e.desig,
+        email: e.email,
+        phone: e.phone,
+        amount: e.sal,
+        date: '2024-03-15',
+        description: `Full-time permanent enterprise staff member`,
+        status: 'ACTIVE',
+        created_time: now,
+        is_active: true
+      }));
+    }
+
     const prefix = tableName.replace('tb_', '').substring(0, 4).toUpperCase();
     const title = tableName.replace('tb_', '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
@@ -257,7 +335,7 @@ export class OperationalDataStore {
     const count = 5;
 
     for (let i = 1; i <= count; i++) {
-      const now = new Date(Date.now() - i * 86400000).toISOString();
+      const itemTime = new Date(Date.now() - i * 86400000).toISOString();
       items.push({
         id: crypto.randomUUID(),
         tenant_id: tenantId,
@@ -269,7 +347,7 @@ export class OperationalDataStore {
         amount: (i * 14500.5).toFixed(2),
         quantity: (i * 12).toFixed(3),
         currency_code: 'INR',
-        created_time: now,
+        created_time: itemTime,
         is_active: true
       });
     }

@@ -54,7 +54,6 @@ export const RegisterPage: React.FC = () => {
   const [otpTimer, setOtpTimer] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [generatedRegOtp, setGeneratedRegOtp] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -156,7 +155,6 @@ export const RegisterPage: React.FC = () => {
         // Also attempt direct localhost:4000
         await axios.post('http://localhost:4000/api/v1/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
       }
-      setGeneratedRegOtp(null);
       setStep('otp');
       setOtpTimer(60);
     } catch (err: any) {
@@ -214,6 +212,7 @@ export const RegisterPage: React.FC = () => {
         ownerName: formData.ownerName.trim(),
         email: formData.email.trim().toLowerCase(),
         mobile: formData.mobile.trim(),
+        password: formData.password
       });
       navigate('/dashboard');
     } catch (err: any) {

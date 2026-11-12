@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../services/api';
@@ -49,8 +49,27 @@ import {
   Table,
   Loader2,
   ShieldAlert,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
+  RefreshCw,
+  Fingerprint,
+  FileUp,
+  Award
 } from 'lucide-react';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import {
+  generateNextSequentialCode,
+  getDynamicFieldOptions,
+  ensureTableSeedRecords,
+  FIELD_TABLE_MAPPING,
+  getPrimaryCodeField,
+  lookupIfscCode,
+  calculateSalaryComponents,
+  ensureEmployeeUserAccount
+} from './fkRelations';
+import { ResumeAutoFillModal } from '../../components/hr/ResumeAutoFillModal';
+import { EmployeeAttendanceModal } from '../../components/hr/EmployeeAttendanceModal';
+import { StatutoryFormsModal } from '../../components/hr/StatutoryFormsModal';
 import { canUserAccessModule, getModuleActionPermissions } from '../../utils/permissionManager';
 
 const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
@@ -398,6 +417,68 @@ export const ModuleHubPage: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [voiceGuideModule, setVoiceGuideModule] = useState<string | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showStatutoryModal, setShowStatutoryModal] = useState(false);
+  const [selectedEmployeeForDossier, setSelectedEmployeeForDossier] = useState<any>(null);
+  const [resolvedIfscStatus, setResolvedIfscStatus] = useState<{ ifsc: string; bankName: string; branch: string } | null>(null);
+
+  // Resume Auto-Fill Handler: populate candidate fields into formData
+  const handleApplyResumeData = (details: Record<string, any>) => {
+    setFormData((prev) => {
+      const updated = { ...prev, ...details };
+
+      // If IFSC is extracted, auto-lookup bank
+      if (details.ifsc) {
+        lookupIfscCode(details.ifsc).then((info) => {
+          if (info) {
+            setResolvedIfscStatus({ ifsc: details.ifsc, bankName: info.bankName, branch: info.branch });
+            setFormData((curr) => ({
+              ...curr,
+              bank_name: info.bankName,
+              bank_branch: info.branch
+            }));
+          }
+        });
+      }
+
+      // If department is extracted, map department_code
+      if (details.department) {
+        const depts = ensureTableSeedRecords('tb_department');
+        const matchDept = depts.find((d: any) => d.name === details.department || d.code === details.department);
+        if (matchDept) updated.department_code = matchDept.code;
+      }
+
+      // If designation is extracted, map designation_code and calculate benchmark salary
+      if (details.designation) {
+        const desigs = ensureTableSeedRecords('tb_designation');
+        const matchDesig = desigs.find((d: any) => d.name === details.designation || d.code === details.designation);
+        if (matchDesig) {
+          updated.designation_code = matchDesig.code;
+          if (matchDesig.amount && (!updated.amount || updated.amount === '0')) {
+            const grossVal = Number(matchDesig.amount) > 100000 ? Math.round(Number(matchDesig.amount) / 12) : Number(matchDesig.amount);
+            updated.amount = String(grossVal);
+            const sal = calculateSalaryComponents(grossVal);
+            updated.basic_salary = String(sal.basicSalary);
+            updated.hra = String(sal.hra);
+            updated.da = String(sal.da);
+            updated.special_allowance = String(sal.specialAllowance);
+            updated.pf_deduction = String(sal.pfDeduction);
+            updated.esi_deduction = String(sal.esiDeduction);
+            updated.net_salary = String(sal.netTakeHome);
+          }
+        }
+      }
+
+      return updated;
+    });
+
+    setShowResumeModal(false);
+    setActionAlert({
+      type: 'success',
+      message: `Resume parsed successfully! Auto-filled ${Object.keys(details).filter((k) => details[k]).length} fields directly into the form.`
+    });
+  };
 
   // Check if current user has authorization to access this module/menu
   const hasModulePermission = useMemo(() => {
@@ -539,16 +620,46 @@ export const ModuleHubPage: React.FC = () => {
     }
   };
 
+  // Pre-seed realistic records for HR and related tables on initial load
+  useEffect(() => {
+    ensureTableSeedRecords('tb_department');
+    ensureTableSeedRecords('tb_designation');
+    ensureTableSeedRecords('tb_employee_master');
+  }, []);
+
   // Open Create Modal
   const openCreateModal = () => {
     setEditingRecord(null);
+    const allExisting = [
+      ...(queryResult?.items || []),
+      ...getLocalRecords(selectedTable)
+    ];
+
     const initial: Record<string, any> = {};
     for (const f of currentSchema) {
       initial[f.key] = f.defaultValue || '';
     }
+
+    // Auto-generate next sequential code for the primary identifier field ONLY
+    const primaryCodeField = getPrimaryCodeField(currentSchema);
+    if (primaryCodeField) {
+      initial[primaryCodeField.key] = generateNextSequentialCode(selectedTable, allExisting);
+    }
+
+    setResolvedIfscStatus(null);
     setFormData(initial);
     setFormErrors({});
     setShowCreateModal(true);
+  };
+
+  // Re-generate next sequential code on demand
+  const handleRegenerateCode = (codeKey: string) => {
+    const allExisting = [
+      ...(queryResult?.items || []),
+      ...getLocalRecords(selectedTable)
+    ];
+    const nextCode = generateNextSequentialCode(selectedTable, allExisting);
+    setFormData((prev) => ({ ...prev, [codeKey]: nextCode }));
   };
 
   // Open Edit Modal with existing record pre-filled
@@ -561,6 +672,11 @@ export const ModuleHubPage: React.FC = () => {
     if (!initial.name && record.name) initial.name = record.name;
     if (!initial.code && record.code) initial.code = record.code;
     setFormData(initial);
+    if (record.ifsc && record.bank_name) {
+      setResolvedIfscStatus({ ifsc: record.ifsc, bankName: record.bank_name, branch: record.bank_branch || '' });
+    } else {
+      setResolvedIfscStatus(null);
+    }
     setFormErrors({});
     setShowCreateModal(true);
   };
@@ -585,21 +701,20 @@ export const ModuleHubPage: React.FC = () => {
     };
 
     // 1. Primary Code / Identifier Field Validation & Uniqueness
-    const codeField = currentSchema.find(
-      (f) => ['code', 'sku_code', 'company_code', 'branch_code', 'account_code', 'vendor_code', 'employee_code', 'voucher_no', 'po_number', 'invoice_number', 'receipt_number', 'quotation_number', 'grn_number', 'order_number', 'task_code', 'project_code', 'licence_number', 'subscription_code', 'payment_id', 'plan_code'].includes(f.key)
-    ) || currentSchema.find((f) => f.key === 'code');
-    const codeKey = codeField?.key;
+    const primaryCodeField = getPrimaryCodeField(currentSchema);
+    const codeKey = primaryCodeField?.key;
+    const codeLabel = primaryCodeField?.label || 'Identifier Code';
 
     if (codeKey) {
       const codeVal = String(formData[codeKey] || '').trim();
       if (!codeVal) {
-        errors[codeKey] = `${codeField.label} is required.`;
+        errors[codeKey] = `${codeLabel} is required.`;
       } else if (codeVal.length < 2) {
-        errors[codeKey] = `${codeField.label} must be at least 2 characters.`;
+        errors[codeKey] = `${codeLabel} must be at least 2 characters.`;
       } else if (codeVal.length > 35) {
-        errors[codeKey] = `${codeField.label} cannot exceed 35 characters.`;
+        errors[codeKey] = `${codeLabel} cannot exceed 35 characters.`;
       } else if (!/^[A-Z0-9\-_]+$/i.test(codeVal)) {
-        errors[codeKey] = `${codeField.label} can only contain letters, numbers, hyphens, and underscores.`;
+        errors[codeKey] = `${codeLabel} can only contain letters, numbers, hyphens, and underscores.`;
       } else {
         const normalizedCode = codeVal.toUpperCase();
         const isDuplicateCode = allExisting.some((rec: any) => {
@@ -974,11 +1089,16 @@ export const ModuleHubPage: React.FC = () => {
           currencyCode: formData.currency_code || 'INR'
         });
       }
+      if (selectedTable === 'tb_employee_master') {
+        ensureEmployeeUserAccount(formData);
+      }
       setShowCreateModal(false);
       setEditingRecord(null);
       setActionAlert({
         type: 'success',
-        message: `${singleLabel} record successfully ${isEdit ? 'updated' : 'saved'} and synchronized with database.`
+        message: selectedTable === 'tb_employee_master'
+          ? `Employee "${formData.name}" successfully saved! Default login credentials generated for ${formData.email} (Password: Zuno@2026).`
+          : `${singleLabel} record successfully ${isEdit ? 'updated' : 'saved'} and synchronized with database.`
       });
       refetch();
     },
@@ -1051,11 +1171,113 @@ export const ModuleHubPage: React.FC = () => {
     if (selectedTable === 'tb_employee_master') {
       return [
         { key: 'name', header: 'Employee Name', sortable: true },
-        { key: 'code', header: 'Employee ID', sortable: true, width: '130px' },
+        { key: 'code', header: 'Employee ID', sortable: true, width: '120px' },
         { key: 'department', header: 'Department' },
         { key: 'designation', header: 'Designation' },
-        { key: 'email', header: 'Email' },
-        { key: 'amount', header: 'Salary (INR)', align: 'right', render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}` },
+        { key: 'email', header: 'Work Email' },
+        {
+          key: 'amount',
+          header: 'Salary (INR)',
+          align: 'right',
+          render: (r) => `₹${Number(r.amount || 0).toLocaleString('en-IN')}`
+        },
+        {
+          key: 'bank_name',
+          header: 'Bank / IFSC',
+          render: (r) => (
+            <div className="text-[11px] leading-tight">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{r.bank_name || 'Bank Not Set'}</span>
+              {r.ifsc && <span className="block text-slate-400 font-mono text-[10px]">{r.ifsc}</span>}
+            </div>
+          )
+        },
+        {
+          key: 'compliance_dossier',
+          header: 'Forms & Biometrics',
+          align: 'center',
+          width: '180px',
+          render: (r) => (
+            <div className="flex items-center justify-center gap-1.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedEmployeeForDossier(r);
+                  setShowStatutoryModal(true);
+                }}
+                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
+                title="View Statutory Labour Forms (A, B, C, D, 11, 2, F) & Training Dossier"
+              >
+                <FileText className="w-3 h-3" />
+                Forms
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedEmployeeForDossier(r);
+                  setShowAttendanceModal(true);
+                }}
+                className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 cursor-pointer inline-flex items-center gap-1 transition-colors"
+                title="Mark Biometric Attendance (Thumb/Face + Location)"
+              >
+                <Fingerprint className="w-3 h-3" />
+                Punch
+              </button>
+            </div>
+          )
+        },
+        { key: 'status', header: 'Status', align: 'center', width: '90px' }
+      ];
+    }
+
+    if (selectedTable === 'tb_attendance') {
+      return [
+        { key: 'name', header: 'Employee Name', sortable: true },
+        { key: 'employee_code', header: 'Emp Code', width: '110px' },
+        { key: 'date', header: 'Date', width: '110px' },
+        { key: 'in_time', header: 'Punch In', width: '90px' },
+        { key: 'out_time', header: 'Punch Out', width: '90px', render: (r) => r.out_time || '—' },
+        { key: 'working_hours', header: 'Hours Worked', width: '110px', render: (r) => r.working_hours || '—' },
+        {
+          key: 'overtime_hours',
+          header: 'Overtime (OT)',
+          width: '110px',
+          render: (r) => (
+            <span className={r.overtime_hours && r.overtime_hours !== '0h 00m' ? 'text-amber-600 font-semibold font-mono' : 'text-slate-400 font-mono'}>
+              {r.overtime_hours || '0h 00m'}
+            </span>
+          )
+        },
+        {
+          key: 'verification_mode',
+          header: 'Biometric Mode',
+          width: '140px',
+          render: (r) => (
+            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              {r.verification_mode || 'BIOMETRIC'}
+            </span>
+          )
+        },
+        {
+          key: 'approval_status',
+          header: 'Admin Approval',
+          align: 'center',
+          width: '140px',
+          render: (r) => (
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                r.approval_status === 'APPROVED'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                  : r.approval_status === 'REJECTED'
+                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+              }`}
+            >
+              {r.approval_status || 'PENDING_APPROVAL'}
+            </span>
+          )
+        },
         { key: 'status', header: 'Status', align: 'center', width: '100px' }
       ];
     }
@@ -1318,6 +1540,54 @@ export const ModuleHubPage: React.FC = () => {
         </div>
       )}
 
+      {/* HR & Attendance Quick Actions Banner */}
+      {(moduleKey === 'hr' || moduleKey === 'attendance' || selectedTable === 'tb_employee_master' || selectedTable === 'tb_attendance') && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-purple-900/10 border border-blue-200/70 dark:border-blue-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+              <Fingerprint className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Workforce Biometric Attendance & Labour Compliance Dossier
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
+                  LIVE PORTAL
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Mark biometric punches with GPS geofence verification, manage overtime approvals, and generate statutory labour registers (Forms A–D, 11, 2, F).
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEmployeeForDossier(displayedData[0] || null);
+                setShowAttendanceModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+            >
+              <Fingerprint className="w-4 h-4" />
+              Biometric Punch & Location
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEmployeeForDossier(displayedData[0] || null);
+                setShowStatutoryModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+            >
+              <FileText className="w-4 h-4" />
+              Statutory Forms Dossier
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Enterprise Data Grid */}
       <DataGrid
         title={currentTableLabel}
@@ -1381,6 +1651,33 @@ export const ModuleHubPage: React.FC = () => {
               </button>
             </div>
 
+            {/* Resume Upload Quick Auto-Fill for Employee Master */}
+            {selectedTable === 'tb_employee_master' && !editingRecord && (
+              <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-200 dark:border-blue-800/60 flex items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      AI Resume Upload & Smart Auto-Fill
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Upload candidate CV/Resume to automatically populate Name, KYC, Education, Experience & Bank.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowResumeModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-1.5 transition-all shrink-0"
+                >
+                  <FileUp className="w-3.5 h-3.5" />
+                  Upload Resume
+                </button>
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1391,126 +1688,214 @@ export const ModuleHubPage: React.FC = () => {
               noValidate
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {currentSchema.map((field) => (
-                  <div key={field.key} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {field.label} {field.required && <span className="text-blue-600">*</span>}
-                    </label>
-                    {field.type === 'select' ? (
-                      <select
-                        value={formData[field.key] || field.defaultValue || ''}
-                        onChange={(e) => {
-                          setFormData({ ...formData, [field.key]: e.target.value });
-                          if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
-                        }}
-                        className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 cursor-pointer transition-colors ${
-                          formErrors[field.key]
-                            ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
-                            : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
-                        }`}
-                      >
-                        {field.options?.map((opt) => (
-                          <option key={opt} value={opt} className="dark:bg-slate-800">
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field.type === 'textarea' ? (
-                      <textarea
-                        rows={3}
-                        value={formData[field.key] || ''}
-                        onChange={(e) => {
-                          setFormData({ ...formData, [field.key]: e.target.value });
-                          if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
-                        }}
-                        placeholder={field.placeholder}
-                        className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
-                          formErrors[field.key]
-                            ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
-                            : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
-                        }`}
-                      />
-                    ) : field.type === 'tel' ? (
-                      <div className="space-y-1">
-                        <div
-                          className={`flex items-center rounded-xl border bg-slate-50/70 hover:bg-slate-50 focus-within:bg-white dark:bg-slate-800 dark:focus-within:bg-slate-900 transition-all duration-200 overflow-hidden ${
-                            formErrors[field.key]
-                              ? 'border-rose-400 bg-rose-50/20 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20'
-                              : 'border-slate-300 dark:border-slate-700 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800/90 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 select-none shrink-0">
-                            <Phone className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-xs font-semibold font-mono text-slate-700 dark:text-slate-300">+91</span>
-                          </div>
-                          <input
-                            type="tel"
-                            inputMode="numeric"
-                            maxLength={10}
-                            value={formData[field.key] || ''}
-                            onChange={(e) => {
-                              const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
-                              setFormData({ ...formData, [field.key]: digitsOnly });
-                              if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
-                            }}
-                            placeholder="9876543210"
-                            className="w-full px-3 py-2 text-xs bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 font-mono focus:outline-none tracking-wider"
-                          />
-                          <span className="px-2.5 text-[10px] font-mono text-slate-400 shrink-0">
-                            {(formData[field.key] || '').length}/10
+                {currentSchema.map((field) => {
+                  const isSelectField = field.type === 'select' || !!FIELD_TABLE_MAPPING[field.key];
+                  const primaryCodeField = getPrimaryCodeField(currentSchema);
+                  const isCodeField = primaryCodeField?.key === field.key;
+
+                  return (
+                    <div key={field.key} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {field.label} {field.required && <span className="text-blue-600">*</span>}
+                        </label>
+                        {isCodeField && !editingRecord && (
+                          <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 inline-flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                            Auto-Generated
                           </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative group">
-                        {/* Currency Prefix Icon */}
-                        {(field.type === 'number' && (field.key === 'amount' || field.key.includes('price') || field.key.includes('salary') || field.key.includes('cost') || field.key.includes('budget') || field.key.includes('revenue') || field.key.includes('balance') || field.key.includes('credit_limit') || field.key.includes('gross') || field.key.includes('net'))) && (
-                          <div className="absolute left-3 top-2 text-xs font-bold text-slate-400 select-none pointer-events-none">
-                            ₹
-                          </div>
                         )}
-                        <input
-                          type={field.type}
+                      </div>
+
+                      {isSelectField ? (
+                        <SearchableSelect
+                          value={formData[field.key] || field.defaultValue || ''}
+                          options={getDynamicFieldOptions(field, selectedTable)}
+                          placeholder={field.placeholder || `Select ${field.label}...`}
+                          error={!!formErrors[field.key]}
+                          required={field.required}
+                          allowCustom={true}
+                          onChange={(val) => {
+                            const updated = { ...formData, [field.key]: val };
+
+                            // Cascading handler 1: Department selection -> sets department_code
+                            if (field.key === 'department') {
+                              const allDepts = [
+                                ...getLocalRecords('tb_department'),
+                                ...ensureTableSeedRecords('tb_department')
+                              ];
+                              const matchDept = allDepts.find((d: any) => d.name === val || d.code === val);
+                              if (matchDept) {
+                                updated.department_code = matchDept.code;
+                              }
+                            }
+
+                            // Cascading handler 2: Designation selection -> sets designation_code & benchmark salary
+                            if (field.key === 'designation') {
+                              const allDesigs = [
+                                ...getLocalRecords('tb_designation'),
+                                ...ensureTableSeedRecords('tb_designation')
+                              ];
+                              const matchDesig = allDesigs.find((d: any) => d.name === val || d.code === val);
+                              if (matchDesig) {
+                                updated.designation_code = matchDesig.code;
+                                if (matchDesig.amount && (!updated.amount || updated.amount === '0' || updated.amount === '0.00')) {
+                                  const grossVal = Number(matchDesig.amount) > 100000 ? Math.round(Number(matchDesig.amount) / 12) : Number(matchDesig.amount);
+                                  updated.amount = String(grossVal);
+                                  const sal = calculateSalaryComponents(grossVal);
+                                  updated.basic_salary = String(sal.basicSalary);
+                                  updated.hra = String(sal.hra);
+                                  updated.da = String(sal.da);
+                                  updated.special_allowance = String(sal.specialAllowance);
+                                  updated.pf_deduction = String(sal.pfDeduction);
+                                  updated.esi_deduction = String(sal.esiDeduction);
+                                  updated.net_salary = String(sal.netTakeHome);
+                                }
+                              }
+                            }
+
+                            setFormData(updated);
+                            if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                          }}
+                        />
+                      ) : field.type === 'textarea' ? (
+                        <textarea
+                          rows={3}
                           value={formData[field.key] || ''}
                           onChange={(e) => {
-                            let val = e.target.value;
-                            if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
-                              val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
-                            } else if (field.key === 'pan' || field.key === 'pan_number') {
-                              val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-                            } else if (field.key === 'ifsc' || field.key === 'ifsc_code') {
-                              val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
-                            } else if (field.key === 'postal_code' || field.key === 'pincode' || field.key === 'pin_code') {
-                              val = val.replace(/\D/g, '').slice(0, 6);
-                            } else if (field.key === 'hsn' || field.key === 'hsn_code' || field.key === 'sac_code') {
-                              val = val.replace(/\D/g, '').slice(0, 8);
-                            } else if (field.key === 'account_number' || field.key === 'bank_account' || field.key === 'loan_account_no') {
-                              val = val.replace(/\D/g, '').slice(0, 18);
-                            } else if (field.key === 'uan') {
-                              val = val.replace(/\D/g, '').slice(0, 12);
-                            } else if (field.key === 'ip_number') {
-                              val = val.replace(/\D/g, '').slice(0, 17);
-                            } else if (field.key === 'code' || field.key === 'sku_code' || field.key === 'company_code' || field.key === 'branch_code') {
-                              val = val.toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 35);
-                            }
-                            setFormData({ ...formData, [field.key]: val });
+                            setFormData({ ...formData, [field.key]: e.target.value });
                             if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
                           }}
                           placeholder={field.placeholder}
                           className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
-                            (field.type === 'number' && (field.key === 'amount' || field.key.includes('price') || field.key.includes('salary') || field.key.includes('cost') || field.key.includes('budget') || field.key.includes('revenue') || field.key.includes('balance') || field.key.includes('credit_limit') || field.key.includes('gross') || field.key.includes('net')))
-                              ? 'pl-7 font-mono'
-                              : ''
-                          } ${
-                            field.key === 'gstin' || field.key === 'code' || field.key === 'sku_code' || field.key === 'pan' || field.key === 'ifsc' || field.key === 'ifsc_code'
-                              ? 'font-mono tracking-wider uppercase'
-                              : ''
-                          } ${
                             formErrors[field.key]
                               ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
                               : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
                           }`}
                         />
+                      ) : field.type === 'tel' ? (
+                        <div className="space-y-1">
+                          <div
+                            className={`flex items-center rounded-xl border bg-slate-50/70 hover:bg-slate-50 focus-within:bg-white dark:bg-slate-800 dark:focus-within:bg-slate-900 transition-all duration-200 overflow-hidden ${
+                              formErrors[field.key]
+                                ? 'border-rose-400 bg-rose-50/20 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20'
+                                : 'border-slate-300 dark:border-slate-700 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800/90 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 select-none shrink-0">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="text-xs font-semibold font-mono text-slate-700 dark:text-slate-300">+91</span>
+                            </div>
+                            <input
+                              type="tel"
+                              inputMode="numeric"
+                              maxLength={10}
+                              value={formData[field.key] || ''}
+                              onChange={(e) => {
+                                const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                setFormData({ ...formData, [field.key]: digitsOnly });
+                                if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                              }}
+                              placeholder="9876543210"
+                              className="w-full px-3 py-2 text-xs bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 font-mono focus:outline-none tracking-wider"
+                            />
+                            <span className="px-2.5 text-[10px] font-mono text-slate-400 shrink-0">
+                              {(formData[field.key] || '').length}/10
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          {/* Currency Prefix Icon */}
+                          {(field.type === 'number' && (field.key === 'amount' || field.key.includes('price') || field.key.includes('salary') || field.key.includes('cost') || field.key.includes('budget') || field.key.includes('revenue') || field.key.includes('balance') || field.key.includes('credit_limit') || field.key.includes('gross') || field.key.includes('net'))) && (
+                            <div className="absolute left-3 top-2 text-xs font-bold text-slate-400 select-none pointer-events-none">
+                              ₹
+                            </div>
+                          )}
+                          <input
+                            type={field.type}
+                            value={formData[field.key] || ''}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') {
+                                val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
+                              } else if (field.key === 'pan' || field.key === 'pan_number') {
+                                val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+                              } else if (field.key === 'ifsc' || field.key === 'ifsc_code') {
+                                val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
+                                lookupIfscCode(val).then((info) => {
+                                  if (info) {
+                                    setResolvedIfscStatus({ ifsc: val, bankName: info.bankName, branch: info.branch });
+                                    setFormData((curr) => ({
+                                      ...curr,
+                                      bank_name: info.bankName,
+                                      bank_branch: info.branch
+                                    }));
+                                  } else {
+                                    setResolvedIfscStatus(null);
+                                  }
+                                });
+                              } else if (field.key === 'amount' && selectedTable === 'tb_employee_master') {
+                                const gross = Number(val) || 0;
+                                const sal = calculateSalaryComponents(gross);
+                                setFormData({
+                                  ...formData,
+                                  amount: val,
+                                  basic_salary: String(sal.basicSalary),
+                                  hra: String(sal.hra),
+                                  da: String(sal.da),
+                                  special_allowance: String(sal.specialAllowance),
+                                  pf_deduction: String(sal.pfDeduction),
+                                  esi_deduction: String(sal.esiDeduction),
+                                  net_salary: String(sal.netTakeHome)
+                                });
+                                if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                                return;
+                              } else if (field.key === 'postal_code' || field.key === 'pincode' || field.key === 'pin_code') {
+                                val = val.replace(/\D/g, '').slice(0, 6);
+                              } else if (field.key === 'hsn' || field.key === 'hsn_code' || field.key === 'sac_code') {
+                                val = val.replace(/\D/g, '').slice(0, 8);
+                              } else if (field.key === 'account_number' || field.key === 'bank_account' || field.key === 'loan_account_no') {
+                                val = val.replace(/\D/g, '').slice(0, 18);
+                              } else if (field.key === 'uan') {
+                                val = val.replace(/\D/g, '').slice(0, 12);
+                              } else if (field.key === 'ip_number') {
+                                val = val.replace(/\D/g, '').slice(0, 17);
+                              } else if (field.key === 'code' || field.key === 'sku_code' || field.key === 'company_code' || field.key === 'branch_code') {
+                                val = val.toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 35);
+                              }
+                              setFormData({ ...formData, [field.key]: val });
+                              if (formErrors[field.key]) setFormErrors((p) => ({ ...p, [field.key]: undefined as any }));
+                            }}
+                            placeholder={field.placeholder}
+                            className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 transition-colors ${
+                              (field.type === 'number' && (field.key === 'amount' || field.key.includes('price') || field.key.includes('salary') || field.key.includes('cost') || field.key.includes('budget') || field.key.includes('revenue') || field.key.includes('balance') || field.key.includes('credit_limit') || field.key.includes('gross') || field.key.includes('net')))
+                                ? 'pl-7 font-mono'
+                                : ''
+                            } ${
+                              isCodeField
+                                ? 'font-mono tracking-wider uppercase pr-8'
+                                : field.key === 'gstin' || field.key === 'pan' || field.key === 'ifsc' || field.key === 'ifsc_code'
+                                ? 'font-mono tracking-wider uppercase'
+                                : ''
+                            } ${
+                              formErrors[field.key]
+                                ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400/20'
+                                : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500'
+                            }`}
+                          />
+
+                          {/* Code Regenerate Button */}
+                          {isCodeField && !editingRecord && (
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerateCode(field.key)}
+                              className="absolute right-2 top-2 p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors cursor-pointer"
+                              title="Regenerate next sequential code"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         {/* Real-time Character Counter & Indicator Badges */}
                         {(field.key === 'gstin' || field.key.includes('gstin') || field.key === 'tax_id') && (
                           <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 pointer-events-none">
@@ -1554,6 +1939,16 @@ export const ModuleHubPage: React.FC = () => {
                         )}
                       </div>
                     )}
+                    {/* Instant IFSC Bank Resolution Indicator */}
+                    {(field.key === 'ifsc' || field.key === 'ifsc_code') && (resolvedIfscStatus || formData.bank_name) && (
+                      <div className="mt-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 animate-in fade-in">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="font-semibold">{resolvedIfscStatus?.bankName || formData.bank_name}</span>
+                        {(resolvedIfscStatus?.branch || formData.bank_branch) && (
+                          <span className="text-emerald-600/80">• {resolvedIfscStatus?.branch || formData.bank_branch}</span>
+                        )}
+                      </div>
+                    )}
                     {formErrors[field.key] && (
                       <p className="mt-1 text-[11px] text-rose-600 font-medium flex items-center gap-1 animate-in fade-in">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
@@ -1561,7 +1956,8 @@ export const ModuleHubPage: React.FC = () => {
                       </p>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -1597,6 +1993,27 @@ export const ModuleHubPage: React.FC = () => {
         isOpen={!!voiceGuideModule}
         initialModuleId={voiceGuideModule || undefined}
         onClose={() => setVoiceGuideModule(null)}
+      />
+
+      {/* AI Resume Upload & Smart Auto-Fill Modal */}
+      <ResumeAutoFillModal
+        isOpen={showResumeModal}
+        onClose={() => setShowResumeModal(false)}
+        onApplyDetails={handleApplyResumeData}
+      />
+
+      {/* Biometric Attendance & Geolocation Portal */}
+      <EmployeeAttendanceModal
+        isOpen={showAttendanceModal}
+        onClose={() => setShowAttendanceModal(false)}
+        activeEmployee={selectedEmployeeForDossier}
+      />
+
+      {/* Statutory Labour Compliance & Training Records Dossier */}
+      <StatutoryFormsModal
+        isOpen={showStatutoryModal}
+        onClose={() => setShowStatutoryModal(false)}
+        employee={selectedEmployeeForDossier || displayedData[0] || getLocalRecords('tb_employee_master')[0] || { name: 'Employee', code: 'EMP-001', department: 'Operations' }}
       />
     </div>
   );

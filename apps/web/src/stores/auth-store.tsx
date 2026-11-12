@@ -502,6 +502,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         code: 'USR-001',
         email: tenantData.email,
         phone: tenantData.mobile,
+        password: tenantData.password,
         user_type: 'ADMIN',
         status: 'ACTIVE',
         created_time: new Date().toISOString(),
