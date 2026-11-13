@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { sanitizeErrorMessage } from '../utils/errorSanitizer';
 
 const isBrowser = typeof window !== 'undefined';
 const isLocalhost =
@@ -58,7 +59,22 @@ apiClient.interceptors.response.use(
         }
       }
     }
-    return Promise.reject(error.response?.data || error);
+
+    const rawData: any = error.response?.data;
+    const rawMsg = rawData?.message || error.message || 'An error occurred';
+    const cleanMsg = sanitizeErrorMessage(rawMsg);
+
+    const sanitizedError: any = new Error(cleanMsg);
+    sanitizedError.status = error.response?.status;
+    sanitizedError.data = rawData;
+    sanitizedError.response = error.response;
+    sanitizedError.originalMessage = rawMsg;
+    if (typeof rawData === 'object' && rawData !== null) {
+      Object.assign(sanitizedError, rawData);
+      sanitizedError.message = cleanMsg;
+    }
+
+    return Promise.reject(sanitizedError);
   }
 );
 

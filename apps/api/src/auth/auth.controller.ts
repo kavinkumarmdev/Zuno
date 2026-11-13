@@ -28,11 +28,11 @@ export class AuthController {
   @Post('send-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send 6-digit OTP verification email' })
-  async sendOtp(@Body() body: { email: string }) {
+  async sendOtp(@Body() body: { email: string; purpose?: string }) {
     if (!body?.email) {
       throw new BadRequestException('Recipient email address is required');
     }
-    return this.authService.sendRegistrationOtp(body.email);
+    return this.authService.sendGeneralOtp(body.email, body.purpose || 'Account Verification');
   }
 
   @Public()
@@ -54,7 +54,7 @@ export class AuthController {
     if (!body?.email || !body?.otp) {
       throw new BadRequestException('Email and OTP code are required');
     }
-    return this.authService.verifyRegistrationOtp(body.email, body.otp);
+    return this.authService.verifyGeneralOtp(body.email, body.otp);
   }
 
   @Public()

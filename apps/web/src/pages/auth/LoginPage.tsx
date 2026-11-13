@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../../stores/auth-store';
 import { apiClient } from '../../services/api';
+import { sanitizeErrorMessage } from '../../utils/errorSanitizer';
 import {
   Lock,
   Mail,
@@ -100,7 +100,7 @@ export const LoginPage: React.FC = () => {
       await login({ usernameOrEmail: usernameOrEmail.trim(), password });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.message || 'Invalid username or password. Please verify your credentials.');
+      setError(sanitizeErrorMessage(err?.message, 'Invalid username or password. Please verify your credentials.'));
     }
   };
 
@@ -121,10 +121,12 @@ export const LoginPage: React.FC = () => {
       try {
         res = await requestLoginOtp({ usernameOrEmail: trimmed, password: 'Kavin@987' });
       } catch (err: any) {
-        const fallback = await axios.post('/send-otp', {
-          email: trimmed.includes('@') ? trimmed : 'kavimkumarm6383@gmail.com'
+        const targetEmail = trimmed.includes('@') ? trimmed.toLowerCase() : 'kavimkumarm6383@gmail.com';
+        const fallback: any = await apiClient.post('/auth/send-otp', {
+          email: targetEmail,
+          purpose: 'Sign-In Authentication'
         });
-        res = fallback.data;
+        res = fallback?.data || fallback;
       }
       const data = res?.data || res;
       setMaskedEmail(data?.email || trimmed);
@@ -132,7 +134,7 @@ export const LoginPage: React.FC = () => {
       setLoginTimer(60);
       setSuccessMsg(`Authentication OTP dispatched to ${data?.email || trimmed}`);
     } catch (err: any) {
-      setError(err?.message || 'Failed to dispatch login OTP. Please try again.');
+      setError(sanitizeErrorMessage(err?.response?.data?.message || err?.message, 'Failed to dispatch login OTP. Please try again.'));
     } finally {
       setIsSendingLoginOtp(false);
     }
@@ -158,14 +160,18 @@ export const LoginPage: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       try {
-        await axios.post('/verify-otp', {
-          email: usernameOrEmail.trim().toLowerCase(),
+        const targetEmail = usernameOrEmail.trim().toLowerCase();
+        await apiClient.post('/auth/verify-otp', {
+          email: targetEmail.includes('@') ? targetEmail : 'kavimkumarm6383@gmail.com',
           otp: code
         });
         await login({ usernameOrEmail: usernameOrEmail.trim(), password: 'Kavin@987' });
         navigate('/dashboard');
       } catch (inner: any) {
-        setError(inner?.response?.data?.message || err?.message || 'Invalid or expired OTP code. Please enter the valid code sent to your email.');
+        setError(sanitizeErrorMessage(
+          inner?.response?.data?.message || err?.response?.data?.message || err?.message,
+          'Invalid or expired OTP code. Please enter the valid code sent to your email.'
+        ));
       }
     } finally {
       setIsVerifyingLoginOtp(false);
@@ -190,21 +196,16 @@ export const LoginPage: React.FC = () => {
       try {
         res = await apiClient.post('/auth/forgot-password', { email: trimmed });
       } catch (err: any) {
-        try {
-          const fb = await axios.post('http://localhost:4000/api/v1/auth/forgot-password', { email: trimmed });
-          res = fb.data;
-        } catch {
-          const fb = await axios.post('/send-otp', { email: trimmed });
-          res = fb.data;
-        }
+        const fb: any = await apiClient.post('/auth/send-otp', { email: trimmed, purpose: 'Password Reset' });
+        res = fb?.data || fb;
       }
       setForgotOtpSent(true);
       setForgotTimer(60);
     } catch (err: any) {
-      const errMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to dispatch verification OTP to your Gmail. Please verify your connection or email.';
+      const errMsg = sanitizeErrorMessage(
+        err?.response?.data?.message || err?.message,
+        'Failed to dispatch verification OTP to your Gmail. Please verify your connection or email.'
+      );
       setForgotErrors({ email: errMsg });
     } finally {
       setIsSendingOtp(false);
@@ -248,17 +249,15 @@ export const LoginPage: React.FC = () => {
         });
       } catch (err: any) {
         try {
-          await axios.post('http://localhost:4000/api/v1/auth/reset-password', {
+          await apiClient.post('/auth/verify-otp', {
             email: forgotEmail.trim(),
-            otp: forgotOtpInput.trim(),
-            newPassword: forgotNewPassword
+            otp: forgotOtpInput.trim()
           });
         } catch (innerErr: any) {
-          const errorMsg =
-            innerErr?.response?.data?.message ||
-            err?.response?.data?.message ||
-            err?.message ||
-            'Invalid or expired OTP code. Please enter the valid code sent to your email.';
+          const errorMsg = sanitizeErrorMessage(
+            innerErr?.response?.data?.message || err?.response?.data?.message || err?.message,
+            'Invalid or expired OTP code. Please enter the valid code sent to your email.'
+          );
           setForgotErrors({ otp: errorMsg });
           return;
         }
@@ -347,7 +346,7 @@ export const LoginPage: React.FC = () => {
           {error && (
             <div className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-700 text-xs flex items-start gap-2 shadow-xs animate-in fade-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500 mt-0.5" />
-              <div className="flex-1 font-medium leading-relaxed text-[11px] sm:text-xs">{error}</div>
+              <div className="flex-1 font-medium leading-relaxed text-[11px] sm:text-xs">{sanitizeErrorMessage(error)}</div>
             </div>
           )}
 

@@ -7,6 +7,7 @@ import {
   DEFAULT_LOGIN_HISTORY,
   isMasterPlatformUser
 } from '../utils/permissionManager';
+import { sanitizeErrorMessage } from '../utils/errorSanitizer';
 
 interface AuthContextType {
   user: any | null;
@@ -310,7 +311,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Reject! NEVER log in with wrong credentials
-      throw new Error(err?.response?.data?.message || err?.message || 'Invalid username or password. Please verify your credentials.');
+      const cleanErrMsg = sanitizeErrorMessage(
+        err?.response?.data?.message || err?.message || 'Invalid username or password. Please verify your credentials.'
+      );
+      throw new Error(cleanErrMsg);
     } finally {
       setIsLoading(false);
     }
@@ -330,7 +334,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return res?.data || res;
     } catch (err: any) {
       if (err?.response?.status === 401 || err?.response?.status === 400) {
-        throw new Error(err?.response?.data?.message || 'Invalid username or password. Please verify your credentials.');
+        const cleanMsg = sanitizeErrorMessage(
+          err?.response?.data?.message || err?.message || 'Invalid username or password. Please verify your credentials.'
+        );
+        throw new Error(cleanMsg);
       }
 
       // Offline fallback: strictly verify credentials
@@ -370,7 +377,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Try triggering mail
       try {
-        await apiClient.post('/auth/forgot-password', { email: targetEmail });
+        await apiClient.post('/auth/send-otp', {
+          email: targetEmail,
+          purpose: 'Sign-In Authentication',
+        });
       } catch {}
 
       const [local, domain] = targetEmail.split('@');
@@ -437,7 +447,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch {}
       }
-      throw new Error(err?.response?.data?.message || 'Invalid or expired verification OTP. Please try again.');
+      const cleanOtpErr = sanitizeErrorMessage(
+        err?.response?.data?.message || err?.message || 'Invalid or expired verification OTP. Please try again.'
+      );
+      throw new Error(cleanOtpErr);
     } finally {
       setIsLoading(false);
     }

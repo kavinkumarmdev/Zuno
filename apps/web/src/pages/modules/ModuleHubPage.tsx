@@ -75,6 +75,7 @@ import { EmployeePayslipModal } from '../../components/hr/EmployeePayslipModal';
 import { EmployeeExitDpdpModal } from '../../components/hr/EmployeeExitDpdpModal';
 import { BonusAuditModal } from '../../components/hr/BonusAuditModal';
 import { canUserAccessModule, getModuleActionPermissions } from '../../utils/permissionManager';
+import { sanitizeErrorMessage } from '../../utils/errorSanitizer';
 
 const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
   'company': Building2,
@@ -1175,7 +1176,8 @@ export const ModuleHubPage: React.FC = () => {
       refetch();
     },
     onError: (err: any) => {
-      setActionAlert({ type: 'error', message: `Unable to save record: ${err?.message || 'Please check all required fields and try again.'}` });
+      const cleanErr = sanitizeErrorMessage(err?.message || err, 'Please check all required fields and try again.');
+      setActionAlert({ type: 'error', message: `Unable to save record: ${cleanErr}` });
     }
   });
 
@@ -1554,7 +1556,7 @@ export const ModuleHubPage: React.FC = () => {
             ) : (
               <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             )}
-            <span className="font-semibold">{actionAlert.message}</span>
+            <span className="font-semibold">{sanitizeErrorMessage(actionAlert.message)}</span>
           </div>
           <button
             onClick={() => setActionAlert(null)}

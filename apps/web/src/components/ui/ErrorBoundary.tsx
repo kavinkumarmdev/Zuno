@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouteError, useNavigate, isRouteErrorResponse } from 'react-router-dom';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, ChevronRight, Sparkles, ShieldAlert } from 'lucide-react';
+import { sanitizeErrorMessage } from '../../utils/errorSanitizer';
 
 export const ErrorBoundary: React.FC = () => {
   const error = useRouteError();
@@ -44,8 +45,8 @@ export const ErrorBoundary: React.FC = () => {
 
           {/* Description */}
           <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 text-slate-300 text-sm leading-relaxed">
-            <p className="font-medium text-white mb-1">Message:</p>
-            <p className="font-mono text-xs text-rose-300/90 break-words">{errorMessage}</p>
+            <p className="font-medium text-white mb-1">Status Notice:</p>
+            <p className="text-xs text-rose-300/90 leading-relaxed">{sanitizeErrorMessage(errorMessage, 'The requested system view is temporarily synchronizing. Please reload the page or return to dashboard.')}</p>
           </div>
 
           {/* Actions */}

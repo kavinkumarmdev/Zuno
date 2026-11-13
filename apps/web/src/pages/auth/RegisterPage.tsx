@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../../stores/auth-store';
 import { apiClient } from '../../services/api';
+import { sanitizeErrorMessage } from '../../utils/errorSanitizer';
 import {
   Building2,
   User,
@@ -152,16 +152,19 @@ export const RegisterPage: React.FC = () => {
       try {
         await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
       } catch (postErr: any) {
-        // Also attempt direct localhost:4000
-        await axios.post('http://localhost:4000/api/v1/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
+        // Fallback to general OTP endpoint if registration check fails
+        await apiClient.post('/auth/send-otp', {
+          email: formData.email.trim().toLowerCase(),
+          purpose: 'Tenant Registration'
+        });
       }
       setStep('otp');
       setOtpTimer(60);
     } catch (err: any) {
-      const errMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to dispatch registration OTP to your Gmail. Please verify your email and network.';
+      const errMsg = sanitizeErrorMessage(
+        err?.response?.data?.message || err?.message,
+        'Failed to dispatch registration OTP to your Gmail. Please verify your email and network.'
+      );
       setError(errMsg);
     } finally {
       setIsSendingOtp(false);
@@ -181,7 +184,7 @@ export const RegisterPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // Validate OTP strictly with backend or Vite engine
+      // Validate OTP strictly with backend
       try {
         await apiClient.post('/auth/register-verify-otp', {
           email: formData.email.trim().toLowerCase(),
@@ -189,16 +192,15 @@ export const RegisterPage: React.FC = () => {
         });
       } catch (err: any) {
         try {
-          await axios.post('http://localhost:4000/api/v1/auth/register-verify-otp', {
+          await apiClient.post('/auth/verify-otp', {
             email: formData.email.trim().toLowerCase(),
             otp: code
           });
         } catch (innerErr: any) {
-          const errMsg =
-            innerErr?.response?.data?.message ||
-            err?.response?.data?.message ||
-            err?.message ||
-            'Invalid or expired verification code. Please check your Gmail.';
+          const errMsg = sanitizeErrorMessage(
+            innerErr?.response?.data?.message || err?.response?.data?.message || err?.message,
+            'Invalid or expired verification code. Please check your Gmail.'
+          );
           setOtpError(errMsg);
           return;
         }
@@ -216,7 +218,7 @@ export const RegisterPage: React.FC = () => {
       });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.message || 'Failed to complete registration. Please check and try again.');
+      setError(sanitizeErrorMessage(err?.message, 'Failed to complete registration. Please check and try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -270,7 +272,7 @@ export const RegisterPage: React.FC = () => {
           {error && (
             <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-700 text-xs flex items-start gap-2.5 shadow-sm animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500 mt-0.5" />
-              <div className="flex-1 font-medium leading-relaxed">{error}</div>
+              <div className="flex-1 font-medium leading-relaxed">{sanitizeErrorMessage(error)}</div>
             </div>
           )}
 

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { GlobalHttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('ZunoBootstrap');
@@ -49,6 +50,9 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     })
   );
+
+  // Global exception filter to sanitize database & Prisma errors
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
 
   // OpenAPI / Swagger Documentation
   const swaggerConfig = new DocumentBuilder()
