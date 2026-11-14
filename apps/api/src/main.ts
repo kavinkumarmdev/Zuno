@@ -80,6 +80,83 @@ async function bootstrap() {
     customCss: '.swagger-ui .topbar { background-color: #0F172A; }',
   });
 
+  // Direct root endpoints matching user specification
+  const express = require('express');
+  const server = app.getHttpAdapter().getInstance();
+  server.use(express.json());
+  server.use(express.urlencoded({ extended: true }));
+
+  server.post('/send-email', async (req: any, res: any) => {
+    try {
+      const { to, email, subject, message, html, text } = req.body || {};
+      const targetTo = (to || email || '').trim();
+      const targetSubject = (subject || '').trim();
+      const targetMessage = (message || html || text || '').trim();
+
+      if (!targetTo || !targetSubject || !targetMessage) {
+        return res.status(400).json({
+          success: false,
+          message: 'All fields are required',
+        });
+      }
+
+      const { MailService } = await import('./mail/mail.service');
+      const mailService = app.get(MailService);
+      const result = await mailService.sendEmail(targetTo, targetSubject, targetMessage);
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: 'Email sending failed',
+      });
+    }
+  });
+
+  server.post('/send-otp', async (req: any, res: any) => {
+    try {
+      const { email, to, purpose } = req.body || {};
+      const target = (email || to || '').trim();
+      if (!target) {
+        return res.status(400).json({
+          success: false,
+          message: 'Recipient email address is required',
+        });
+      }
+      const { AuthService } = await import('./auth/auth.service');
+      const authService = app.get(AuthService);
+      const result = await authService.sendGeneralOtp(target, purpose || 'Account Verification');
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'OTP dispatch failed',
+      });
+    }
+  });
+
+  server.post('/verify-otp', async (req: any, res: any) => {
+    try {
+      const { email, to, otp } = req.body || {};
+      const target = (email || to || '').trim();
+      const cleanOtp = (otp || '').trim();
+      if (!target || !cleanOtp) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email and OTP code are required',
+        });
+      }
+      const { AuthService } = await import('./auth/auth.service');
+      const authService = app.get(AuthService);
+      const result = await authService.verifyGeneralOtp(target, cleanOtp);
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'OTP verification failed',
+      });
+    }
+  });
+
   const port = process.env.PORT || 4000;
   await app.listen(port, '0.0.0.0');
   logger.log(`🚀 Zuno ERP Backend API service running at: http://localhost:${port}/${apiPrefix.replace(/^\//, '')}`);

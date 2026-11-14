@@ -136,6 +136,52 @@ function gmailOtpDevPlugin(): Plugin {
           return;
         }
 
+        // 3. Send Email (generic email dispatch matching user specification)
+        if (req.method === 'POST' && (url === '/send-email' || url === '/api/v1/send-email' || url === '/api/v1/mail/send-email')) {
+          let body = '';
+          req.on('data', (chunk) => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const data = JSON.parse(body || '{}');
+              const to = (data.to || data.email || '').trim();
+              const subject = (data.subject || '').trim();
+              const message = (data.message || data.html || data.text || '').trim();
+
+              if (!to || !subject || !message) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({
+                  success: false,
+                  message: 'All fields are required'
+                }));
+              }
+
+              const transporter = await getTransporter();
+              const fromUser = process.env.GMAIL_USER || process.env.EMAIL_USER || 'kavimkumarm6383@gmail.com';
+              const info = await transporter.sendMail({
+                from: `"Zuno ERP Enterprise" <${fromUser}>`,
+                to,
+                subject,
+                html: message
+              });
+
+              console.log('[Vite Dev Email] Email sent:', info?.messageId || 'ok');
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({
+                success: true,
+                messageId: info?.messageId || `msg-${Date.now()}`
+              }));
+            } catch (err: any) {
+              console.error('[Vite Dev Email] Email error:', err?.message || err);
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({
+                success: false,
+                message: 'Email sending failed'
+              }));
+            }
+          });
+          return;
+        }
+
         // 3. Send Forgot Password OTP
         if (req.method === 'POST' && url === '/api/v1/auth/forgot-password') {
           let body = '';

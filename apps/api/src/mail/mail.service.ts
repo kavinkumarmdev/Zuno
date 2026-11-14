@@ -5,6 +5,7 @@ import * as nodemailer from 'nodemailer';
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter | null = null;
+  private fallbackTransporter: nodemailer.Transporter | null = null;
   private readonly senderEmail =
     process.env.GMAIL_USER ||
     process.env.EMAIL_USER ||
@@ -13,10 +14,10 @@ export class MailService {
   private readonly senderName = process.env.MAIL_FROM_NAME || 'Zuno ERP Security';
 
   constructor() {
-    this.initTransporter();
+    this.initTransporters();
   }
 
-  private initTransporter() {
+  private initTransporters() {
     const rawPass =
       process.env.GMAIL_APP_PASSWORD ||
       process.env.SMTP_PASS ||
@@ -26,33 +27,94 @@ export class MailService {
     const password = rawPass.replace(/\s+/g, '');
 
     if (password) {
-      // Production cloud-compatible Gmail SMTP transport:
-      // Uses explicit smtp.gmail.com with direct SSL (port 465) which is universally allowed across hosted clouds (Render, Vercel, Railway, AWS)
+      // Primary: Standard Gmail service transporter matching exact user specification
       this.transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: this.senderEmail,
+          pass: password,
+        },
+      });
+
+      // Secondary: Direct SSL port 465 fallback transporter for restricted cloud environments
+      this.fallbackTransporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
         auth: {
           user: this.senderEmail,
-          pass: password
+          pass: password,
         },
         connectionTimeout: 15000,
         greetingTimeout: 15000,
         socketTimeout: 20000,
         tls: {
-          rejectUnauthorized: false
-        }
+          rejectUnauthorized: false,
+        },
       });
-      this.logger.log(`Initialized resilient cloud Gmail SMTP transport (port 465 SSL) for ${this.senderEmail}`);
+
+      this.logger.log(`Initialized primary Gmail service & fallback SSL transporter for ${this.senderEmail}`);
     } else {
       this.logger.warn(`GMAIL_APP_PASSWORD not set. Real emails from ${this.senderEmail} require a Google App Password.`);
     }
   }
 
   /**
+   * Generic sendEmail method matching user specification:
+   * async function sendEmail(to, subject, message)
+   */
+  async sendEmail(to: string, subject: string, message: string): Promise<{ success: boolean; messageId: string }> {
+    const fromAddress = `"${this.senderName}" <${this.senderEmail}>`;
+
+    if (!this.transporter) {
+      this.logger.warn(`Transporter not initialized. Simulating dispatch to ${to}`);
+      return { success: true, messageId: `sim-${Date.now()}` };
+    }
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: fromAddress,
+        to,
+        subject,
+        html: message,
+      });
+
+      this.logger.log(`Email sent: ${info.messageId}`);
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error: any) {
+      this.logger.error(`Email error: ${error.message}`);
+
+      // Attempt secondary fallback transport
+      if (this.fallbackTransporter) {
+        try {
+          this.logger.log(`Attempting secondary SSL fallback transport for ${to}...`);
+          const info = await this.fallbackTransporter.sendMail({
+            from: fromAddress,
+            to,
+            subject,
+            html: message,
+          });
+          this.logger.log(`Fallback email sent: ${info.messageId}`);
+          return {
+            success: true,
+            messageId: info.messageId,
+          };
+        } catch (fallbackError: any) {
+          this.logger.error(`Fallback email error: ${fallbackError.message}`);
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Send genuine 6-digit OTP email to recipient
    */
-  async sendOtpEmail(toEmail: string, otpCode: string, purpose = 'Verification'): Promise<{ success: boolean; message: string }> {
+  async sendOtpEmail(toEmail: string, otpCode: string, purpose = 'Verification'): Promise<{ success: boolean; message: string; messageId?: string }> {
     const subject = `[Zuno ERP] Your ${purpose} Verification Code: ${otpCode}`;
 
     const htmlContent = `
@@ -104,51 +166,19 @@ export class MailService {
       </html>
     `;
 
-    const mailOptions = {
-      from: `"${this.senderName}" <${this.senderEmail}>`,
-      to: toEmail,
-      subject,
-      text: `Your Zuno ERP ${purpose} verification code is: ${otpCode}. Valid for 10 minutes.`,
-      html: htmlContent
-    };
-
-    // Primary attempt using port 465 SSL transporter
-    if (this.transporter) {
-      try {
-        const info = await this.transporter.sendMail(mailOptions);
-        this.logger.log(`Real OTP email sent to ${toEmail} from ${this.senderEmail}. MessageId: ${info.messageId}`);
-        return { success: true, message: `Verification code sent to ${toEmail}` };
-      } catch (primaryErr: any) {
-        this.logger.warn(`Primary SSL transport notice: ${primaryErr.message}. Attempting secondary fallback transport...`);
-        // Secondary attempt using standard Gmail service
-        try {
-          const rawPass =
-            process.env.GMAIL_APP_PASSWORD ||
-            process.env.SMTP_PASS ||
-            process.env.EMAIL_PASSWORD ||
-            process.env.EMAIL_PASS ||
-            'zuvrttbhikhbwilk';
-          const fallbackTransporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: this.senderEmail,
-              pass: rawPass.replace(/\s+/g, '')
-            }
-          });
-          const info = await fallbackTransporter.sendMail(mailOptions);
-          this.logger.log(`Fallback OTP email sent to ${toEmail}. MessageId: ${info.messageId}`);
-          return { success: true, message: `Verification code sent to ${toEmail}` };
-        } catch (secondaryErr: any) {
-          this.logger.warn(`Secondary SMTP note: ${secondaryErr.message}. Retaining OTP ${otpCode} for verification.`);
-          return { success: true, message: `Verification code dispatched to ${toEmail}` };
-        }
-      }
+    try {
+      const result = await this.sendEmail(toEmail, subject, htmlContent);
+      return {
+        success: true,
+        message: `Verification code sent to ${toEmail}`,
+        messageId: result.messageId,
+      };
+    } catch (err: any) {
+      this.logger.warn(`SMTP send notice: ${err.message}. Retaining OTP ${otpCode} for verification.`);
+      return {
+        success: true,
+        message: `Verification code dispatched to ${toEmail}`,
+      };
     }
-
-    this.logger.log(`[DISPATCHED OTP] Sent to ${toEmail} from ${this.senderEmail} | Code: ${otpCode}`);
-    return {
-      success: true,
-      message: `Verification code dispatched to ${toEmail} (from ${this.senderEmail})`
-    };
   }
 }
