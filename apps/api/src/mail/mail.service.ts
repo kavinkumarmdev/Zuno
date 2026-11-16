@@ -63,61 +63,141 @@ export class MailService {
   }
 
   /**
-   * Generic sendEmail method matching user specification:
-   * async function sendEmail(to, subject, message)
-   * NEVER returns fake success — throws on delivery failure so callers know the true outcome.
+   * Generic sendEmail method matching user specification.
+   * Multi-strategy delivery:
+   * 1. Resend HTTPS API (Port 443 - 100% cloud firewall compatible)
+   * 2. Brevo HTTPS API (Port 443 - 100% cloud firewall compatible)
+   * 3. Google Apps Script Webhook Relay (Port 443)
+   * 4. Direct Gmail SMTP (Port 465 SSL primary, Port 587 fallback)
    */
   async sendEmail(to: string, subject: string, message: string): Promise<{ success: boolean; messageId: string }> {
     const fromAddress = `"${this.senderName}" <${this.senderEmail}>`;
 
-    if (!this.transporter) {
-      const err = new Error('Email transporter is not initialized. Please verify GMAIL_USER and GMAIL_APP_PASSWORD.');
-      this.logger.error(err.message);
-      throw err;
-    }
-
-    // Attempt 1: Direct SSL port 465 transporter
-    try {
-      const info = await this.transporter.sendMail({
-        from: fromAddress,
-        to,
-        subject,
-        html: message,
-      });
-
-      this.logger.log(`Email sent successfully: ${info.messageId}`);
-      return {
-        success: true,
-        messageId: info.messageId,
-      };
-    } catch (primaryError: any) {
-      this.logger.warn(`Primary SSL transport notice: ${primaryError.message}. Attempting secondary fallback transport...`);
-
-      // Attempt 2: Secondary Gmail service transport
-      if (this.fallbackTransporter) {
-        try {
-          const info = await this.fallbackTransporter.sendMail({
-            from: fromAddress,
-            to,
+    // Strategy 1: Resend HTTP API (HTTPS Port 443 - 100% cloud firewall compatible)
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const fromHeader = process.env.RESEND_FROM || 'Zuno ERP <onboarding@resend.dev>';
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: fromHeader,
+            to: [to],
             subject,
             html: message,
-          });
-          this.logger.log(`Fallback email sent successfully: ${info.messageId}`);
-          return {
-            success: true,
-            messageId: info.messageId,
-          };
-        } catch (secondaryError: any) {
-          this.logger.error(`Fallback transport notice: ${secondaryError.message}`);
+          }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json();
+          this.logger.log(`[Resend HTTPS API] Email sent to ${to}: ${data?.id}`);
+          return { success: true, messageId: data?.id || `resend-${Date.now()}` };
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`[Resend HTTPS API] Rejection (${res.status}): ${errText}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Resend HTTPS API] Request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 2: Brevo HTTP API (HTTPS Port 443 - 100% cloud firewall compatible)
+    if (process.env.BREVO_API_KEY) {
+      try {
+        const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'api-key': process.env.BREVO_API_KEY.trim(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sender: {
+              name: this.senderName,
+              email: process.env.BREVO_SENDER || this.senderEmail,
+            },
+            to: [{ email: to }],
+            subject,
+            htmlContent: message,
+          }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json();
+          this.logger.log(`[Brevo HTTPS API] Email sent to ${to}: ${data?.messageId}`);
+          return { success: true, messageId: data?.messageId || `brevo-${Date.now()}` };
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`[Brevo HTTPS API] Rejection (${res.status}): ${errText}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Brevo HTTPS API] Request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 3: Google Apps Script Webhook Relay (HTTPS Port 443)
+    if (process.env.GMAIL_HTTP_RELAY_URL) {
+      try {
+        const res = await fetch(process.env.GMAIL_HTTP_RELAY_URL.trim(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, html: message }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json();
+          this.logger.log(`[Google Relay HTTPS] Email sent to ${to}`);
+          return { success: true, messageId: data?.messageId || `relay-${Date.now()}` };
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Google Relay HTTPS] Request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 4: Standard Gmail SMTP Transporter (Port 465 SSL primary, Port 587 fallback)
+    if (this.transporter) {
+      try {
+        const info = await this.transporter.sendMail({
+          from: fromAddress,
+          to,
+          subject,
+          html: message,
+        });
+
+        this.logger.log(`[SMTP SSL] Email sent successfully: ${info.messageId}`);
+        return {
+          success: true,
+          messageId: info.messageId,
+        };
+      } catch (primaryError: any) {
+        this.logger.warn(`[SMTP SSL] Primary attempt notice: ${primaryError.message}. Trying fallback...`);
+
+        if (this.fallbackTransporter) {
+          try {
+            const info = await this.fallbackTransporter.sendMail({
+              from: fromAddress,
+              to,
+              subject,
+              html: message,
+            });
+            this.logger.log(`[SMTP 587] Fallback email sent successfully: ${info.messageId}`);
+            return {
+              success: true,
+              messageId: info.messageId,
+            };
+          } catch (secondaryError: any) {
+            this.logger.error(`[SMTP 587] Fallback transport notice: ${secondaryError.message}`);
+          }
         }
       }
-
-      // If both fail, THROW the error so caller knows email was NOT sent
-      const reason = primaryError?.message || 'SMTP connection timed out';
-      const failureMsg = `Failed to deliver email to ${to}: ${reason}. Cloud hosting firewalls (e.g. Render Free tier) may block outbound SMTP ports (465/587).`;
-      this.logger.error(failureMsg);
-      throw new Error(failureMsg);
     }
+
+    // If all strategies fail:
+    const failureMsg = `Failed to deliver email to ${to}: Connection timeout to smtp.gmail.com. Cloud hosting providers (e.g. Render Free Tier) block outbound raw SMTP ports (465/587). To enable email on Render, add RESEND_API_KEY or BREVO_API_KEY in your Render dashboard environment variables.`;
+    this.logger.error(failureMsg);
+    throw new Error(failureMsg);
   }
 
   /**
