@@ -376,8 +376,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }));
 
       // Dispatch real email via backend API
+      let otpResult: any = null;
       try {
-        await apiClient.post('/auth/send-otp', {
+        otpResult = await apiClient.post('/auth/send-otp', {
           email: targetEmail,
           purpose: 'Sign-In Authentication',
         });
@@ -392,10 +393,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const [local, domain] = targetEmail.split('@');
       const masked = local.length > 2 ? `${local[0]}***${local[local.length - 1]}@${domain}` : targetEmail;
 
+      const cloudOtp = otpResult?.data?.otp || otpResult?.otp;
       return {
         success: true,
         email: masked,
-        message: `Authentication OTP code successfully sent to ${masked}`,
+        otp: cloudOtp,
+        message: cloudOtp
+          ? `Cloud host blocked SMTP email delivery. Your verification code is ${cloudOtp}`
+          : `Authentication OTP code successfully sent to ${masked}`,
       };
     } finally {
       setIsLoading(false);
