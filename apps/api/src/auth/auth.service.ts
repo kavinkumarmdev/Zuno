@@ -300,7 +300,14 @@ export class AuthService implements OnModuleInit {
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    await this.mailService.sendOtpEmail(normalized, otp, 'Password Reset');
+    try {
+      await this.mailService.sendOtpEmail(normalized, otp, 'Password Reset');
+    } catch (mailError: any) {
+      this.logger.error(`[Zuno OTP] ❌ Password reset email dispatch failed: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver password reset verification code to ${normalized}. ${mailError.message || 'Please check your email address or network connection.'}`
+      );
+    }
     this.logger.log(`[Zuno OTP] ✅ Sent Password Reset OTP [${otp}] to ${normalized}`);
     return {
       success: true,
@@ -375,7 +382,14 @@ export class AuthService implements OnModuleInit {
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    await this.mailService.sendOtpEmail(normalized, otp, 'Tenant Registration');
+    try {
+      await this.mailService.sendOtpEmail(normalized, otp, 'Tenant Registration');
+    } catch (mailError: any) {
+      this.logger.error(`[Zuno OTP] ❌ Registration email dispatch failed: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver registration verification code to ${normalized}. ${mailError.message || 'Please check your email address or network connection.'}`
+      );
+    }
     this.logger.log(`[Zuno OTP] ✅ Sent Tenant Registration OTP [${otp}] to ${normalized}`);
     return {
       success: true,
@@ -414,14 +428,22 @@ export class AuthService implements OnModuleInit {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000;
 
-    // Store in all standard lookup keys so any verification endpoint succeeds
+    try {
+      await this.mailService.sendOtpEmail(normalized, otp, purpose);
+    } catch (mailError: any) {
+      this.logger.error(`[Zuno OTP] ❌ ${purpose} email dispatch failed: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver verification code to ${normalized}. ${mailError.message || 'Please check your email address or network connection.'}`
+      );
+    }
+
+    // Store in all standard lookup keys only after genuine email dispatch
     this.otpStore.set(normalized, { code: otp, expiresAt });
     this.otpStore.set(`gen:${normalized}`, { code: otp, expiresAt });
     this.otpStore.set(`reg:${normalized}`, { code: otp, expiresAt });
     this.otpStore.set(`login:${normalized}`, { code: otp, expiresAt });
     this.otpStore.set(`${normalized}:login`, { code: otp, expiresAt });
 
-    await this.mailService.sendOtpEmail(normalized, otp, purpose);
     this.logger.log(`[Zuno OTP] ✅ Sent ${purpose} OTP [${otp}] to ${normalized}`);
     return {
       success: true,
@@ -735,7 +757,14 @@ export class AuthService implements OnModuleInit {
     }
 
     // Dispatch real email via MailService (kavimkumarm6383@gmail.com)
-    await this.mailService.sendOtpEmail(targetEmail, otp, 'Sign-In Authentication');
+    try {
+      await this.mailService.sendOtpEmail(targetEmail, otp, 'Sign-In Authentication');
+    } catch (mailError: any) {
+      this.logger.error(`[Zuno OTP] ❌ Sign-in OTP email dispatch failed: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver sign-in authentication code to ${targetEmail}. ${mailError.message || 'Please check your email address or network connection.'}`
+      );
+    }
     this.logger.log(`[Zuno OTP] ✅ Sent Sign-In OTP [${otp}] to ${targetEmail}`);
 
     const [local, domain] = targetEmail.split('@');

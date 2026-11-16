@@ -27,17 +27,8 @@ export class MailService {
     const password = rawPass.replace(/\s+/g, '');
 
     if (password) {
-      // Primary: Standard Gmail service transporter matching exact user specification
+      // Primary: Direct SSL port 465 with short timeouts (works reliably in cloud hosting & localhost)
       this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: this.senderEmail,
-          pass: password,
-        },
-      });
-
-      // Secondary: Direct SSL port 465 fallback transporter for restricted cloud environments
-      this.fallbackTransporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
@@ -45,15 +36,27 @@ export class MailService {
           user: this.senderEmail,
           pass: password,
         },
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 20000,
+        connectionTimeout: 7000,
+        greetingTimeout: 7000,
+        socketTimeout: 10000,
         tls: {
           rejectUnauthorized: false,
         },
       });
 
-      this.logger.log(`Initialized primary Gmail service & fallback SSL transporter for ${this.senderEmail}`);
+      // Secondary: Standard service: 'gmail' (port 587 STARTTLS) with fast timeout
+      this.fallbackTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: this.senderEmail,
+          pass: password,
+        },
+        connectionTimeout: 7000,
+        greetingTimeout: 7000,
+        socketTimeout: 10000,
+      });
+
+      this.logger.log(`Initialized primary SSL (port 465) & fallback Gmail transporters for ${this.senderEmail}`);
     } else {
       this.logger.warn(`GMAIL_APP_PASSWORD not set. Real emails from ${this.senderEmail} require a Google App Password.`);
     }
@@ -62,15 +65,18 @@ export class MailService {
   /**
    * Generic sendEmail method matching user specification:
    * async function sendEmail(to, subject, message)
+   * NEVER returns fake success — throws on delivery failure so callers know the true outcome.
    */
   async sendEmail(to: string, subject: string, message: string): Promise<{ success: boolean; messageId: string }> {
     const fromAddress = `"${this.senderName}" <${this.senderEmail}>`;
 
     if (!this.transporter) {
-      this.logger.warn(`Transporter not initialized. Simulating dispatch to ${to}`);
-      return { success: true, messageId: `sim-${Date.now()}` };
+      const err = new Error('Email transporter is not initialized. Please verify GMAIL_USER and GMAIL_APP_PASSWORD.');
+      this.logger.error(err.message);
+      throw err;
     }
 
+    // Attempt 1: Direct SSL port 465 transporter
     try {
       const info = await this.transporter.sendMail({
         from: fromAddress,
@@ -79,40 +85,44 @@ export class MailService {
         html: message,
       });
 
-      this.logger.log(`Email sent: ${info.messageId}`);
+      this.logger.log(`Email sent successfully: ${info.messageId}`);
       return {
         success: true,
         messageId: info.messageId,
       };
-    } catch (error: any) {
-      this.logger.error(`Email error: ${error.message}`);
+    } catch (primaryError: any) {
+      this.logger.warn(`Primary SSL transport notice: ${primaryError.message}. Attempting secondary fallback transport...`);
 
-      // Attempt secondary fallback transport
+      // Attempt 2: Secondary Gmail service transport
       if (this.fallbackTransporter) {
         try {
-          this.logger.log(`Attempting secondary SSL fallback transport for ${to}...`);
           const info = await this.fallbackTransporter.sendMail({
             from: fromAddress,
             to,
             subject,
             html: message,
           });
-          this.logger.log(`Fallback email sent: ${info.messageId}`);
+          this.logger.log(`Fallback email sent successfully: ${info.messageId}`);
           return {
             success: true,
             messageId: info.messageId,
           };
-        } catch (fallbackError: any) {
-          this.logger.error(`Fallback email error: ${fallbackError.message}`);
+        } catch (secondaryError: any) {
+          this.logger.error(`Fallback transport notice: ${secondaryError.message}`);
         }
       }
 
-      throw error;
+      // If both fail, THROW the error so caller knows email was NOT sent
+      const reason = primaryError?.message || 'SMTP connection timed out';
+      const failureMsg = `Failed to deliver email to ${to}: ${reason}. Cloud hosting firewalls (e.g. Render Free tier) may block outbound SMTP ports (465/587).`;
+      this.logger.error(failureMsg);
+      throw new Error(failureMsg);
     }
   }
 
   /**
    * Send genuine 6-digit OTP email to recipient
+   * Propagates errors on delivery failure — NEVER returns fake success.
    */
   async sendOtpEmail(toEmail: string, otpCode: string, purpose = 'Verification'): Promise<{ success: boolean; message: string; messageId?: string }> {
     const subject = `[Zuno ERP] Your ${purpose} Verification Code: ${otpCode}`;
@@ -166,19 +176,13 @@ export class MailService {
       </html>
     `;
 
-    try {
-      const result = await this.sendEmail(toEmail, subject, htmlContent);
-      return {
-        success: true,
-        message: `Verification code sent to ${toEmail}`,
-        messageId: result.messageId,
-      };
-    } catch (err: any) {
-      this.logger.warn(`SMTP send notice: ${err.message}. Retaining OTP ${otpCode} for verification.`);
-      return {
-        success: true,
-        message: `Verification code dispatched to ${toEmail}`,
-      };
-    }
+    // Strictly deliver email. If sending fails, throw error so caller knows OTP was NOT delivered
+    const result = await this.sendEmail(toEmail, subject, htmlContent);
+
+    return {
+      success: true,
+      message: `Verification code successfully sent to ${toEmail}`,
+      messageId: result.messageId,
+    };
   }
 }

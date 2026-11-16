@@ -95,7 +95,12 @@ function gmailOtpDevPlugin(): Plugin {
               try {
                 await sendOtpEmail(email, otp, url.includes('register') ? 'Tenant Registration' : 'Account');
               } catch (mailErr: any) {
-                console.warn(`[Gmail OTP Dev Engine] SMTP notice: ${mailErr?.message}. Retaining local OTP [${otp}]`);
+                console.error(`[Gmail OTP Dev Engine] ❌ SMTP send failed: ${mailErr?.message}`);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({
+                  success: false,
+                  message: `Failed to dispatch OTP to ${email}: ${mailErr?.message || 'SMTP delivery failed'}`
+                }));
               }
 
               res.writeHead(200, { 'Content-Type': 'application/json' });

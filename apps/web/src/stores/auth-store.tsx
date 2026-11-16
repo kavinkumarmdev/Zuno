@@ -375,13 +375,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: match || DEFAULT_DEMO_SESSION.user,
       }));
 
-      // Try triggering mail
+      // Dispatch real email via backend API
       try {
         await apiClient.post('/auth/send-otp', {
           email: targetEmail,
           purpose: 'Sign-In Authentication',
         });
-      } catch {}
+      } catch (sendErr: any) {
+        const cleanMsg = sanitizeErrorMessage(
+          sendErr?.response?.data?.message || sendErr?.message,
+          `Failed to dispatch verification OTP to ${targetEmail}. Please check your email configuration.`
+        );
+        throw new Error(cleanMsg);
+      }
 
       const [local, domain] = targetEmail.split('@');
       const masked = local.length > 2 ? `${local[0]}***${local[local.length - 1]}@${domain}` : targetEmail;
