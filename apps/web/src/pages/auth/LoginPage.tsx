@@ -132,12 +132,7 @@ export const LoginPage: React.FC = () => {
       setMaskedEmail(data?.email || trimmed);
       setLoginOtpSent(true);
       setLoginTimer(60);
-      if (data?.otp) {
-        setLoginOtpInput(data.otp);
-        setSuccessMsg(`Cloud host blocked SMTP email delivery. Your verification code is: ${data.otp}`);
-      } else {
-        setSuccessMsg(`Authentication OTP dispatched to ${data?.email || trimmed}`);
-      }
+      setSuccessMsg(`Authentication OTP dispatched to ${data?.email || trimmed}`);
     } catch (err: any) {
       setError(sanitizeErrorMessage(err?.response?.data?.message || err?.message, 'Failed to dispatch login OTP. Please try again.'));
     } finally {
@@ -204,12 +199,8 @@ export const LoginPage: React.FC = () => {
         const fb: any = await apiClient.post('/auth/send-otp', { email: trimmed, purpose: 'Password Reset' });
         res = fb?.data || fb;
       }
-      const data = res?.data || res;
       setForgotOtpSent(true);
       setForgotTimer(60);
-      if (data?.otp) {
-        setForgotOtpInput(data.otp);
-      }
     } catch (err: any) {
       const errMsg = sanitizeErrorMessage(
         err?.response?.data?.message || err?.message,

@@ -149,19 +149,14 @@ export const RegisterPage: React.FC = () => {
 
     setIsSendingOtp(true);
     try {
-      let res: any;
       try {
-        res = await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
+        await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
       } catch (postErr: any) {
         // Fallback to general OTP endpoint if registration check fails
-        res = await apiClient.post('/auth/send-otp', {
+        await apiClient.post('/auth/send-otp', {
           email: formData.email.trim().toLowerCase(),
           purpose: 'Tenant Registration'
         });
-      }
-      const data = res?.data || res;
-      if (data?.otp) {
-        setOtpInput(data.otp);
       }
       setStep('otp');
       setOtpTimer(60);
