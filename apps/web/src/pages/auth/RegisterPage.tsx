@@ -55,8 +55,6 @@ export const RegisterPage: React.FC = () => {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
-  const [cloudDeliveryBlocked, setCloudDeliveryBlocked] = useState(false);
-  const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (otpTimer > 0) {
@@ -160,15 +158,6 @@ export const RegisterPage: React.FC = () => {
           email: formData.email.trim().toLowerCase(),
           purpose: 'Tenant Registration'
         });
-      }
-      const data = res?.data || res;
-      if (data?.isDeliveryBlocked && data?.devOtp) {
-        setCloudDeliveryBlocked(true);
-        setDevOtpCode(data.devOtp);
-        setOtpInput(data.devOtp);
-      } else {
-        setCloudDeliveryBlocked(false);
-        setDevOtpCode(null);
       }
       setStep('otp');
       setOtpTimer(60);
@@ -616,29 +605,6 @@ export const RegisterPage: React.FC = () => {
               <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
                 <span className="font-medium">{otpError}</span>
-              </div>
-            )}
-
-            {cloudDeliveryBlocked && devOtpCode && (
-              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 text-left shadow-sm">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 text-amber-700">
-                    <Sparkles className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-amber-900">Render Free Tier SMTP Notice</h4>
-                    <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                      Render Free Tier firewall blocked raw SMTP. Your temporary verification code is:
-                      <strong className="mx-1.5 font-mono text-sm bg-white px-2.5 py-0.5 rounded-lg border border-amber-300 text-amber-950 font-bold tracking-wider inline-block">
-                        {devOtpCode}
-                      </strong>
-                      (Auto-filled).
-                    </p>
-                    <p className="text-[10px] text-amber-700/80 mt-1.5">
-                      💡 <em>Tip: Add <code>RESEND_API_KEY</code> in Render Environment to receive genuine emails in your Gmail inbox.</em>
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 

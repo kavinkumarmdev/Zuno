@@ -300,29 +300,21 @@ export class AuthService implements OnModuleInit {
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    let emailDelivered = true;
     try {
       await this.mailService.sendOtpEmail(normalized, otp, 'Password Reset');
-      this.logger.log(`[Zuno OTP] ✅ Sent Password Reset OTP [${otp}] to ${normalized}`);
+      this.logger.log(`[Zuno OTP] ✅ Sent Password Reset OTP to ${normalized}`);
     } catch (mailError: any) {
-      emailDelivered = false;
-      this.logger.warn(`[Zuno OTP] ⚠️ Password reset email could not be delivered to ${normalized}: ${mailError.message}`);
-      this.logger.warn(`[Zuno OTP] 🔑 Emergency password reset OTP for ${normalized} is [${otp}]`);
+      this.logger.error(`[Zuno OTP] ❌ Password reset email delivery failed for ${normalized}: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver password reset code to ${normalized}. ${mailError.message}`
+      );
     }
 
-    if (emailDelivered) {
-      return {
-        success: true,
-        message: `Verification code successfully sent to ${normalized}`
-      };
-    } else {
-      return {
-        success: true,
-        isDeliveryBlocked: true,
-        devOtp: otp,
-        message: `Verification code generated. (Render Free Tier blocked outbound SMTP. Code: ${otp}. Add RESEND_API_KEY to send to inbox)`
-      };
-    }
+    return {
+      success: true,
+      email: normalized,
+      message: `Verification code successfully sent to ${normalized}`
+    };
   }
 
   /**
@@ -392,34 +384,21 @@ export class AuthService implements OnModuleInit {
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    let emailDelivered = true;
-    let deliveryNotice = '';
-
     try {
       await this.mailService.sendOtpEmail(normalized, otp, 'Tenant Registration');
-      this.logger.log(`[Zuno OTP] ✅ Sent Tenant Registration OTP [${otp}] to ${normalized}`);
+      this.logger.log(`[Zuno OTP] ✅ Sent Tenant Registration OTP to ${normalized}`);
     } catch (mailError: any) {
-      emailDelivered = false;
-      deliveryNotice = mailError?.message || 'Cloud SMTP blocked';
-      this.logger.warn(`[Zuno OTP] ⚠️ Registration email could not be delivered to ${normalized}: ${deliveryNotice}`);
-      this.logger.warn(`[Zuno OTP] 🔑 Emergency OTP code for ${normalized} is [${otp}]`);
+      this.logger.error(`[Zuno OTP] ❌ Registration email could not be delivered to ${normalized}: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver registration verification code to ${normalized}. ${mailError.message}`
+      );
     }
 
-    if (emailDelivered) {
-      return {
-        success: true,
-        email: normalized,
-        message: `Verification code successfully sent to ${normalized}`
-      };
-    } else {
-      return {
-        success: true,
-        email: normalized,
-        isDeliveryBlocked: true,
-        devOtp: otp,
-        message: `Verification code generated. (Render Free Tier blocked outbound SMTP. Code: ${otp}. Add RESEND_API_KEY to send to inbox)`
-      };
-    }
+    return {
+      success: true,
+      email: normalized,
+      message: `Verification code successfully sent to ${normalized}`
+    };
   }
 
   /**
@@ -453,19 +432,6 @@ export class AuthService implements OnModuleInit {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000;
 
-    let emailDelivered = true;
-    let deliveryNotice = '';
-
-    try {
-      await this.mailService.sendOtpEmail(normalized, otp, purpose);
-      this.logger.log(`[Zuno OTP] ✅ Sent ${purpose} OTP [${otp}] to ${normalized}`);
-    } catch (mailError: any) {
-      emailDelivered = false;
-      deliveryNotice = mailError?.message || 'Cloud SMTP blocked';
-      this.logger.warn(`[Zuno OTP] ⚠️ ${purpose} email could not be delivered to ${normalized}: ${deliveryNotice}`);
-      this.logger.warn(`[Zuno OTP] 🔑 Emergency OTP code for ${normalized} is [${otp}]`);
-    }
-
     // Always store in standard lookup keys so verification succeeds
     this.otpStore.set(normalized, { code: otp, expiresAt });
     this.otpStore.set(`gen:${normalized}`, { code: otp, expiresAt });
@@ -473,21 +439,21 @@ export class AuthService implements OnModuleInit {
     this.otpStore.set(`login:${normalized}`, { code: otp, expiresAt });
     this.otpStore.set(`${normalized}:login`, { code: otp, expiresAt });
 
-    if (emailDelivered) {
-      return {
-        success: true,
-        email: normalized,
-        message: `Verification code successfully sent to ${normalized}`
-      };
-    } else {
-      return {
-        success: true,
-        email: normalized,
-        isDeliveryBlocked: true,
-        devOtp: otp,
-        message: `Verification code generated. (Render Free Tier blocked outbound SMTP. Code: ${otp}. Add RESEND_API_KEY to send to inbox)`
-      };
+    try {
+      await this.mailService.sendOtpEmail(normalized, otp, purpose);
+      this.logger.log(`[Zuno OTP] ✅ Sent ${purpose} OTP to ${normalized}`);
+    } catch (mailError: any) {
+      this.logger.error(`[Zuno OTP] ❌ ${purpose} email could not be delivered to ${normalized}: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver verification code to ${normalized}. ${mailError.message}`
+      );
     }
+
+    return {
+      success: true,
+      email: normalized,
+      message: `Verification code successfully sent to ${normalized}`
+    };
   }
 
   /**
@@ -794,35 +760,25 @@ export class AuthService implements OnModuleInit {
       } catch {}
     }
 
-    // Dispatch real email via MailService (kavimkumarm6383@gmail.com)
-    let emailDelivered = true;
-    try {
-      await this.mailService.sendOtpEmail(targetEmail, otp, 'Sign-In Authentication');
-      this.logger.log(`[Zuno OTP] ✅ Sent Sign-In OTP [${otp}] to ${targetEmail}`);
-    } catch (mailError: any) {
-      emailDelivered = false;
-      this.logger.warn(`[Zuno OTP] ⚠️ Sign-in OTP email dispatch failed: ${mailError.message}`);
-      this.logger.warn(`[Zuno OTP] 🔑 Emergency sign-in OTP for ${targetEmail} is [${otp}]`);
-    }
-
     const [local, domain] = targetEmail.split('@');
     const masked = local.length > 2 ? `${local[0]}***${local[local.length - 1]}@${domain}` : targetEmail;
 
-    if (emailDelivered) {
-      return {
-        success: true,
-        email: masked,
-        message: `Authentication OTP code successfully sent to ${masked}`
-      } as any;
-    } else {
-      return {
-        success: true,
-        email: masked,
-        isDeliveryBlocked: true,
-        devOtp: otp,
-        message: `Authentication OTP code generated. (Render Free Tier blocked outbound SMTP. Code: ${otp}. Add RESEND_API_KEY to send to inbox)`
-      } as any;
+    // Dispatch real email via MailService (kavimkumarm6383@gmail.com)
+    try {
+      await this.mailService.sendOtpEmail(targetEmail, otp, 'Sign-In Authentication');
+      this.logger.log(`[Zuno OTP] ✅ Sent Sign-In OTP to ${targetEmail}`);
+    } catch (mailError: any) {
+      this.logger.error(`[Zuno OTP] ❌ Sign-in OTP email dispatch failed: ${mailError.message}`);
+      throw new BadRequestException(
+        `Failed to deliver sign-in authentication code to ${masked}. ${mailError.message}`
+      );
     }
+
+    return {
+      success: true,
+      email: masked,
+      message: `Authentication OTP code successfully sent to ${masked}`
+    } as any;
   }
 
   /**

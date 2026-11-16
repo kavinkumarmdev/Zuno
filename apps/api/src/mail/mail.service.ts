@@ -143,16 +143,41 @@ export class MailService {
         const res = await fetch(process.env.GMAIL_HTTP_RELAY_URL.trim(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to, subject, html: message }),
+          body: JSON.stringify({ to, subject, html: message, message }),
+          redirect: 'follow'
         });
 
         if (res.ok) {
-          const data: any = await res.json();
           this.logger.log(`[Google Relay HTTPS] Email sent to ${to}`);
-          return { success: true, messageId: data?.messageId || `relay-${Date.now()}` };
+          return { success: true, messageId: `google-relay-${Date.now()}` };
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`[Google Relay HTTPS] Rejection (${res.status}): ${errText}`);
         }
       } catch (err: any) {
         this.logger.warn(`[Google Relay HTTPS] Request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 3b: Custom HTTP Email Relay (Express Relay over HTTPS Port 443)
+    if (process.env.EMAIL_RELAY_URL) {
+      try {
+        const res = await fetch(process.env.EMAIL_RELAY_URL.trim(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, message, html: message }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json().catch(() => ({}));
+          this.logger.log(`[Custom HTTP Relay] Email sent to ${to}: ${data?.messageId || 'ok'}`);
+          return { success: true, messageId: data?.messageId || `custom-relay-${Date.now()}` };
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`[Custom HTTP Relay] Rejection (${res.status}): ${errText}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Custom HTTP Relay] Request error: ${err.message}`);
       }
     }
 
