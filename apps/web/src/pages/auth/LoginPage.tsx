@@ -132,7 +132,12 @@ export const LoginPage: React.FC = () => {
       setMaskedEmail(data?.email || trimmed);
       setLoginOtpSent(true);
       setLoginTimer(60);
-      setSuccessMsg(`Authentication OTP dispatched to ${data?.email || trimmed}`);
+      if (data?.isDeliveryBlocked && data?.devOtp) {
+        setLoginOtpInput(data.devOtp);
+        setSuccessMsg(`Render Free Tier blocked outbound SMTP. Test Code [${data.devOtp}] auto-filled. (Add RESEND_API_KEY in Render to send to Gmail inbox)`);
+      } else {
+        setSuccessMsg(`Authentication OTP dispatched to ${data?.email || trimmed}`);
+      }
     } catch (err: any) {
       setError(sanitizeErrorMessage(err?.response?.data?.message || err?.message, 'Failed to dispatch login OTP. Please try again.'));
     } finally {
@@ -199,8 +204,12 @@ export const LoginPage: React.FC = () => {
         const fb: any = await apiClient.post('/auth/send-otp', { email: trimmed, purpose: 'Password Reset' });
         res = fb?.data || fb;
       }
+      const data = res?.data || res;
       setForgotOtpSent(true);
       setForgotTimer(60);
+      if (data?.isDeliveryBlocked && data?.devOtp) {
+        setForgotOtpInput(data.devOtp);
+      }
     } catch (err: any) {
       const errMsg = sanitizeErrorMessage(
         err?.response?.data?.message || err?.message,

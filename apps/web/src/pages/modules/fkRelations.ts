@@ -138,6 +138,10 @@ export const FIELD_TABLE_MAPPING: Record<
   // Warehouse References
   'warehouse': { table: 'tb_warehouse_master', labelField: 'name', valueField: 'name', codeField: 'code' },
   'warehouse_name': { table: 'tb_warehouse_master', labelField: 'name', valueField: 'name', codeField: 'code' },
+
+  // Statutory Forms & Submissions
+  'form_code': { table: 'tb_statutory_form_master', labelField: 'name', valueField: 'code', codeField: 'code' },
+  'statutory_form': { table: 'tb_statutory_form_master', labelField: 'name', valueField: 'name', codeField: 'code' },
 };
 
 // Initial master records seeded automatically if tables are unpopulated
@@ -247,6 +251,18 @@ export const INITIAL_MASTER_SEEDS: Record<string, any[]> = {
       bank_branch: 'Industrial Estate Branch',
       status: 'ACTIVE'
     }
+  ],
+  'tb_statutory_form_master': [
+    { id: 'sform-1', code: 'GSTR-1', name: 'GSTR-1 Outward Supplies Return', statutory_act: 'GST_ACT_2017', frequency: 'MONTHLY', due_day: '11th', description: 'Monthly statement of outward supplies and tax liability' },
+    { id: 'sform-2', code: 'GSTR-3B', name: 'GSTR-3B Self-Assessed Summary Return', statutory_act: 'GST_ACT_2017', frequency: 'MONTHLY', due_day: '20th', description: 'Summary return of inward & outward supplies and input tax credit' },
+    { id: 'sform-3', code: 'FORM-24Q', name: 'Form 24Q Quarterly TDS on Salaries', statutory_act: 'INCOME_TAX_ACT_1961', frequency: 'QUARTERLY', due_day: '31st', description: 'Quarterly statement of deduction of tax at source from salaries' },
+    { id: 'sform-4', code: 'FORM-26Q', name: 'Form 26Q TDS Other Than Salaries', statutory_act: 'INCOME_TAX_ACT_1961', frequency: 'QUARTERLY', due_day: '31st', description: 'Quarterly statement for contractor, professional and vendor payments' },
+    { id: 'sform-5', code: 'FORM-16', name: 'Form 16 Annual Employee TDS Certificate', statutory_act: 'INCOME_TAX_ACT_1961', frequency: 'ANNUAL', due_day: '15th June', description: 'Annual certificate of tax deducted and salary computation' },
+    { id: 'sform-6', code: 'PF-ECR', name: 'PF Electronic Challan cum Return (ECR)', statutory_act: 'EPF_MP_ACT_1952', frequency: 'MONTHLY', due_day: '15th', description: 'Monthly PF remittance and employee contribution schedule' },
+    { id: 'sform-7', code: 'ESI-FORM-5', name: 'ESI Form 5 Return of Contribution', statutory_act: 'ESI_ACT_1948', frequency: 'HALF_YEARLY', due_day: '11th May/Nov', description: 'Half-yearly return of ESI employee & employer contributions' },
+    { id: 'sform-8', code: 'FORM-12', name: 'Form 12 Adult Workers Register', statutory_act: 'FACTORIES_ACT_1948', frequency: 'CONTINUOUS', due_day: 'Daily', description: 'Register of adult workers with shift and workplace allocation' },
+    { id: 'sform-9', code: 'FORM-25', name: 'Form 25 Muster Roll & Inspection Book', statutory_act: 'FACTORIES_ACT_1948', frequency: 'CONTINUOUS', due_day: 'Daily', description: 'Muster roll and inspection register of attendance & wages' },
+    { id: 'sform-10', code: 'FORM-A', name: 'Form A Employee Register (Code on Wages)', statutory_act: 'FACTORIES_ACT_1948', frequency: 'CONTINUOUS', due_day: 'Daily', description: 'Unified employee master register under Central Labour Codes' }
   ]
 };
 
