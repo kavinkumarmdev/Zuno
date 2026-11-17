@@ -65,15 +65,102 @@ export class MailService {
   /**
    * Generic sendEmail method matching user specification.
    * Multi-strategy delivery:
-   * 1. Resend HTTPS API (Port 443 - 100% cloud firewall compatible)
-   * 2. Brevo HTTPS API (Port 443 - 100% cloud firewall compatible)
-   * 3. Google Apps Script Webhook Relay (Port 443)
-   * 4. Direct Gmail SMTP (Port 465 SSL primary, Port 587 fallback)
+   * 1. Mailjet HTTPS API v3.1 (Port 443 - Cloud Hosting Firewall Compatible)
+   * 2. Custom Email API Server (Port 443 - matching EmailHelpService C# client)
+   * 3. Resend HTTPS API (Port 443)
+   * 4. Brevo HTTPS API (Port 443)
+   * 5. Google Apps Script Webhook Relay (Port 443)
+   * 6. Standard Gmail SMTP Transporter (Port 465 SSL primary, Port 587 fallback)
    */
   async sendEmail(to: string, subject: string, message: string): Promise<{ success: boolean; messageId: string }> {
     const fromAddress = `"${this.senderName}" <${this.senderEmail}>`;
 
-    // Strategy 1: Resend HTTP API (HTTPS Port 443 - 100% cloud firewall compatible)
+    // Strategy 1: Mailjet v3.1 HTTPS API (Port 443 - Cloud Hosting Firewall Compatible)
+    const mailjetApiKey = process.env.MAILJET_API_KEY || '2b9e93b25b29f738d202e311f3659a9c';
+    const mailjetApiSecret = process.env.MAILJET_API_SECRET || '1e1eaefe7af201e78ba6700e853cb154';
+    const mailjetSender = process.env.MAILJET_SENDER_EMAIL || this.senderEmail;
+    const mailjetSenderName = process.env.MAILJET_SENDER_NAME || this.senderName;
+
+    if (mailjetApiKey && mailjetApiSecret) {
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${mailjetApiKey.trim()}:${mailjetApiSecret.trim()}`).toString('base64');
+        const textContent = message.replace(/<[^>]*>/g, '').trim();
+
+        const res = await fetch('https://api.mailjet.com/v3.1/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader,
+          },
+          body: JSON.stringify({
+            Messages: [
+              {
+                From: {
+                  Email: mailjetSender,
+                  Name: mailjetSenderName,
+                },
+                To: [
+                  {
+                    Email: to,
+                    Name: to.split('@')[0],
+                  },
+                ],
+                Subject: subject,
+                HTMLPart: message,
+                TextPart: textContent,
+              },
+            ],
+          }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json().catch(() => ({}));
+          const messageId = data?.Messages?.[0]?.To?.[0]?.MessageID || `mailjet-${Date.now()}`;
+          this.logger.log(`[Mailjet HTTPS API] ✅ Email sent to ${to}: ${messageId}`);
+          return { success: true, messageId: String(messageId) };
+        } else {
+          const errData: any = await res.json().catch(() => ({}));
+          this.logger.warn(`[Mailjet HTTPS API] Rejection (${res.status}): ${errData.ErrorMessage || JSON.stringify(errData)}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Mailjet HTTPS API] Request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 2: Custom Email API Server (matching EmailHelpService C# client)
+    const emailApiBase = process.env.EMAIL_API_URL || process.env.EMAIL_RELAY_URL;
+    if (emailApiBase) {
+      try {
+        const endpoint = emailApiBase.endsWith('/send-email') ? emailApiBase : `${emailApiBase.replace(/\/+$/, '')}/send-email`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: to.trim(),
+            subject,
+            body: message,
+            html: message,
+            message,
+            key: process.env.EMAIL_API_KEY || '',
+            enableContent: true,
+            isLocalServer: false,
+          }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json().catch(() => ({}));
+          this.logger.log(`[Email API Server] ✅ Email sent to ${to}: ${data?.messageId || 'ok'}`);
+          return { success: true, messageId: data?.messageId || `email-api-${Date.now()}` };
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`[Email API Server] Rejection (${res.status}): ${errText}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Email API Server] Request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 3: Resend HTTP API (HTTPS Port 443 - 100% cloud firewall compatible)
     if (process.env.RESEND_API_KEY) {
       try {
         const fromHeader = process.env.RESEND_FROM || 'Zuno ERP <onboarding@resend.dev>';
@@ -104,7 +191,7 @@ export class MailService {
       }
     }
 
-    // Strategy 2: Brevo HTTP API (HTTPS Port 443 - 100% cloud firewall compatible)
+    // Strategy 4: Brevo HTTP API (HTTPS Port 443 - 100% cloud firewall compatible)
     if (process.env.BREVO_API_KEY) {
       try {
         const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -137,7 +224,7 @@ export class MailService {
       }
     }
 
-    // Strategy 3: Google Apps Script Webhook Relay (HTTPS Port 443)
+    // Strategy 5: Google Apps Script Webhook Relay (HTTPS Port 443)
     if (process.env.GMAIL_HTTP_RELAY_URL) {
       try {
         const res = await fetch(process.env.GMAIL_HTTP_RELAY_URL.trim(), {
@@ -156,28 +243,6 @@ export class MailService {
         }
       } catch (err: any) {
         this.logger.warn(`[Google Relay HTTPS] Request error: ${err.message}`);
-      }
-    }
-
-    // Strategy 3b: Custom HTTP Email Relay (Express Relay over HTTPS Port 443)
-    if (process.env.EMAIL_RELAY_URL) {
-      try {
-        const res = await fetch(process.env.EMAIL_RELAY_URL.trim(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to, subject, message, html: message }),
-        });
-
-        if (res.ok) {
-          const data: any = await res.json().catch(() => ({}));
-          this.logger.log(`[Custom HTTP Relay] Email sent to ${to}: ${data?.messageId || 'ok'}`);
-          return { success: true, messageId: data?.messageId || `custom-relay-${Date.now()}` };
-        } else {
-          const errText = await res.text();
-          this.logger.warn(`[Custom HTTP Relay] Rejection (${res.status}): ${errText}`);
-        }
-      } catch (err: any) {
-        this.logger.warn(`[Custom HTTP Relay] Request error: ${err.message}`);
       }
     }
 
