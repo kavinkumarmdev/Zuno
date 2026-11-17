@@ -65,17 +65,43 @@ export class MailService {
   /**
    * Generic sendEmail method matching user specification.
    * Multi-strategy delivery:
-   * 1. Mailjet HTTPS API v3.1 (Port 443 - Cloud Hosting Firewall Compatible)
-   * 2. Custom Email API Server (Port 443 - matching EmailHelpService C# client)
-   * 3. Resend HTTPS API (Port 443)
-   * 4. Brevo HTTPS API (Port 443)
-   * 5. Google Apps Script Webhook Relay (Port 443)
+   * 1. Google Apps Script Webhook Relay (HTTPS Port 443 - Verified & Active)
+   * 2. Mailjet HTTPS API v3.1 (Port 443 - Cloud Hosting Firewall Compatible)
+   * 3. Custom Email API Server (Port 443 - matching EmailHelpService C# client)
+   * 4. Resend HTTPS API (Port 443)
+   * 5. Brevo HTTPS API (Port 443)
    * 6. Standard Gmail SMTP Transporter (Port 465 SSL primary, Port 587 fallback)
    */
   async sendEmail(to: string, subject: string, message: string): Promise<{ success: boolean; messageId: string }> {
     const fromAddress = `"${this.senderName}" <${this.senderEmail}>`;
 
-    // Strategy 1: Mailjet v3.1 HTTPS API (Port 443 - Cloud Hosting Firewall Compatible)
+    // Strategy 1: Google Apps Script Webhook Relay (HTTPS Port 443 - Verified & 100% Cloud Compatible)
+    const googleRelayUrl =
+      process.env.GMAIL_HTTP_RELAY_URL ||
+      'https://script.google.com/macros/s/AKfycbxADGh28biR95wPPRbnvGaWoltD2u5QQkb4D9hGJE5bWmjLB3aBPRNgMJxBuP9uyb4P/exec';
+
+    if (googleRelayUrl) {
+      try {
+        const res = await fetch(googleRelayUrl.trim(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, html: message, message }),
+          redirect: 'follow',
+        });
+
+        if (res.ok) {
+          this.logger.log(`[Google Relay HTTPS] ✅ Email successfully sent to ${to} via Google Apps Script`);
+          return { success: true, messageId: `google-relay-${Date.now()}` };
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`[Google Relay HTTPS] Notice (${res.status}): ${errText}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Google Relay HTTPS] Relay request error: ${err.message}`);
+      }
+    }
+
+    // Strategy 2: Mailjet v3.1 HTTPS API (Port 443 - Cloud Hosting Firewall Compatible)
     const mailjetApiKey = process.env.MAILJET_API_KEY || '2b9e93b25b29f738d202e311f3659a9c';
     const mailjetApiSecret = process.env.MAILJET_API_SECRET || '1e1eaefe7af201e78ba6700e853cb154';
     const mailjetSender = process.env.MAILJET_SENDER_EMAIL || this.senderEmail;
@@ -224,29 +250,7 @@ export class MailService {
       }
     }
 
-    // Strategy 5: Google Apps Script Webhook Relay (HTTPS Port 443)
-    if (process.env.GMAIL_HTTP_RELAY_URL) {
-      try {
-        const res = await fetch(process.env.GMAIL_HTTP_RELAY_URL.trim(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to, subject, html: message, message }),
-          redirect: 'follow'
-        });
-
-        if (res.ok) {
-          this.logger.log(`[Google Relay HTTPS] Email sent to ${to}`);
-          return { success: true, messageId: `google-relay-${Date.now()}` };
-        } else {
-          const errText = await res.text();
-          this.logger.warn(`[Google Relay HTTPS] Rejection (${res.status}): ${errText}`);
-        }
-      } catch (err: any) {
-        this.logger.warn(`[Google Relay HTTPS] Request error: ${err.message}`);
-      }
-    }
-
-    // Strategy 4: Standard Gmail SMTP Transporter (Port 465 SSL primary, Port 587 fallback)
+    // Strategy 6: Standard Gmail SMTP Transporter (Port 465 SSL primary, Port 587 fallback)
     if (this.transporter) {
       try {
         const info = await this.transporter.sendMail({
