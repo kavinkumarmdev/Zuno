@@ -20,7 +20,8 @@ import {
   CalendarCheck,
   Sliders,
   Sparkles,
-  Info
+  Info,
+  Users
 } from 'lucide-react';
 import {
   calculateAttendanceHours,
@@ -31,6 +32,8 @@ import {
   PermissionRecord,
   getEmployeePermissionBalance
 } from '../../pages/modules/fkRelations';
+import { CompanyAttendanceConfigModal } from './CompanyAttendanceConfigModal';
+import { BulkAttendanceModal } from './BulkAttendanceModal';
 
 interface EmployeeAttendanceModalProps {
   isOpen: boolean;
@@ -65,6 +68,8 @@ export const EmployeeAttendanceModal: React.FC<EmployeeAttendanceModalProps> = (
   const [permDuration, setPermDuration] = useState<1 | 2>(1);
   const [permType, setPermType] = useState<'LATE_ARRIVAL' | 'EARLY_DEPARTURE' | 'MID_DAY_EMERGENCY'>('LATE_ARRIVAL');
   const [permReason, setPermReason] = useState<string>('');
+  const [showCompanyPolicyModal, setShowCompanyPolicyModal] = useState(false);
+  const [showBulkSheet, setShowBulkSheet] = useState(false);
 
   // Live Clock Tick
   useEffect(() => {
@@ -539,13 +544,24 @@ export const EmployeeAttendanceModal: React.FC<EmployeeAttendanceModalProps> = (
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowBulkSheet(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Mark attendance for multiple employees at the same time"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Multi-Employee Bulk Sheet</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Switcher */}
@@ -1230,6 +1246,27 @@ export const EmployeeAttendanceModal: React.FC<EmployeeAttendanceModalProps> = (
         {/* Tab 4: Shift & Week-Off Rules Settings */}
         {activeTab === 'settings' && (
           <div className="space-y-4 text-xs">
+            {/* Global Company Policy Engine CTA */}
+            <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-indigo-950 dark:text-indigo-200 text-xs flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-indigo-600" />
+                  Full Company Attendance, Shift &amp; Payroll Configuration
+                </h4>
+                <p className="text-[11px] text-indigo-800 dark:text-indigo-300 mt-0.5">
+                  Configure punch modes (2-punch vs 4-punch), shift from-to timings, lunch breaks, permission multi-options, leave quotas, and automated salary calculation rules.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompanyPolicyModal(true)}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Configure Company Policy</span>
+              </button>
+            </div>
+
             {/* Week Off Policy Selector */}
             <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
@@ -1335,6 +1372,32 @@ export const EmployeeAttendanceModal: React.FC<EmployeeAttendanceModalProps> = (
           </button>
         </div>
       </div>
+
+      {/* Embedded Company Policy Modal */}
+      <CompanyAttendanceConfigModal
+        isOpen={showCompanyPolicyModal}
+        onClose={() => setShowCompanyPolicyModal(false)}
+        onPolicySaved={(newPol) => {
+          setPunchMode(newPol.punchMode);
+          setWeekOffPolicy(newPol.weekOffPolicy);
+          setAlertMsg({
+            type: 'success',
+            text: 'Company attendance & shift policy saved and applied across all employees!'
+          });
+        }}
+      />
+
+      {/* Multi-Employee Simultaneous Attendance Sheet Modal */}
+      <BulkAttendanceModal
+        isOpen={showBulkSheet}
+        onClose={() => setShowBulkSheet(false)}
+        onAttendanceSaved={(count) => {
+          setAlertMsg({
+            type: 'success',
+            text: `Synchronized attendance for ${count} employees directly into the database!`
+          });
+        }}
+      />
     </div>
   );
 };

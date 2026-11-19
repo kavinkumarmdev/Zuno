@@ -229,19 +229,24 @@ export class OperationalDataStore {
     return updated;
   }
 
-  static deleteRecord(tenantId: string, userId: string, tableName: string, id: string): boolean {
+  static deleteRecord(tenantId: string, userId: string, tableName: string, id: string, permanent: boolean = false): boolean {
     const data = this.readData();
     const key = this.getStoreKey(tenantId, tableName);
     const existing = data[key] || [];
 
-    const index = existing.findIndex((r) => r.id === id);
+    const index = existing.findIndex((r) => r.id === id || (r as any).code === id);
     if (index === -1) return false;
 
-    // Soft delete
-    existing[index].is_active = false;
-    existing[index].status = 'DELETED';
-    existing[index].updated_by = userId;
-    existing[index].updated_time = new Date().toISOString();
+    if (permanent) {
+      // Permanent hard delete: completely remove entry from dataset
+      existing.splice(index, 1);
+    } else {
+      // Soft delete: mark archived/inactive
+      existing[index].is_active = false;
+      existing[index].status = 'DELETED';
+      existing[index].updated_by = userId;
+      existing[index].updated_time = new Date().toISOString();
+    }
 
     data[key] = existing;
     this.writeData(data);

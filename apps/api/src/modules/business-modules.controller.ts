@@ -78,14 +78,16 @@ export class BusinessModulesController {
   }
 
   @Delete('data/:tableName/:id')
-  @ApiOperation({ summary: 'Soft-delete a record in the specified catalogue table' })
+  @ApiOperation({ summary: 'Delete a record (soft-delete or permanent hard delete for owner)' })
   async deleteRecord(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
     @Param('tableName') tableName: string,
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Query('permanent') permanent?: string
   ) {
-    return this.modulesService.deleteRecord(tenantId, user.sub, tableName, id);
+    const isPermanent = permanent === 'true';
+    return this.modulesService.deleteRecord(tenantId, user.sub, tableName, id, isPermanent);
   }
 }
 

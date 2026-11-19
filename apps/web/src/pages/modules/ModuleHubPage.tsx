@@ -74,6 +74,9 @@ import { StatutoryFormsModal } from '../../components/hr/StatutoryFormsModal';
 import { EmployeePayslipModal } from '../../components/hr/EmployeePayslipModal';
 import { EmployeeExitDpdpModal } from '../../components/hr/EmployeeExitDpdpModal';
 import { BonusAuditModal } from '../../components/hr/BonusAuditModal';
+import { CompanyAttendanceConfigModal } from '../../components/hr/CompanyAttendanceConfigModal';
+import { ComprehensiveEmployeeModal } from '../../components/hr/ComprehensiveEmployeeModal';
+import { BulkAttendanceModal } from '../../components/hr/BulkAttendanceModal';
 import { canUserAccessModule, getModuleActionPermissions } from '../../utils/permissionManager';
 import { sanitizeErrorMessage } from '../../utils/errorSanitizer';
 
@@ -428,6 +431,9 @@ export const ModuleHubPage: React.FC = () => {
   const [showPayslipModal, setShowPayslipModal] = useState(false);
   const [showExitDpdpModal, setShowExitDpdpModal] = useState(false);
   const [showBonusAuditModal, setShowBonusAuditModal] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [showBulkAttendanceModal, setShowBulkAttendanceModal] = useState(false);
+  const [showComprehensiveEmployeeModal, setShowComprehensiveEmployeeModal] = useState(false);
   const [selectedEmployeeForDossier, setSelectedEmployeeForDossier] = useState<any>(null);
   const [resolvedIfscStatus, setResolvedIfscStatus] = useState<{ ifsc: string; bankName: string; branch: string } | null>(null);
 
@@ -590,6 +596,48 @@ export const ModuleHubPage: React.FC = () => {
     }
   };
 
+  const isOwner = Boolean(
+    isKavin ||
+    user?.userType === 'OWNER' ||
+    user?.roles?.includes('ADMINISTRATOR') ||
+    permissions?.includes('*') ||
+    user?.username === 'admin'
+  );
+
+  // Owner Permanent Hard Delete Handler: Purges record completely from DB and storage
+  const handlePermanentDelete = async (record: any) => {
+    if (!isOwner) {
+      setActionAlert({
+        type: 'error',
+        message: 'Permission Denied: Permanent delete is restricted exclusively to Company Owners.',
+      });
+      return;
+    }
+    try {
+      const existing = getLocalRecords(selectedTable);
+      const updated = existing.filter((r: any) => r.id !== record.id && r.code !== record.code);
+      localStorage.setItem(`zuno_records_${selectedTable}`, JSON.stringify(updated));
+
+      // Call backend permanent delete endpoint
+      try {
+        await apiClient.delete(`/modules/data/${selectedTable}/${record.id}?permanent=true`);
+      } catch (err) {
+        console.warn('API permanent delete synced locally:', err);
+      }
+
+      setActionAlert({
+        type: 'success',
+        message: `Record "${record.name || record.code || 'Entry'}" has been permanently purged from the database by Owner.`,
+      });
+      refetch();
+    } catch (err: any) {
+      setActionAlert({
+        type: 'error',
+        message: `Unable to permanently delete record: ${err?.message || 'Please try again.'}`,
+      });
+    }
+  };
+
   // Restore Soft-Deleted Record
   const handleRestoreRecord = async (record: any) => {
     try {
@@ -638,6 +686,10 @@ export const ModuleHubPage: React.FC = () => {
   // Open Create Modal
   const openCreateModal = () => {
     setEditingRecord(null);
+    if (selectedTable === 'tb_employee_master') {
+      setShowComprehensiveEmployeeModal(true);
+      return;
+    }
     const allExisting = [
       ...(queryResult?.items || []),
       ...getLocalRecords(selectedTable)
@@ -673,6 +725,10 @@ export const ModuleHubPage: React.FC = () => {
   // Open Edit Modal with existing record pre-filled
   const handleEditRecord = (record: any) => {
     setEditingRecord(record);
+    if (selectedTable === 'tb_employee_master') {
+      setShowComprehensiveEmployeeModal(true);
+      return;
+    }
     const initial: Record<string, any> = {};
     for (const f of currentSchema) {
       initial[f.key] = record[f.key] ?? record[f.key.replace(/_/g, '')] ?? f.defaultValue ?? '';
@@ -1050,27 +1106,47 @@ export const ModuleHubPage: React.FC = () => {
 
       let combined = Array.from(mergedMap.values());
 
-      // STRICT MULTI-TENANT COMPANY ACCESS:
-      // Kavin has full platform rights to access all company details.
-      // Other new users only access their own registered company details.
-      if (!isKavin) {
-        if (selectedTable === 'tb_company') {
-          combined = combined.filter(
-            (c: any) =>
-              c.id === activeCompany?.id ||
-              c.code === activeCompany?.companyCode ||
-              c.company_code === activeCompany?.companyCode ||
-              c.name === activeCompany?.companyName ||
-              c.company_name === activeCompany?.companyName
+      // STRICT MULTI-TENANT ISOLATION:
+      // Admin and users must ONLY see their own active company details, branches, and users.
+      // Other company details and foreign users must NEVER be displayed!
+      if (selectedTable === 'tb_company') {
+        const activeCompId = activeCompany?.id;
+        const activeCompCode = (activeCompany?.companyCode || activeCompany?.code || '').toLowerCase();
+        const activeCompName = (activeCompany?.companyName || activeCompany?.name || '').toLowerCase();
+
+        combined = combined.filter((c: any) => {
+          if (!activeCompId && !activeCompCode && !activeCompName) return true;
+          const cId = c.id;
+          const cCode = (c.code || c.company_code || '').toLowerCase();
+          const cName = (c.name || c.company_name || '').toLowerCase();
+          return (
+            (activeCompId && cId === activeCompId) ||
+            (activeCompCode && cCode === activeCompCode) ||
+            (activeCompName && cName === activeCompName)
           );
-        } else if (selectedTable === 'tb_company_branch') {
-          combined = combined.filter(
-            (b: any) =>
-              !b.company_id ||
-              b.company_id === activeCompany?.id ||
-              b.company_id === activeCompany?.companyCode
+        });
+      } else if (selectedTable === 'tb_company_branch') {
+        const activeCompId = activeCompany?.id;
+        const activeCompCode = (activeCompany?.companyCode || activeCompany?.code || '').toLowerCase();
+
+        combined = combined.filter((b: any) => {
+          if (!activeCompId && !activeCompCode) return true;
+          const compRef = (b.company_id || b.company || b.company_code || '').toLowerCase();
+          return (
+            !compRef ||
+            compRef === activeCompId?.toLowerCase() ||
+            compRef === activeCompCode
           );
-        }
+        });
+      } else if (selectedTable === 'tb_user') {
+        // Strict user directory isolation: Only display users belonging to the active tenant/organization
+        const activeTenantId = tenant?.id || user?.tenantId;
+        const activeCompName = (activeCompany?.companyName || '').toLowerCase();
+        combined = combined.filter((u: any) => {
+          if (activeTenantId && u.tenant_id && u.tenant_id !== activeTenantId) return false;
+          if (u.company_name && activeCompName && u.company_name.toLowerCase() !== activeCompName) return false;
+          return true;
+        });
       }
 
       if (search) {
@@ -1180,6 +1256,11 @@ export const ModuleHubPage: React.FC = () => {
       setActionAlert({ type: 'error', message: `Unable to save record: ${cleanErr}` });
     }
   });
+
+  const handleSaveComprehensiveEmployee = (employeeData: Record<string, any>) => {
+    createMutation.mutate(employeeData);
+    setShowComprehensiveEmployeeModal(false);
+  };
 
   // Dynamic columns based on selected table
   const columns: ColumnDef[] = useMemo(() => {
@@ -1699,6 +1780,15 @@ export const ModuleHubPage: React.FC = () => {
             </button>
             <button
               type="button"
+              onClick={() => setShowBulkAttendanceModal(true)}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+              title="Mark attendance for multiple employees at the same time with shift timings, lunch breaks, and overtime"
+            >
+              <Users className="w-4 h-4" />
+              Multi-Employee Attendance Sheet
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 setSelectedEmployeeForDossier(displayedData[0] || null);
                 setShowStatutoryModal(true);
@@ -1730,6 +1820,15 @@ export const ModuleHubPage: React.FC = () => {
               <Award className="w-4 h-4" />
               Bonus &amp; Form C
             </button>
+            <button
+              type="button"
+              onClick={() => setShowPolicyModal(true)}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 cursor-pointer flex items-center gap-1.5 transition-all"
+              title="Configure Company Shift Timings (From-To), Punch Mode (2 vs 4), Lunch Breaks, Permissions, and Leaves"
+            >
+              <Sliders className="w-4 h-4" />
+              Shift &amp; Policy Config
+            </button>
           </div>
         </div>
       )}
@@ -1759,6 +1858,8 @@ export const ModuleHubPage: React.FC = () => {
         onSoftDelete={canDelete ? handleSoftDelete : undefined}
         onRestore={canDelete ? handleRestoreRecord : undefined}
         canDelete={canDelete}
+        onPermanentDelete={isOwner ? handlePermanentDelete : undefined}
+        isOwner={isOwner}
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
         archivedCount={archivedCount}
@@ -2207,6 +2308,43 @@ export const ModuleHubPage: React.FC = () => {
         isOpen={showBonusAuditModal}
         onClose={() => setShowBonusAuditModal(false)}
         activeEmployee={selectedEmployeeForDossier || displayedData[0] || getLocalRecords('tb_employee_master')[0]}
+      />
+
+      {/* Company-Wide Attendance, Shift, Lunch, Permission & Leave Policy Config Modal */}
+      <CompanyAttendanceConfigModal
+        isOpen={showPolicyModal}
+        onClose={() => setShowPolicyModal(false)}
+        onPolicySaved={() => {
+          setActionAlert({
+            type: 'success',
+            message: 'Company attendance & shift policy successfully saved and applied across all employees.',
+          });
+          refetch();
+        }}
+      />
+
+      {/* Multi-Employee Simultaneous Attendance Sheet Modal */}
+      <BulkAttendanceModal
+        isOpen={showBulkAttendanceModal}
+        onClose={() => setShowBulkAttendanceModal(false)}
+        onAttendanceSaved={(savedCount) => {
+          setActionAlert({
+            type: 'success',
+            message: `Successfully synchronized daily attendance records for ${savedCount} employees directly to database!`
+          });
+          refetch();
+        }}
+      />
+
+      {/* Comprehensive All-In-One Employee Master Dossier Modal */}
+      <ComprehensiveEmployeeModal
+        isOpen={showComprehensiveEmployeeModal}
+        onClose={() => {
+          setShowComprehensiveEmployeeModal(false);
+          setEditingRecord(null);
+        }}
+        onSave={handleSaveComprehensiveEmployee}
+        initialData={editingRecord}
       />
     </div>
   );

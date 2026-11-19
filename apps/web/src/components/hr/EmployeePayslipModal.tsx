@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { Printer, Download, X, Banknote, Building2, CheckCircle2, Calendar, FileText } from 'lucide-react';
-import { calculateSalaryComponents } from '../../pages/modules/fkRelations';
+import React, { useState, useMemo } from 'react';
+import { Printer, Download, X, Banknote, Building2, CheckCircle2, Calendar, FileText, Sliders, Sparkles } from 'lucide-react';
+import {
+  calculateSalaryComponents,
+  calculateSalaryBreakdownFromAttendance,
+  getCompanyAttendancePolicy
+} from '../../pages/modules/fkRelations';
 
 interface EmployeePayslipModalProps {
   isOpen: boolean;
@@ -18,8 +22,29 @@ export const EmployeePayslipModal: React.FC<EmployeePayslipModalProps> = ({
   const [otHours, setOtHours] = useState(8.5);
   const [lopDays, setLopDays] = useState(0);
 
+  const policy = useMemo(() => getCompanyAttendancePolicy(), []);
+
+  const attnSummary = useMemo(() => {
+    if (!employee) return null;
+    return calculateSalaryBreakdownFromAttendance(
+      Number(employee.amount || 75000),
+      selectedMonth,
+      selectedYear,
+      employee.code || employee.employee_code,
+      policy
+    );
+  }, [employee, selectedMonth, selectedYear, policy]);
+
   if (!isOpen || !employee) return null;
 
+  const handleAutoSync = () => {
+    if (attnSummary) {
+      setOtHours(attnSummary.overtimeHours);
+      setLopDays(attnSummary.totalLopDays);
+    }
+  };
+
+  const totalCalendarDays = attnSummary?.totalCalendarDays || 30;
   const grossMonthly = Number(employee.amount || 75000);
   const sal = calculateSalaryComponents(grossMonthly);
 
@@ -30,7 +55,7 @@ export const EmployeePayslipModal: React.FC<EmployeePayslipModalProps> = ({
   const overtimeEarning = Math.round(otHourlyRate * otHours);
 
   // LOP deduction if any
-  const perDayRate = Math.round(grossMonthly / 30);
+  const perDayRate = Math.round(grossMonthly / totalCalendarDays);
   const lopDeduction = perDayRate * lopDays;
 
   // Earnings
@@ -147,6 +172,33 @@ export const EmployeePayslipModal: React.FC<EmployeePayslipModalProps> = ({
           </div>
         </div>
 
+        {/* Attendance & Policy Sync Strip */}
+        {attnSummary && (
+          <div className="p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <div>
+                <span className="font-bold text-indigo-950 dark:text-indigo-200 block">
+                  Company Attendance &amp; Shift Policy Rules ({policy.punchMode === '4_PUNCH' ? '4-Punch Factory' : '2-Punch Corporate'}):
+                </span>
+                <span className="text-[11px] text-indigo-800 dark:text-indigo-300">
+                  {attnSummary.totalWorkingDays} Working Days &bull; {attnSummary.actualPresentDays} Days Present &bull; {attnSummary.totalWeekOffDays} Paid Week-Offs &bull; {attnSummary.permissionsUsed} Permissions ({attnSummary.permissionsUsed <= policy.maxPermissionsPerMonth ? 'Within Allowed Quota' : `${attnSummary.excessPermissions} Excess`}) &bull; {attnSummary.totalLateMarks} Late Marks ({attnSummary.lateMarkLopDays}d LOP)
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAutoSync}
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer whitespace-nowrap"
+              title="Automatically calculate and apply working days, late penalty, and permission deduction from biometric punches"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Auto-Sync from Punches</span>
+            </button>
+          </div>
+        )}
+
         {/* Printable Payslip Card */}
         <div id="printable-payslip" className="p-6 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-3xl space-y-5 text-xs text-slate-800 dark:text-slate-200">
           {/* Company Banner */}
@@ -211,11 +263,11 @@ export const EmployeePayslipModal: React.FC<EmployeePayslipModalProps> = ({
           <div className="grid grid-cols-4 gap-2 text-center text-[11px] p-2 bg-slate-100 dark:bg-slate-800 rounded-xl font-mono">
             <div>
               <span className="text-slate-400 block text-[10px]">Calendar Days</span>
-              <strong>30</strong>
+              <strong>{totalCalendarDays}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Paid Days</span>
-              <strong className="text-emerald-600">{30 - lopDays}</strong>
+              <strong className="text-emerald-600">{Math.max(0, totalCalendarDays - lopDays)}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Loss of Pay (LOP)</span>

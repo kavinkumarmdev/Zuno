@@ -701,16 +701,21 @@ export interface AttendanceCalculation {
  * - Mode B: 2 Punch (start(in) -> end(out))
  * - Week-Off & Holiday double wage/status detection
  * - Approved Permission late-mark waiver (1 hr or 2 hrs)
+ * - Dynamic Company Policy Configuration
  */
 export const calculateAttendanceHours = (
   inTimeStr: string,
   outTimeStr?: string,
   lunchOutStr?: string,
   lunchInStr?: string,
-  punchMode: '4_PUNCH' | '2_PUNCH' = '2_PUNCH',
+  punchModeInput?: '4_PUNCH' | '2_PUNCH',
   approvedPermissionHours: number = 0,
-  isWeekOffDay: boolean = false
+  isWeekOffDay: boolean = false,
+  policyInput?: CompanyAttendancePolicy
 ): AttendanceCalculation => {
+  const policy = policyInput || getCompanyAttendancePolicy();
+  const punchMode = punchModeInput || policy.punchMode || '2_PUNCH';
+
   if (!inTimeStr) {
     return {
       totalMinutesWorked: 0,
@@ -730,14 +735,15 @@ export const calculateAttendanceHours = (
   const [inH, inM] = inTimeStr.split(':').map((n) => parseInt(n, 10));
   const inTotalM = inH * 60 + (inM || 0);
 
-  // Standard Shift: 09:00 AM (540 mins) + 15 mins grace (555 mins)
-  // If approved permission is granted (e.g. 1 hour or 2 hours), shift arrival grace extends accordingly
-  const graceMinutes = 15 + approvedPermissionHours * 60;
-  const shiftStandardStartM = 9 * 60; // 09:00 AM
+  // Shift Start from Company Policy (e.g. 09:00) + grace tolerance
+  const [shiftStartH, shiftStartM] = (policy.shiftStartTime || '09:00').split(':').map((n) => parseInt(n, 10));
+  const shiftStandardStartM = shiftStartH * 60 + (shiftStartM || 0);
+  const baseGrace = policy.graceMinutes || 15;
+  const graceMinutes = baseGrace + approvedPermissionHours * 60;
   const lateThresholdM = shiftStandardStartM + graceMinutes;
-  const isRawLate = inTotalM > shiftStandardStartM + 15;
+  const isRawLate = inTotalM > shiftStandardStartM + baseGrace;
   const isLate = inTotalM > lateThresholdM;
-  const lateMinutes = Math.max(0, inTotalM - (shiftStandardStartM + 15));
+  const lateMinutes = Math.max(0, inTotalM - (shiftStandardStartM + baseGrace));
   const permissionWaived = isRawLate && !isLate && approvedPermissionHours > 0;
 
   const now = new Date();
@@ -793,18 +799,19 @@ export const calculateAttendanceHours = (
       totalElapsedM = Math.max(0, currentTotalM - inTotalM);
     }
 
-    // Deduct standard 60 mins lunch break if worked > 5 hours (300 mins)
-    if (totalElapsedM > 300) {
-      breakMinutes = 60;
-      netWorkingMinutes = Math.max(0, totalElapsedM - 60);
+    // Deduct standard lunch break if enabled and worked > 5 hours (300 mins)
+    const lunchDuration = policy.lunchDurationMinutes || 60;
+    if (policy.autoDeductLunchIn2Punch && totalElapsedM > 300) {
+      breakMinutes = lunchDuration;
+      netWorkingMinutes = Math.max(0, totalElapsedM - lunchDuration);
     } else {
       breakMinutes = 0;
       netWorkingMinutes = totalElapsedM;
     }
   }
 
-  // Overtime: anything over 8 hours (480 minutes)
-  const standardDayMinutes = 480;
+  // Overtime: anything over standard workday minutes (e.g. 480 mins)
+  const standardDayMinutes = policy.overtimeThresholdMinutes || 480;
   const otMinutes = Math.max(0, netWorkingMinutes - standardDayMinutes);
 
   const workH = Math.floor(netWorkingMinutes / 60);
@@ -816,6 +823,7 @@ export const calculateAttendanceHours = (
   const otH = Math.floor(otMinutes / 60);
   const otM = otMinutes % 60;
 
+  const halfDayCutoff = policy.halfDayMinimumMinutes || 240;
   let status: 'PRESENT' | 'LATE_MARK' | 'OVERTIME' | 'HALF_DAY' | 'WEEK_OFF_WORK' = 'PRESENT';
   if (isWeekOffDay) {
     status = 'WEEK_OFF_WORK';
@@ -823,7 +831,7 @@ export const calculateAttendanceHours = (
     status = 'OVERTIME';
   } else if (isLate) {
     status = 'LATE_MARK';
-  } else if (netWorkingMinutes < 240 && outTimeStr) {
+  } else if (netWorkingMinutes < halfDayCutoff && outTimeStr) {
     status = 'HALF_DAY';
   }
 
@@ -919,6 +927,159 @@ export const isDateWeekOff = (
 };
 
 /**
+ * Comprehensive Company Attendance, Shift, Lunch, Permission, Leave & Payroll Policy
+ * Configured once at company level, automatically applied across all employees for attendance & salary calculation.
+ */
+export interface CompanyAttendancePolicy {
+  // 1. Shift & Punch Timings (2-Punch vs 4-Punch, from-to, lunch)
+  punchMode: '4_PUNCH' | '2_PUNCH';
+  shiftStartTime: string; // e.g. "09:00" (Shift from)
+  shiftEndTime: string;   // e.g. "18:00" (Shift to)
+  graceMinutes: number;   // e.g. 15 (Grace tolerance)
+  halfDayMinimumMinutes: number; // e.g. 240 mins (4 hrs)
+  fullDayMinimumMinutes: number; // e.g. 480 mins (8 hrs)
+  overtimeThresholdMinutes: number; // e.g. 480 mins (8 hrs)
+
+  // 2. Lunch Break Timings
+  lunchStartTime: string; // e.g. "13:00" (Lunch from)
+  lunchEndTime: string;   // e.g. "14:00" (Lunch to)
+  lunchDurationMinutes: number; // e.g. 60 mins
+  autoDeductLunchIn2Punch: boolean; // Auto-deduct 60 mins in 2-punch mode if elapsed > 5 hrs
+
+  // 3. Permission Multi-Option & Limits (Hours, Days per month & weekly)
+  permissionAllowedHours: 1 | 2; // e.g. 2 hrs per permission
+  maxPermissionsPerMonth: number; // e.g. 2 times per month
+  maxPermissionsPerWeek: number;  // e.g. 1 time per week
+  maxPermissionHoursPerMonth: number; // e.g. 4 hours per month
+  permissionTypes: Array<{
+    id: string;
+    name: string;
+    type: 'LATE_ARRIVAL' | 'EARLY_DEPARTURE' | 'MID_DAY_EMERGENCY';
+    maxDurationHours: number;
+    description: string;
+  }>;
+  excessPermissionAction: 'HALF_DAY_LOP' | 'HOURLY_DEDUCTION' | 'NONE';
+
+  // 4. Leave & Holiday Policy
+  casualLeavePerYear: number; // 12
+  sickLeavePerYear: number;   // 12
+  earnedLeavePerYear: number; // 15
+  weekOffPolicy: WeekOffPolicy; // 'SECOND_FOURTH_SAT_SUNDAY'
+  paidHolidaysPerYear: number; // 10
+  lateMarksForHalfDayLop: number; // 3 late marks = 0.5 Day LOP
+
+  // 5. Salary Calculation
+  standardWorkingDaysPerMonth: number; // 26
+  salaryCalculationBasis: 'CALENDAR_DAYS' | 'FIXED_26_DAYS' | 'WORKING_DAYS';
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export const DEFAULT_COMPANY_ATTENDANCE_POLICY: CompanyAttendancePolicy = {
+  punchMode: '4_PUNCH',
+  shiftStartTime: '09:00',
+  shiftEndTime: '18:00',
+  graceMinutes: 15,
+  halfDayMinimumMinutes: 240,
+  fullDayMinimumMinutes: 480,
+  overtimeThresholdMinutes: 480,
+  lunchStartTime: '13:00',
+  lunchEndTime: '14:00',
+  lunchDurationMinutes: 60,
+  autoDeductLunchIn2Punch: true,
+  permissionAllowedHours: 2,
+  maxPermissionsPerMonth: 2,
+  maxPermissionsPerWeek: 1,
+  maxPermissionHoursPerMonth: 4,
+  permissionTypes: [
+    {
+      id: 'LATE_ARRIVAL',
+      name: 'Morning Late Arrival Permission',
+      type: 'LATE_ARRIVAL',
+      maxDurationHours: 2,
+      description: 'Permits arriving up to 2 hours after shift start without late mark or salary penalty.'
+    },
+    {
+      id: 'EARLY_DEPARTURE',
+      name: 'Evening Early Departure Permission',
+      type: 'EARLY_DEPARTURE',
+      maxDurationHours: 2,
+      description: 'Permits departing up to 2 hours before shift end for personal or medical appointments.'
+    },
+    {
+      id: 'MID_DAY_EMERGENCY',
+      name: 'Mid-Day Personal Emergency Permission',
+      type: 'MID_DAY_EMERGENCY',
+      maxDurationHours: 2,
+      description: 'Permits short personal stepped-out leave during work hours for up to 2 hours.'
+    }
+  ],
+  excessPermissionAction: 'HALF_DAY_LOP',
+  casualLeavePerYear: 12,
+  sickLeavePerYear: 12,
+  earnedLeavePerYear: 15,
+  weekOffPolicy: 'SECOND_FOURTH_SAT_SUNDAY',
+  paidHolidaysPerYear: 10,
+  lateMarksForHalfDayLop: 3,
+  standardWorkingDaysPerMonth: 26,
+  salaryCalculationBasis: 'CALENDAR_DAYS'
+};
+
+export const getLocalRecords = (tableName: string): any[] => {
+  try {
+    const raw = localStorage.getItem(`zuno_records_${tableName}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveLocalRecord = (tableName: string, newRecord: any): void => {
+  try {
+    const records = getLocalRecords(tableName);
+    const existingIndex = records.findIndex((r: any) => r.id === newRecord.id);
+    let updated: any[];
+    if (existingIndex >= 0) {
+      updated = [...records];
+      updated[existingIndex] = { ...updated[existingIndex], ...newRecord };
+    } else {
+      updated = [newRecord, ...records];
+    }
+    localStorage.setItem(`zuno_records_${tableName}`, JSON.stringify(updated));
+  } catch {}
+};
+
+export const getCompanyAttendancePolicy = (): CompanyAttendancePolicy => {
+  try {
+    const raw = localStorage.getItem('zuno_company_attendance_policy');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_COMPANY_ATTENDANCE_POLICY, ...parsed };
+    }
+  } catch {}
+  return DEFAULT_COMPANY_ATTENDANCE_POLICY;
+};
+
+export const saveCompanyAttendancePolicy = (policy: Partial<CompanyAttendancePolicy>): CompanyAttendancePolicy => {
+  const current = getCompanyAttendancePolicy();
+  const updated: CompanyAttendancePolicy = {
+    ...current,
+    ...policy,
+    updatedAt: new Date().toISOString()
+  };
+  try {
+    localStorage.setItem('zuno_company_attendance_policy', JSON.stringify(updated));
+    if (updated.punchMode) {
+      localStorage.setItem('zuno_shift_punch_mode', updated.punchMode);
+    }
+    if (updated.weekOffPolicy) {
+      localStorage.setItem('zuno_week_off_policy', updated.weekOffPolicy);
+    }
+  } catch {}
+  return updated;
+};
+
+/**
  * Company Permission / Short-Leave Rules (1 hr or 2 hrs weekly/monthly)
  */
 export interface PermissionRecord {
@@ -938,18 +1099,243 @@ export interface PermissionRecord {
 
 export const getEmployeePermissionBalance = (
   employeeCode: string,
-  records: PermissionRecord[] = []
-): { usedThisMonth: number; maxAllowedMonth: number; remainingThisMonth: number; canApply: boolean } => {
-  const currentMonth = new Date().toISOString().substring(0, 7);
-  const used = records.filter(
+  records: PermissionRecord[] = [],
+  policyInput?: CompanyAttendancePolicy
+): {
+  usedThisMonth: number;
+  maxAllowedMonth: number;
+  remainingThisMonth: number;
+  canApply: boolean;
+  usedThisWeek: number;
+  maxAllowedWeek: number;
+  remainingThisWeek: number;
+} => {
+  const policy = policyInput || getCompanyAttendancePolicy();
+  const now = new Date();
+  const currentMonth = now.toISOString().substring(0, 7);
+
+  // Calculate start of current week (Monday)
+  const currentDay = now.getDay();
+  const diffToMonday = (currentDay + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const usedMonth = records.filter(
     (r) => r.employee_code === employeeCode && r.date?.startsWith(currentMonth) && r.approval_status !== 'REJECTED'
   ).length;
-  const maxAllowedMonth = 2; // Up to 2 times monthly or 1 weekly
+
+  const usedWeek = records.filter((r) => {
+    if (r.employee_code !== employeeCode || r.approval_status === 'REJECTED') return false;
+    const rDate = new Date(r.date);
+    return rDate >= monday && rDate <= now;
+  }).length;
+
+  const maxMonth = policy.maxPermissionsPerMonth || 2;
+  const maxWeek = policy.maxPermissionsPerWeek || 1;
+
   return {
-    usedThisMonth: used,
-    maxAllowedMonth,
-    remainingThisMonth: Math.max(0, maxAllowedMonth - used),
-    canApply: used < maxAllowedMonth
+    usedThisMonth: usedMonth,
+    maxAllowedMonth: maxMonth,
+    remainingThisMonth: Math.max(0, maxMonth - usedMonth),
+    canApply: usedMonth < maxMonth && usedWeek < maxWeek,
+    usedThisWeek: usedWeek,
+    maxAllowedWeek: maxWeek,
+    remainingThisWeek: Math.max(0, maxWeek - usedWeek)
+  };
+};
+
+/**
+ * Attendance to Salary Calculation Engine
+ * Converts marked punches, late-marks, permissions, leaves, and overtime into exact payroll figures
+ */
+export interface AttendanceSalarySummary {
+  month: string;
+  year: string;
+  totalCalendarDays: number;
+  totalWeekOffDays: number;
+  totalWorkingDays: number;
+  actualPresentDays: number;
+  totalLateMarks: number;
+  lateMarkLopDays: number;
+  permissionsUsed: number;
+  excessPermissions: number;
+  excessPermissionLopDays: number;
+  leavesTaken: number;
+  totalLopDays: number;
+  payableDays: number;
+  grossMonthly: number;
+  earnedBasic: number;
+  earnedHra: number;
+  earnedDa: number;
+  earnedSpecialAllowance: number;
+  overtimeHours: number;
+  overtimeEarnings: number;
+  earnedGrossSalary: number;
+  pfDeduction: number;
+  esiDeduction: number;
+  professionalTax: number;
+  tdsDeduction: number;
+  totalDeductions: number;
+  netPayableSalary: number;
+}
+
+export const calculateSalaryBreakdownFromAttendance = (
+  grossMonthly: number,
+  monthStr: string = 'November',
+  yearStr: string = '2026',
+  employeeCode?: string,
+  policyInput?: CompanyAttendancePolicy
+): AttendanceSalarySummary => {
+  const policy = policyInput || getCompanyAttendancePolicy();
+  const gross = Math.max(0, grossMonthly || 0);
+
+  // Month map
+  const monthMap: Record<string, number> = {
+    'January': 31, 'February': 28, 'March': 31, 'April': 30, 'May': 31, 'June': 30,
+    'July': 31, 'August': 31, 'September': 30, 'October': 31, 'November': 30, 'December': 31
+  };
+  const totalCalendarDays = monthMap[monthStr] || 30;
+
+  // Month index (0-based)
+  const monthNames = Object.keys(monthMap);
+  const monthIdx = Math.max(0, monthNames.indexOf(monthStr));
+  const yearNum = parseInt(yearStr, 10) || 2026;
+
+  // Calculate week off count in this month
+  let totalWeekOffDays = 0;
+  for (let day = 1; day <= totalCalendarDays; day++) {
+    const d = new Date(yearNum, monthIdx, day);
+    if (isDateWeekOff(d, policy.weekOffPolicy)) {
+      totalWeekOffDays++;
+    }
+  }
+
+  const totalWorkingDays = Math.max(1, totalCalendarDays - totalWeekOffDays);
+
+  // Fetch actual attendance records from localStorage if present
+  let actualPresentDays = totalWorkingDays;
+  let totalLateMarks = 0;
+  let overtimeHours = 0;
+  let permissionsUsed = 0;
+  let leavesTaken = 0;
+
+  try {
+    const rawAttn = localStorage.getItem('zuno_records_tb_attendance');
+    if (rawAttn) {
+      const allAttn = JSON.parse(rawAttn);
+      const filtered = allAttn.filter((a: any) => {
+        if (employeeCode && a.employee_code && a.employee_code !== employeeCode) return false;
+        if (a.date) {
+          const aDate = new Date(a.date);
+          return aDate.getFullYear() === yearNum && aDate.getMonth() === monthIdx;
+        }
+        return true;
+      });
+
+      if (filtered.length > 0) {
+        actualPresentDays = filtered.filter((a: any) => a.status === 'PRESENT' || a.status === 'OVERTIME' || a.in_time).length;
+        totalLateMarks = filtered.filter((a: any) => a.status === 'LATE_MARK' || a.is_late).length;
+        overtimeHours = filtered.reduce((sum: number, a: any) => {
+          const ot = parseFloat(a.overtime_hours || 0);
+          return sum + (isNaN(ot) ? 0 : ot);
+        }, 0);
+      }
+    }
+
+    // Permissions
+    const rawPerms = localStorage.getItem('zuno_records_tb_permissions');
+    if (rawPerms) {
+      const allPerms = JSON.parse(rawPerms);
+      permissionsUsed = allPerms.filter((p: any) => {
+        if (employeeCode && p.employee_code && p.employee_code !== employeeCode) return false;
+        if (p.date) {
+          const pDate = new Date(p.date);
+          return pDate.getFullYear() === yearNum && pDate.getMonth() === monthIdx && p.approval_status !== 'REJECTED';
+        }
+        return false;
+      }).length;
+    }
+
+    // Leaves
+    const rawLeaves = localStorage.getItem('zuno_records_tb_leave_request');
+    if (rawLeaves) {
+      const allLeaves = JSON.parse(rawLeaves);
+      leavesTaken = allLeaves.filter((l: any) => {
+        if (employeeCode && l.employee_code && l.employee_code !== employeeCode) return false;
+        return l.status === 'APPROVED';
+      }).length;
+    }
+  } catch {}
+
+  // Late mark penalty: e.g. 3 late marks = 0.5 Day LOP
+  const lateMarksForHalfDay = policy.lateMarksForHalfDayLop || 3;
+  const lateMarkLopDays = Math.floor(totalLateMarks / lateMarksForHalfDay) * 0.5;
+
+  // Excess permission penalty
+  const maxPermissions = policy.maxPermissionsPerMonth || 2;
+  const excessPermissions = Math.max(0, permissionsUsed - maxPermissions);
+  const excessPermissionLopDays = policy.excessPermissionAction === 'HALF_DAY_LOP' ? excessPermissions * 0.5 : 0;
+
+  // Unapproved absence LOP
+  const absentDays = Math.max(0, totalWorkingDays - actualPresentDays - leavesTaken);
+  const totalLopDays = absentDays + lateMarkLopDays + excessPermissionLopDays;
+
+  // Payable days: Working Days + Paid Week Offs - LOP Days
+  const payableDays = Math.max(0, Math.min(totalCalendarDays, totalCalendarDays - totalLopDays));
+
+  // Prorated Salary
+  const payRatio = payableDays / totalCalendarDays;
+  const earnedBasic = Math.round(gross * 0.5 * payRatio);
+  const earnedHra = Math.round(gross * 0.25 * payRatio);
+  const earnedDa = Math.round(gross * 0.15 * payRatio);
+  const earnedSpecialAllowance = Math.round(gross * 0.1 * payRatio);
+
+  // Overtime rate: double ordinary hourly rate (Gross / (26 * 8) = Gross / 208 * 2)
+  const normalHourlyRate = Math.round(gross / 208);
+  const otHourlyRate = normalHourlyRate * 2;
+  const overtimeEarnings = Math.round(otHourlyRate * overtimeHours);
+
+  const earnedGrossSalary = earnedBasic + earnedHra + earnedDa + earnedSpecialAllowance + overtimeEarnings;
+
+  // Statutory deductions
+  const pfDeduction = Math.round(earnedBasic * 0.12);
+  const esiDeduction = gross <= 21000 ? Math.round(earnedGrossSalary * 0.0075) : 0;
+  const professionalTax = 200;
+  const tdsDeduction = gross > 100000 ? Math.round(earnedGrossSalary * 0.1) : 0;
+  const totalDeductions = pfDeduction + esiDeduction + professionalTax + tdsDeduction;
+
+  const netPayableSalary = Math.max(0, earnedGrossSalary - totalDeductions);
+
+  return {
+    month: monthStr,
+    year: yearStr,
+    totalCalendarDays,
+    totalWeekOffDays,
+    totalWorkingDays,
+    actualPresentDays,
+    totalLateMarks,
+    lateMarkLopDays,
+    permissionsUsed,
+    excessPermissions,
+    excessPermissionLopDays,
+    leavesTaken,
+    totalLopDays,
+    payableDays,
+    grossMonthly: gross,
+    earnedBasic,
+    earnedHra,
+    earnedDa,
+    earnedSpecialAllowance,
+    overtimeHours,
+    overtimeEarnings,
+    earnedGrossSalary,
+    pfDeduction,
+    esiDeduction,
+    professionalTax,
+    tdsDeduction,
+    totalDeductions,
+    netPayableSalary
   };
 };
 

@@ -67,13 +67,6 @@ const DEFAULT_DEMO_SESSION: AuthSessionResponse = {
       currencyCode: 'INR',
       role: 'Administrator',
     },
-    {
-      id: '40000000-0000-0000-0000-000000000002',
-      companyCode: 'KAVIN-LOG',
-      companyName: 'Kavin Logistics & Tech Ltd',
-      currencyCode: 'INR',
-      role: 'Administrator',
-    },
   ],
   branches: [
     {
@@ -139,21 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             currency_code: 'INR',
             email: 'kavin@zuno.com',
             phone: '+91 9876543210',
-            status: 'ACTIVE',
-            created_time: new Date().toISOString(),
-            is_user_record: true,
-          },
-          {
-            id: '40000000-0000-0000-0000-000000000002',
-            name: 'Kavin Logistics & Tech Ltd',
-            company_name: 'Kavin Logistics & Tech Ltd',
-            code: 'KAVIN-LOG',
-            company_code: 'KAVIN-LOG',
-            legal_name: 'Kavin Logistics & Tech Ltd',
-            gstin: '33AAACK5678F1Z8',
-            currency_code: 'INR',
-            email: 'logistics@kavin.com',
-            phone: '+91 9876543211',
             status: 'ACTIVE',
             created_time: new Date().toISOString(),
             is_user_record: true,
@@ -616,9 +594,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return (
       raw === 'kavin' ||
       raw === 'kavin kumar' ||
-      raw === 'admin' ||
       email === 'kavinkumarm987@zuno.in' ||
-      email === 'admin987@zuno.in' ||
       email === 'kavin@zuno.com' ||
       email === 'kavimkumarm6383@gmail.com'
     );
@@ -626,10 +602,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const switchCompany = (companyId: string) => {
     if (!session) return;
-    if (!isKavin) {
-      console.warn('Security policy: Only Kavin has authorization to switch and access all companies.');
-      return;
-    }
     const target = session.companies?.find((c) => c.id === companyId);
     if (target) {
       setSession((prev) =>
@@ -645,14 +617,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const userCompanies = React.useMemo(() => {
     if (!session) return [];
-    if (isKavin) {
-      return session.companies || [];
+    if (session.companies && session.companies.length > 0) {
+      return session.companies;
     }
     if (session.activeCompany) {
       return [session.activeCompany];
     }
-    return (session.companies || []).slice(0, 1);
-  }, [session, isKavin]);
+    return [];
+  }, [session]);
 
   const switchBranch = (branchId: string) => {
     if (!session) return;

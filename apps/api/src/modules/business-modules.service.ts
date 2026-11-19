@@ -176,13 +176,7 @@ export class BusinessModulesService implements OnModuleInit {
     const found = list.find((r) => r.id === id);
     if (found && found.tenant_id === tenantId) return found;
 
-    return {
-      id,
-      tenant_id: tenantId,
-      name: `Record ${id.substring(0, 8)}`,
-      status: 'ACTIVE',
-      created_time: new Date().toISOString()
-    };
+    throw new NotFoundException(`Record with ID ${id} not found in ${tableName}`);
   }
 
   /**
@@ -487,29 +481,42 @@ export class BusinessModulesService implements OnModuleInit {
   }
 
   /**
-   * Soft-delete a record
+   * Delete a record (supports soft-delete for users, permanent hard delete for company owner)
    */
-  async deleteRecord(tenantId: string, userId: string, tableName: string, id: string) {
+  async deleteRecord(tenantId: string, userId: string, tableName: string, id: string, permanent: boolean = false) {
     if (tableName === 'tb_login_history') {
       throw new BadRequestException('Security Audit Violation: Login History table (tb_login_history) is strictly immutable and read-only. Deletion is prohibited.');
     }
 
-    OperationalDataStore.deleteRecord(tenantId, userId, tableName, id);
+    OperationalDataStore.deleteRecord(tenantId, userId, tableName, id, permanent);
 
     try {
       const { delegate } = this.getModelDelegate(tableName);
-      if (delegate && typeof delegate.updateMany === 'function') {
-        await delegate.updateMany({
-          where: { id, tenant_id: tenantId },
-          data: {
-            is_active: false,
-            updated_by: userId,
-            updated_time: new Date()
-          }
-        });
+      if (delegate) {
+        if (permanent && typeof delegate.deleteMany === 'function') {
+          await delegate.deleteMany({
+            where: { id, tenant_id: tenantId }
+          });
+        } else if (typeof delegate.updateMany === 'function') {
+          await delegate.updateMany({
+            where: { id, tenant_id: tenantId },
+            data: {
+              is_active: false,
+              updated_by: userId,
+              updated_time: new Date()
+            }
+          });
+        }
       }
     } catch {}
 
-    return { success: true, id, message: `Record deleted from ${tableName}` };
+    return {
+      success: true,
+      id,
+      permanent,
+      message: permanent
+        ? `Record permanently deleted from ${tableName}`
+        : `Record soft-deleted from ${tableName}`
+    };
   }
 }

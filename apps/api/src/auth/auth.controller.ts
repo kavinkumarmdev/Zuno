@@ -124,6 +124,23 @@ export class AuthController {
     return this.authService.resetPasswordWithOtp(body.email, body.otp, body.newPassword);
   }
 
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password for authenticated user or admin' })
+  async changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { currentPassword?: string; newPassword?: string; email?: string; username?: string }
+  ) {
+    if (!body?.newPassword) {
+      throw new BadRequestException('New password is required');
+    }
+    const identifier = user?.sub || user?.email || user?.username || body?.email || body?.username;
+    if (!identifier) {
+      throw new BadRequestException('User identification is required');
+    }
+    return this.authService.changePassword(identifier, body.currentPassword, body.newPassword);
+  }
+
   @Get('me')
   @ApiOperation({ summary: 'Get profile information of currently authenticated user' })
   async getProfile(@CurrentUser() user: JwtPayload) {

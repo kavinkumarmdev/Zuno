@@ -21,8 +21,20 @@ import {
   ShieldCheck,
   Layers,
   Loader2,
-  KeyRound
+  KeyRound,
+  Clock,
+  Coffee,
+  Sliders,
+  CalendarCheck,
+  MapPin,
+  Save,
+  CheckSquare,
+  Shield
 } from 'lucide-react';
+import {
+  saveCompanyAttendancePolicy,
+  saveLocalRecord
+} from '../modules/fkRelations';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +61,32 @@ export const RegisterPage: React.FC = () => {
     password?: string;
   }>({});
 
-  const [step, setStep] = useState<'details' | 'otp'>('details');
+  const [step, setStep] = useState<'details' | 'otp' | 'company_config'>('details');
+  const [companyConfig, setCompanyConfig] = useState({
+    code: 'CMP-01',
+    legalName: '',
+    gstin: '',
+    address: '',
+    city: '',
+    currency: 'INR',
+    punchMode: '4_PUNCH' as '4_PUNCH' | '2_PUNCH',
+    shiftStart: '09:00',
+    shiftEnd: '18:00',
+    lunchStart: '13:00',
+    lunchEnd: '14:00',
+    gracePeriodMinutes: 15,
+    halfDayCutoffHours: 4.5,
+    minOvertimeHours: 9.0,
+    permissionDuration: '1_HOUR' as '1_HOUR' | '2_HOURS' | 'HALF_DAY',
+    allowedPermissionsPerWeek: 1,
+    allowedPermissionsPerMonth: 2,
+    excessPermissionDeduction: 'LOP_DEDUCTION',
+    weekOffPolicy: 'SUNDAY',
+    annualCasualLeave: 12,
+    annualSickLeave: 12,
+    annualEarnedLeave: 15,
+    lateMarksForHalfDayDeduction: 3
+  });
   const [otpInput, setOtpInput] = useState('');
   const [otpTimer, setOtpTimer] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -207,7 +244,26 @@ export const RegisterPage: React.FC = () => {
         }
       }
 
-      // Once OTP is strictly verified, activate tenant workspace
+      // Once OTP is strictly verified, transition to mandatory company profile & policy configuration
+      setCompanyConfig((prev) => ({
+        ...prev,
+        legalName: formData.companyName.trim(),
+        code: (formData.companyName.trim().replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || 'CMP') + '-01'
+      }));
+      setStep('company_config');
+    } catch (err: any) {
+      setError(sanitizeErrorMessage(err?.message, 'Failed to complete verification. Please check and try again.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveCompanyAndComplete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      // 1. Activate tenant workspace with registered credentials
       await register({
         ...formData,
         tenantName: formData.tenantName.trim(),
@@ -217,9 +273,46 @@ export const RegisterPage: React.FC = () => {
         mobile: formData.mobile.trim(),
         password: formData.password
       });
+
+      // 2. Persist company entity in tb_company
+      const newCompanyRecord = {
+        id: 'comp-' + Date.now(),
+        code: companyConfig.code || 'CMP-01',
+        name: formData.companyName.trim(),
+        legal_name: companyConfig.legalName || formData.companyName.trim(),
+        gstin: companyConfig.gstin || '',
+        currency_code: companyConfig.currency || 'INR',
+        address: companyConfig.address || '',
+        city: companyConfig.city || '',
+        status: 'ACTIVE',
+        created_time: new Date().toISOString()
+      };
+      saveLocalRecord('tb_company', newCompanyRecord);
+
+      // 3. Save company-wide attendance, shift, lunch, permission & leave policy
+      saveCompanyAttendancePolicy({
+        punchMode: companyConfig.punchMode,
+        shiftStartTime: companyConfig.shiftStart,
+        shiftEndTime: companyConfig.shiftEnd,
+        lunchStartTime: companyConfig.lunchStart,
+        lunchEndTime: companyConfig.lunchEnd,
+        graceMinutes: Number(companyConfig.gracePeriodMinutes) || 15,
+        halfDayMinimumMinutes: Math.round((Number(companyConfig.halfDayCutoffHours) || 4.5) * 60),
+        overtimeThresholdMinutes: Math.round((Number(companyConfig.minOvertimeHours) || 9.0) * 60),
+        maxPermissionsPerWeek: Number(companyConfig.allowedPermissionsPerWeek) || 1,
+        maxPermissionsPerMonth: Number(companyConfig.allowedPermissionsPerMonth) || 2,
+        excessPermissionAction: 'HALF_DAY_LOP',
+        weekOffPolicy: companyConfig.weekOffPolicy as any,
+        casualLeavePerYear: Number(companyConfig.annualCasualLeave) || 12,
+        sickLeavePerYear: Number(companyConfig.annualSickLeave) || 12,
+        earnedLeavePerYear: Number(companyConfig.annualEarnedLeave) || 15,
+        lateMarksForHalfDayLop: Number(companyConfig.lateMarksForHalfDayDeduction) || 3
+      });
+
+      // 4. Navigate directly to dashboard
       navigate('/dashboard');
     } catch (err: any) {
-      setError(sanitizeErrorMessage(err?.message, 'Failed to complete registration. Please check and try again.'));
+      setError(sanitizeErrorMessage(err?.message, 'Failed to complete company setup. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -584,7 +677,7 @@ export const RegisterPage: React.FC = () => {
               )}
             </button>
           </form>
-          ) : (
+          ) : step === 'otp' ? (
           <form className="space-y-5 text-center" onSubmit={handleVerifyAndRegister} noValidate>
             <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-inner">
               <KeyRound className="w-7 h-7" />
@@ -657,16 +750,302 @@ export const RegisterPage: React.FC = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verifying Code & Activating Tenant...</span>
+                  <span>Verifying Code...</span>
                 </>
               ) : (
                 <>
-                  <span>Verify Code & Activate Workspace</span>
+                  <span>Verify Code & Configure Policy</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
+          ) : (
+            /* STEP 3: MANDATORY COMPANY & ATTENDANCE POLICY SETUP */
+            <form className="space-y-5" onSubmit={handleSaveCompanyAndComplete} noValidate>
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900">
+                      Company Profile & Work Policy Setup
+                    </h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                      STEP 3 OF 3: MANDATORY
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Set shift timings, punch modes, permission limits, and week-offs once to auto-govern all employees.
+                  </p>
+                </div>
+              </div>
+
+              {/* Company Legal Identity */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-blue-600" />
+                  Company Legal Entity & Location
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Legal Registered Entity Name <span className="text-blue-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={companyConfig.legalName}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, legalName: e.target.value })}
+                      placeholder="e.g. Apex Industrial Enterprises Pvt Ltd"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white outline-none focus:border-blue-600 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Company Short Code <span className="text-blue-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={companyConfig.code}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, code: e.target.value.toUpperCase() })}
+                      placeholder="CMP-01"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-mono font-bold outline-none focus:border-blue-600 uppercase"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      GSTIN / Tax ID
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={15}
+                      value={companyConfig.gstin}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, gstin: e.target.value.toUpperCase() })}
+                      placeholder="33AAAAA0000A1Z5"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-mono outline-none uppercase"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Headquarters City
+                    </label>
+                    <input
+                      type="text"
+                      value={companyConfig.city}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, city: e.target.value })}
+                      placeholder="e.g. Chennai / Bengaluru"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Currency Code
+                    </label>
+                    <input
+                      type="text"
+                      disabled
+                      value="INR (₹)"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-100 font-mono text-slate-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Shift & Punching Mode */}
+              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-blue-600" />
+                    Attendance Punch Policy & Timings
+                  </h4>
+                  <span className="text-[11px] font-semibold text-blue-700">
+                    {companyConfig.punchMode === '4_PUNCH' ? '4-Punch Mode (Factory/Plant)' : '2-Punch Mode (Corporate)'}
+                  </span>
+                </div>
+
+                {/* Punch Mode Selection Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCompanyConfig({ ...companyConfig, punchMode: '4_PUNCH' })}
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                      companyConfig.punchMode === '4_PUNCH'
+                        ? 'border-blue-600 bg-white shadow-sm ring-2 ring-blue-500/20'
+                        : 'border-slate-200 bg-white/60 hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">4-Punch (Factory / Plant)</span>
+                      {companyConfig.punchMode === '4_PUNCH' && <Check className="w-4 h-4 text-blue-600" />}
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Start In → Lunch Out → Lunch In → End Out. Mandatory meal break tracking.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCompanyConfig({ ...companyConfig, punchMode: '2_PUNCH' })}
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                      companyConfig.punchMode === '2_PUNCH'
+                        ? 'border-blue-600 bg-white shadow-sm ring-2 ring-blue-500/20'
+                        : 'border-slate-200 bg-white/60 hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">2-Punch (Office / Tech)</span>
+                      {companyConfig.punchMode === '2_PUNCH' && <Check className="w-4 h-4 text-blue-600" />}
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Morning In → Evening Out. Standard corporate desk and office schedule.
+                    </p>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Shift Start</label>
+                    <input
+                      type="time"
+                      value={companyConfig.shiftStart}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, shiftStart: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Shift End</label>
+                    <input
+                      type="time"
+                      value={companyConfig.shiftEnd}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, shiftEnd: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Lunch Start</label>
+                    <input
+                      type="time"
+                      value={companyConfig.lunchStart}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, lunchStart: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Lunch End</label>
+                    <input
+                      type="time"
+                      value={companyConfig.lunchEnd}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, lunchEnd: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Grace Time for Late In (Minutes)
+                    </label>
+                    <input
+                      type="number"
+                      value={companyConfig.gracePeriodMinutes}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, gracePeriodMinutes: Number(e.target.value) })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Min Overtime Trigger (Hours)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={companyConfig.minOvertimeHours}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, minOvertimeHours: Number(e.target.value) })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Permissions & Leave Quotas */}
+              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <CalendarCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  Permission Rules & Week-Off Policy
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Weekly Permission Quota</label>
+                    <input
+                      type="number"
+                      value={companyConfig.allowedPermissionsPerWeek}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, allowedPermissionsPerWeek: Number(e.target.value) })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Monthly Permission Quota</label>
+                    <input
+                      type="number"
+                      value={companyConfig.allowedPermissionsPerMonth}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, allowedPermissionsPerMonth: Number(e.target.value) })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Week-Off Schedule</label>
+                    <select
+                      value={companyConfig.weekOffPolicy}
+                      onChange={(e) => setCompanyConfig({ ...companyConfig, weekOffPolicy: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none"
+                    >
+                      <option value="SUNDAY">Sunday Only</option>
+                      <option value="SECOND_FOURTH_SAT_SUNDAY">2nd & 4th Saturday + Sunday</option>
+                      <option value="EVERY_SAT_SUNDAY">Saturday & Sunday</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Company Policy & Initializing Workspace...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Company Policy & Launch Workspace</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           )}
 
           {/* Switch to Login */}

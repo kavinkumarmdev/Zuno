@@ -18,7 +18,8 @@ import {
   Pencil,
   RotateCcw,
   Archive,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { STATUS_BADGE_STYLES } from '@zuno/ui';
 
@@ -53,6 +54,8 @@ interface DataGridProps<T = any> {
   onSoftDelete?: (row: T) => void;
   onRestore?: (row: T) => void;
   canDelete?: boolean;
+  onPermanentDelete?: (row: T) => void;
+  isOwner?: boolean;
   showArchived?: boolean;
   onToggleArchived?: (show: boolean) => void;
   archivedCount?: number;
@@ -80,6 +83,8 @@ export function DataGrid<T extends { id: string }>({
   onSoftDelete,
   onRestore,
   canDelete = true,
+  onPermanentDelete,
+  isOwner = false,
   showArchived = false,
   onToggleArchived,
   archivedCount = 0,
@@ -89,7 +94,9 @@ export function DataGrid<T extends { id: string }>({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [recordToDelete, setRecordToDelete] = useState<T | null>(null);
+  const [recordToPermanentDelete, setRecordToPermanentDelete] = useState<T | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPermanentDeleting, setIsPermanentDeleting] = useState(false);
   const [restoringId, setRestoringId] = useState<string | number | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(columns.map((c) => c.key))
@@ -329,7 +336,7 @@ export function DataGrid<T extends { id: string }>({
                   </div>
                 </th>
               ))}
-              {(onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) && (
+              {(onEdit || onSoftDelete || onPermanentDelete) && (canEdit !== false || canDelete !== false) && (
                 <th className="p-3 w-32 text-center select-none text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Actions
                 </th>
@@ -347,7 +354,7 @@ export function DataGrid<T extends { id: string }>({
                       <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
                     </td>
                   ))}
-                  {(onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) && (
+                  {(onEdit || onSoftDelete || onPermanentDelete) && (canEdit !== false || canDelete !== false) && (
                     <td className="p-3 text-center">
                       <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16 mx-auto" />
                     </td>
@@ -356,7 +363,7 @@ export function DataGrid<T extends { id: string }>({
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={displayedColumns.length + 1 + ((onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) ? 1 : 0)} className="p-12 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={displayedColumns.length + 1 + ((onEdit || onSoftDelete || onPermanentDelete) && (canEdit !== false || canDelete !== false) ? 1 : 0)} className="p-12 text-center text-slate-400 dark:text-slate-500">
                   <FileSpreadsheet className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
                   <p className="font-medium text-sm">No records found</p>
                   <p className="text-xs mt-1">Try adjusting your filters or create a new entry.</p>
@@ -410,39 +417,54 @@ export function DataGrid<T extends { id: string }>({
                         )}
                       </td>
                     ))}
-                    {(onEdit || onSoftDelete) && (canEdit !== false || canDelete !== false) && (
+                    {(onEdit || onSoftDelete || onPermanentDelete) && (canEdit !== false || canDelete !== false) && (
                       <td className="p-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           {(row as any).is_deleted || (row as any).status === 'ARCHIVED' ? (
-                            onRestore && (
-                              <button
-                                disabled={restoringId === ((row as any).id || (row as any).code)}
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const rowKey = (row as any).id || (row as any).code;
-                                  setRestoringId(rowKey);
-                                  try {
-                                    await onRestore(row);
-                                  } finally {
-                                    setRestoringId(null);
-                                  }
-                                }}
-                                className="px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs disabled:opacity-50"
-                                title="Restore Archived Record"
-                              >
-                                {restoringId === ((row as any).id || (row as any).code) ? (
-                                  <>
-                                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
-                                    <span>Restoring...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <RotateCcw className="w-3 h-3 shrink-0" />
-                                    <span>Restore</span>
-                                  </>
-                                )}
-                              </button>
-                            )
+                            <>
+                              {onRestore && (
+                                <button
+                                  disabled={restoringId === ((row as any).id || (row as any).code)}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const rowKey = (row as any).id || (row as any).code;
+                                    setRestoringId(rowKey);
+                                    try {
+                                      await onRestore(row);
+                                    } finally {
+                                      setRestoringId(null);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs disabled:opacity-50"
+                                  title="Restore Archived Record"
+                                >
+                                  {restoringId === ((row as any).id || (row as any).code) ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                                      <span>Restoring...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <RotateCcw className="w-3 h-3 shrink-0" />
+                                      <span>Restore</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                              {isOwner && onPermanentDelete && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRecordToPermanentDelete(row);
+                                  }}
+                                  className="px-2.5 py-1 text-xs font-bold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-950/90 hover:bg-red-200 dark:hover:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                  title="Owner Rights: Permanently Purge Record From Database"
+                                >
+                                  <Trash2 className="w-3 h-3 shrink-0" />
+                                  <span>Permanent Delete</span>
+                                </button>
+                              )}
+                            </>
                           ) : (
                             <>
                               {onEdit && canEdit !== false && (
@@ -465,10 +487,23 @@ export function DataGrid<T extends { id: string }>({
                                     setRecordToDelete(row);
                                   }}
                                   className="px-2 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/80 border border-rose-200/80 dark:border-rose-800 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
-                                  title="Soft Delete Record"
+                                  title="Soft Delete (Archive) Record"
                                 >
                                   <Trash2 className="w-3 h-3 shrink-0" />
                                   <span>Delete</span>
+                                </button>
+                              )}
+                              {isOwner && onPermanentDelete && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRecordToPermanentDelete(row);
+                                  }}
+                                  className="px-2 py-1 text-xs font-bold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-950/80 hover:bg-red-200 dark:hover:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                  title="Owner Rights: Permanently Delete Record"
+                                >
+                                  <Trash2 className="w-3 h-3 shrink-0" />
+                                  <span>Purge</span>
                                 </button>
                               )}
                             </>
@@ -611,6 +646,84 @@ export function DataGrid<T extends { id: string }>({
                   <>
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Confirm Soft Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Owner Permanent Hard Delete Confirmation Modal */}
+      {recordToPermanentDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setRecordToPermanentDelete(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border-2 border-red-500 shadow-2xl p-6 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 border border-red-300 dark:border-red-800">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                    Permanent Delete Record
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200">
+                    Owner Rights
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                  Are you sure you want to permanently erase record <strong className="text-slate-900 dark:text-white font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">{(recordToPermanentDelete as any).name || (recordToPermanentDelete as any).code || 'this entry'}</strong>?
+                </p>
+                <div className="mt-3.5 p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/80 text-xs text-red-900 dark:text-red-200 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                  <span>
+                    <strong>IRREVERSIBLE ACTION:</strong> This will completely wipe this record from database storage. It cannot be recovered or restored.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setRecordToPermanentDelete(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isPermanentDeleting}
+                onClick={async () => {
+                  if (onPermanentDelete && recordToPermanentDelete) {
+                    setIsPermanentDeleting(true);
+                    try {
+                      await onPermanentDelete(recordToPermanentDelete);
+                    } finally {
+                      setIsPermanentDeleting(false);
+                      setRecordToPermanentDelete(null);
+                    }
+                  } else {
+                    setRecordToPermanentDelete(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-500/20 hover:shadow-lg transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {isPermanentDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Purging from Database...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Permanent Delete</span>
                   </>
                 )}
               </button>
