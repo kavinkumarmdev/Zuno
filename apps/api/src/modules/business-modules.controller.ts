@@ -28,6 +28,7 @@ export class BusinessModulesController {
   @ApiParam({ name: 'tableName', description: 'Approved catalogue table name (e.g. tb_product_master, tb_purchase_order)' })
   async listRecords(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
     @Param('tableName') tableName: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -35,13 +36,18 @@ export class BusinessModulesController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc'
   ) {
-    return this.modulesService.listRecords(tenantId, tableName, {
-      page,
-      limit,
-      search,
-      sortBy,
-      sortOrder
-    });
+    return this.modulesService.listRecords(
+      tenantId,
+      tableName,
+      {
+        page,
+        limit,
+        search,
+        sortBy,
+        sortOrder
+      },
+      user
+    );
   }
 
   @Get('data/:tableName/:id')
@@ -62,7 +68,7 @@ export class BusinessModulesController {
     @Param('tableName') tableName: string,
     @Body() body: any
   ) {
-    return this.modulesService.createRecord(tenantId, user.sub, tableName, body);
+    return this.modulesService.createRecord(tenantId, user.sub, tableName, body, user);
   }
 
   @Patch('data/:tableName/:id')
@@ -74,7 +80,7 @@ export class BusinessModulesController {
     @Param('id') id: string,
     @Body() body: any
   ) {
-    return this.modulesService.updateRecord(tenantId, user.sub, tableName, id, body);
+    return this.modulesService.updateRecord(tenantId, user.sub, tableName, id, body, user);
   }
 
   @Delete('data/:tableName/:id')

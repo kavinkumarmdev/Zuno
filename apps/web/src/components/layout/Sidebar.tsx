@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { VoiceGuidedAssistant } from '../guidance/VoiceGuidedAssistant';
 import { useAuth } from '../../stores/auth-store';
-import { canUserAccessModule } from '../../utils/permissionManager';
+import { canUserAccessModule, isMasterPlatformUser } from '../../utils/permissionManager';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -149,28 +149,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     return () => window.removeEventListener('zuno_modules_updated', handler);
   }, []);
 
+  const isOwner = Boolean(
+    user?.userType === 'OWNER' ||
+    user?.role === 'OWNER' ||
+    isMasterPlatformUser(user)
+  );
+
   const filteredPhaseGroups = useMemo(() => {
     return ERP_MODULES.filter((group: any) => group.phase && Array.isArray(group.items))
       .map((group: any) => ({
         ...group,
-        items: group.items.filter((item: any) =>
-          enabledModules.includes(item.id) && canUserAccessModule(user, item.id)
-        )
+        items: group.items.filter((item: any) => {
+          // Platform / Tenant Owner has full access to all menus across all modules
+          if (isOwner) return true;
+          return enabledModules.includes(item.id) && canUserAccessModule(user, item.id);
+        })
       }))
       .filter((group: any) => group.items.length > 0);
-  }, [enabledModules, user]);
+  }, [enabledModules, user, isOwner]);
 
   const allAvailableModules = useMemo(() => {
     const list: Array<{ id: string; name: string; phase: string; icon: any; count?: number; table?: string }> = [];
     ERP_MODULES.forEach((g: any) => {
       if (g.phase && Array.isArray(g.items)) {
         g.items.forEach((item: any) => {
-          list.push({ ...item, phase: g.phase });
+          // Non-owners can only configure modules permitted by their company role
+          if (isOwner || canUserAccessModule(user, item.id)) {
+            list.push({ ...item, phase: g.phase });
+          }
         });
       }
     });
     return list;
-  }, []);
+  }, [isOwner, user]);
 
   const handleToggleModule = (id: string) => {
     setPendingModules((prev) =>

@@ -1,5 +1,6 @@
 import { FormFieldConfig } from './tableSchemas';
 import { SelectOption } from '../../components/ui/SearchableSelect';
+import { getUserAccessibleModuleIds, isMasterPlatformUser } from '../../utils/permissionManager';
 
 // Standard table code prefixes for automatic number generation
 export const TABLE_CODE_PREFIXES: Record<string, string> = {
@@ -1673,7 +1674,8 @@ export const calculateFnFSettlement = (params: {
 export const getDynamicFieldOptions = (
   field: FormFieldConfig,
   currentTable: string,
-  extraRecords: Record<string, any[]> = {}
+  extraRecords: Record<string, any[]> = {},
+  currentUser?: any
 ): SelectOption[] => {
   // 1. Check if the field is mapped to a related foreign table
   let rel = FIELD_TABLE_MAPPING[field.key];
@@ -1695,7 +1697,32 @@ export const getDynamicFieldOptions = (
     const localRecords = ensureTableSeedRecords(targetTable);
     const passedRecords = extraRecords[targetTable] || [];
 
-    const combinedRecords = [...localRecords, ...passedRecords];
+    let combinedRecords = [...localRecords, ...passedRecords];
+
+    // COMPANY ISOLATION FOR NON-OWNER:
+    // If not OWNER, only show records matching the current user's active company
+    if (currentUser && !isMasterPlatformUser(currentUser)) {
+      const userCompId = (currentUser.companyId || currentUser.company_id || '').toLowerCase();
+      const userCompName = (currentUser.companyName || currentUser.company_name || '').toLowerCase();
+
+      if (targetTable === 'tb_company') {
+        combinedRecords = combinedRecords.filter((c: any) => {
+          const cId = String(c.id || '').toLowerCase();
+          const cName = String(c.name || c.company_name || '').toLowerCase();
+          return (userCompId && cId === userCompId) || (userCompName && cName === userCompName);
+        });
+      } else if (targetTable === 'tb_user') {
+        combinedRecords = combinedRecords.filter((u: any) => {
+          const uComp = String(u.company_id || u.company || u.company_name || '').toLowerCase();
+          return !uComp || uComp === userCompId || uComp === userCompName;
+        });
+      } else if (targetTable === 'tb_role') {
+        combinedRecords = combinedRecords.filter((r: any) => {
+          const rComp = String(r.company_id || r.company_name || '').toLowerCase();
+          return !rComp || rComp === userCompId || rComp === userCompName || r.is_system;
+        });
+      }
+    }
 
     for (const rec of combinedRecords) {
       if (!rec || rec.is_deleted === true || rec.status === 'ARCHIVED') continue;
@@ -1727,6 +1754,23 @@ export const getDynamicFieldOptions = (
     }
   }
 
-  // 4. Return sorted list of options
+  // 4. MENU & ROLE DELEGATION SAFEGUARD:
+  // Non-owner (Company Admin) can ONLY delegate menus/modules that they themselves have access to!
+  if (currentUser && !isMasterPlatformUser(currentUser)) {
+    if (field.key === 'module_name') {
+      const allowedModules = getUserAccessibleModuleIds(currentUser);
+      for (const [key] of Array.from(optionsMap.entries())) {
+        // Disallow 'all' and any module not in admin's accessible modules
+        if (key === 'all' || key === 'ALL' || !allowedModules.includes(key)) {
+          optionsMap.delete(key);
+        }
+      }
+    } else if (field.key === 'permission_level') {
+      // Company Admins cannot grant SUPER_ADMIN
+      optionsMap.delete('SUPER_ADMIN');
+    }
+  }
+
+  // 5. Return sorted list of options
   return Array.from(optionsMap.values()).sort((a, b) => a.label.localeCompare(b.label));
 };

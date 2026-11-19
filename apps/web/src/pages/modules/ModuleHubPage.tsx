@@ -77,7 +77,12 @@ import { BonusAuditModal } from '../../components/hr/BonusAuditModal';
 import { CompanyAttendanceConfigModal } from '../../components/hr/CompanyAttendanceConfigModal';
 import { ComprehensiveEmployeeModal } from '../../components/hr/ComprehensiveEmployeeModal';
 import { BulkAttendanceModal } from '../../components/hr/BulkAttendanceModal';
-import { canUserAccessModule, getModuleActionPermissions } from '../../utils/permissionManager';
+import {
+  canUserAccessModule,
+  getModuleActionPermissions,
+  getUserAccessibleModuleIds,
+  isMasterPlatformUser
+} from '../../utils/permissionManager';
 import { sanitizeErrorMessage } from '../../utils/errorSanitizer';
 
 const MODULE_ICONS_MAP: Record<string, React.ElementType> = {
@@ -599,9 +604,8 @@ export const ModuleHubPage: React.FC = () => {
   const isOwner = Boolean(
     isKavin ||
     user?.userType === 'OWNER' ||
-    user?.roles?.includes('ADMINISTRATOR') ||
-    permissions?.includes('*') ||
-    user?.username === 'admin'
+    user?.role === 'OWNER' ||
+    isMasterPlatformUser(user)
   );
 
   // Owner Permanent Hard Delete Handler: Purges record completely from DB and storage
@@ -1058,6 +1062,23 @@ export const ModuleHubPage: React.FC = () => {
       }
     }
 
+    // 5. Role & Permission Delegation Safeguards:
+    // Non-owners (Company Admin) can ONLY grant access to menus and modules that they themselves possess!
+    if (!isOwner) {
+      if (selectedTable === 'tb_permission') {
+        const mod = String(formData.module_name || '').toLowerCase();
+        const allowedModules = getUserAccessibleModuleIds(user);
+        if (mod === 'all' || !allowedModules.includes(mod)) {
+          errors.module_name = `Delegation Restriction: As a Company Admin, you can only grant permissions to menus/modules you currently have access to (${mod || 'ALL'} is not permitted).`;
+        }
+      }
+      if (selectedTable === 'tb_role') {
+        if (formData.permission_level === 'SUPER_ADMIN') {
+          errors.permission_level = 'Privilege Error: Only Platform / Tenant Owners can grant SUPER_ADMIN permission level.';
+        }
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1106,47 +1127,53 @@ export const ModuleHubPage: React.FC = () => {
 
       let combined = Array.from(mergedMap.values());
 
-      // STRICT MULTI-TENANT ISOLATION:
-      // Admin and users must ONLY see their own active company details, branches, and users.
-      // Other company details and foreign users must NEVER be displayed!
-      if (selectedTable === 'tb_company') {
-        const activeCompId = activeCompany?.id;
+      // STRICT MULTI-TENANT & COMPANY ISOLATION:
+      // - OWNER role: Can see ALL companies, all users, and all records across the tenant.
+      // - NON-OWNER (Company Admin & other roles): Strictly restricted to their particular company details, users, and roles!
+      if (!isOwner) {
+        const activeCompId = (activeCompany?.id || '').toLowerCase();
         const activeCompCode = (activeCompany?.companyCode || activeCompany?.code || '').toLowerCase();
         const activeCompName = (activeCompany?.companyName || activeCompany?.name || '').toLowerCase();
 
-        combined = combined.filter((c: any) => {
-          if (!activeCompId && !activeCompCode && !activeCompName) return true;
-          const cId = c.id;
-          const cCode = (c.code || c.company_code || '').toLowerCase();
-          const cName = (c.name || c.company_name || '').toLowerCase();
-          return (
-            (activeCompId && cId === activeCompId) ||
-            (activeCompCode && cCode === activeCompCode) ||
-            (activeCompName && cName === activeCompName)
-          );
-        });
-      } else if (selectedTable === 'tb_company_branch') {
-        const activeCompId = activeCompany?.id;
-        const activeCompCode = (activeCompany?.companyCode || activeCompany?.code || '').toLowerCase();
-
-        combined = combined.filter((b: any) => {
-          if (!activeCompId && !activeCompCode) return true;
-          const compRef = (b.company_id || b.company || b.company_code || '').toLowerCase();
-          return (
-            !compRef ||
-            compRef === activeCompId?.toLowerCase() ||
-            compRef === activeCompCode
-          );
-        });
-      } else if (selectedTable === 'tb_user') {
-        // Strict user directory isolation: Only display users belonging to the active tenant/organization
-        const activeTenantId = tenant?.id || user?.tenantId;
-        const activeCompName = (activeCompany?.companyName || '').toLowerCase();
-        combined = combined.filter((u: any) => {
-          if (activeTenantId && u.tenant_id && u.tenant_id !== activeTenantId) return false;
-          if (u.company_name && activeCompName && u.company_name.toLowerCase() !== activeCompName) return false;
-          return true;
-        });
+        if (selectedTable === 'tb_company') {
+          combined = combined.filter((c: any) => {
+            const cId = (c.id || '').toLowerCase();
+            const cCode = (c.code || c.company_code || '').toLowerCase();
+            const cName = (c.name || c.company_name || '').toLowerCase();
+            return (
+              (activeCompId && cId === activeCompId) ||
+              (activeCompCode && cCode === activeCompCode) ||
+              (activeCompName && cName === activeCompName)
+            );
+          });
+        } else if (selectedTable === 'tb_company_branch') {
+          combined = combined.filter((b: any) => {
+            const compRef = (b.company_id || b.company || b.company_code || '').toLowerCase();
+            return (
+              !compRef ||
+              compRef === activeCompId ||
+              compRef === activeCompCode
+            );
+          });
+        } else if (selectedTable === 'tb_user') {
+          // Strict company user isolation: Company admin only sees users of their particular company!
+          combined = combined.filter((u: any) => {
+            const uComp = (u.company_id || u.company || u.company_name || '').toLowerCase();
+            return !uComp || uComp === activeCompId || uComp === activeCompName || uComp === activeCompCode;
+          });
+        } else if (selectedTable === 'tb_employee_master') {
+          // Strict company employee isolation: Company admin only sees employees of their particular company!
+          combined = combined.filter((e: any) => {
+            const eComp = (e.company_id || e.company || e.company_name || '').toLowerCase();
+            return !eComp || eComp === activeCompId || eComp === activeCompName || eComp === activeCompCode;
+          });
+        } else if (selectedTable === 'tb_role') {
+          // Company admin only sees roles belonging to their particular company (or standard system templates)
+          combined = combined.filter((r: any) => {
+            const rComp = (r.company_id || r.company_name || r.company || '').toLowerCase();
+            return !rComp || rComp === activeCompId || rComp === activeCompName || r.is_system;
+          });
+        }
       }
 
       if (search) {
@@ -1170,17 +1197,26 @@ export const ModuleHubPage: React.FC = () => {
   // Create or Update mutation with dual layer persistence
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
+      // Company scoping: automatically stamp company_id and company_name for company admins and non-owners
+      const scopedPayload = { ...payload };
+      if (!isOwner && activeCompany) {
+        if (!scopedPayload.company_id) scopedPayload.company_id = activeCompany.id;
+        if (!scopedPayload.company_name && selectedTable !== 'tb_company') {
+          scopedPayload.company_name = activeCompany.companyName;
+        }
+      }
+
       if (editingRecord) {
         // Update existing record
         const updatedRecord = {
           ...editingRecord,
-          ...payload,
+          ...scopedPayload,
           id: editingRecord.id,
           updated_time: new Date().toISOString()
         };
         saveLocalRecord(selectedTable, updatedRecord);
         try {
-          await apiClient.put(`/modules/data/${selectedTable}/${editingRecord.id}`, payload);
+          await apiClient.put(`/modules/data/${selectedTable}/${editingRecord.id}`, scopedPayload);
         } catch (err: any) {
           console.warn('API update fallback to local store:', err);
         }
@@ -1190,27 +1226,27 @@ export const ModuleHubPage: React.FC = () => {
       // Create new record
       const tempId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const prefix = selectedTable.replace(/^tb_/, '').substring(0, 4).toUpperCase();
-      const codeVal = payload.code || payload.sku_code || payload.company_code || `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const codeVal = scopedPayload.code || scopedPayload.sku_code || scopedPayload.company_code || `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const localRecord = {
         id: tempId,
         code: codeVal,
-        name: payload.name || payload.company_name || payload.branch_name || `${singleLabel} Entry`,
-        company_name: payload.name || payload.company_name,
+        name: scopedPayload.name || scopedPayload.company_name || scopedPayload.branch_name || `${singleLabel} Entry`,
+        company_name: scopedPayload.name || scopedPayload.company_name,
         company_code: codeVal,
-        branch_name: payload.name || payload.branch_name,
+        branch_name: scopedPayload.name || scopedPayload.branch_name,
         branch_code: codeVal,
-        full_name: payload.name || payload.full_name,
-        product_name: payload.name || payload.product_name,
-        customer_name: payload.name || payload.customer_name,
-        supplier_name: payload.name || payload.supplier_name,
-        employee_name: payload.name || payload.employee_name,
-        description: payload.description || '',
-        amount: payload.amount ? Number(payload.amount) : 0,
-        status: payload.status || 'ACTIVE',
+        full_name: scopedPayload.name || scopedPayload.full_name,
+        product_name: scopedPayload.name || scopedPayload.product_name,
+        customer_name: scopedPayload.name || scopedPayload.customer_name,
+        supplier_name: scopedPayload.name || scopedPayload.supplier_name,
+        employee_name: scopedPayload.name || scopedPayload.employee_name,
+        description: scopedPayload.description || '',
+        amount: scopedPayload.amount ? Number(scopedPayload.amount) : 0,
+        status: scopedPayload.status || 'ACTIVE',
         created_time: new Date().toISOString(),
         is_user_record: true,
-        ...payload
+        ...scopedPayload
       };
 
       // 1. Immediately cache locally
@@ -1218,7 +1254,7 @@ export const ModuleHubPage: React.FC = () => {
 
       // 2. Transmit to backend PostgreSQL database
       try {
-        const res: any = await apiClient.post(`/modules/data/${selectedTable}`, payload);
+        const res: any = await apiClient.post(`/modules/data/${selectedTable}`, scopedPayload);
         if (res?.data?.id) {
           saveLocalRecord(selectedTable, res.data);
         }
@@ -1957,7 +1993,7 @@ export const ModuleHubPage: React.FC = () => {
                       {isSelectField ? (
                         <SearchableSelect
                           value={formData[field.key] || field.defaultValue || ''}
-                          options={getDynamicFieldOptions(field, selectedTable)}
+                          options={getDynamicFieldOptions(field, selectedTable, {}, user)}
                           placeholder={field.placeholder || `Select ${field.label}...`}
                           error={!!formErrors[field.key]}
                           required={field.required}

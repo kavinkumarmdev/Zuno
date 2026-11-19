@@ -52,7 +52,7 @@ export class BusinessModulesService implements OnModuleInit {
   /**
    * Universal list query with multi-tenant filtering, search, pagination, and sorting
    */
-  async listRecords(tenantId: string, tableName: string, params: PaginationParams) {
+  async listRecords(tenantId: string, tableName: string, params: PaginationParams, user?: any) {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
     const skip = (page - 1) * limit;
@@ -117,6 +117,41 @@ export class BusinessModulesService implements OnModuleInit {
     const storedRecords = OperationalDataStore.getRecords(tenantId, tableName, true);
 
     let combined = [...storedRecords];
+
+    // COMPANY ISOLATION FOR NON-OWNER:
+    // Company Admins and other non-owner roles ONLY see their particular company's records!
+    const isOwner = user?.userType === 'OWNER';
+    if (!isOwner && user?.companyId) {
+      const userCompId = String(user.companyId).toLowerCase();
+
+      if (tableName === 'tb_company') {
+        combined = combined.filter((c: any) => {
+          const cId = String(c.id || '').toLowerCase();
+          const cCode = String(c.code || c.company_code || '').toLowerCase();
+          return cId === userCompId || cCode === userCompId;
+        });
+      } else if (tableName === 'tb_company_branch') {
+        combined = combined.filter((b: any) => {
+          const cId = String(b.company_id || b.company || b.company_code || '').toLowerCase();
+          return !cId || cId === userCompId;
+        });
+      } else if (tableName === 'tb_user') {
+        combined = combined.filter((u: any) => {
+          const cId = String(u.company_id || u.companyId || '').toLowerCase();
+          return !cId || cId === userCompId;
+        });
+      } else if (tableName === 'tb_employee_master') {
+        combined = combined.filter((e: any) => {
+          const cId = String(e.company_id || e.companyId || '').toLowerCase();
+          return !cId || cId === userCompId;
+        });
+      } else if (tableName === 'tb_role') {
+        combined = combined.filter((r: any) => {
+          const cId = String(r.company_id || r.companyId || '').toLowerCase();
+          return !cId || cId === userCompId || r.is_system;
+        });
+      }
+    }
 
     // 3. Apply Search Filter
     if (params.search && params.search.trim()) {
@@ -406,9 +441,26 @@ export class BusinessModulesService implements OnModuleInit {
   /**
    * Create a new record within tenant boundary with guaranteed disk & database persistence
    */
-  async createRecord(tenantId: string, userId: string, tableName: string, data: any) {
+  async createRecord(tenantId: string, userId: string, tableName: string, data: any, user?: any) {
     if (tableName === 'tb_login_history') {
       throw new BadRequestException('Security Audit Violation: Login History table (tb_login_history) is strictly immutable and read-only. Manual creation is prohibited.');
+    }
+
+    const isOwner = user?.userType === 'OWNER';
+
+    // Role & Permission Delegation Safeguards:
+    // Non-owners (Company Admins) cannot grant SUPER_ADMIN or ALL module access
+    if (!isOwner) {
+      if (tableName === 'tb_role' && data.permission_level === 'SUPER_ADMIN') {
+        throw new BadRequestException('Privilege Error: Only Platform/Tenant Owners can grant SUPER_ADMIN permission level.');
+      }
+      if (tableName === 'tb_permission' && String(data.module_name || '').toLowerCase() === 'all') {
+        throw new BadRequestException('Delegation Restriction: Company Admins cannot grant access to ALL modules.');
+      }
+      // Ensure company_id is stamped if non-owner
+      if (user?.companyId && !data.company_id) {
+        data.company_id = user.companyId;
+      }
     }
 
     // Validate uniqueness, phone format, GSTIN format before saving
@@ -453,9 +505,19 @@ export class BusinessModulesService implements OnModuleInit {
   /**
    * Update an existing record
    */
-  async updateRecord(tenantId: string, userId: string, tableName: string, id: string, data: any) {
+  async updateRecord(tenantId: string, userId: string, tableName: string, id: string, data: any, user?: any) {
     if (tableName === 'tb_login_history') {
       throw new BadRequestException('Security Audit Violation: Login History table (tb_login_history) is strictly immutable and read-only. Modification is prohibited.');
+    }
+
+    const isOwner = user?.userType === 'OWNER';
+    if (!isOwner) {
+      if (tableName === 'tb_role' && data.permission_level === 'SUPER_ADMIN') {
+        throw new BadRequestException('Privilege Error: Only Platform/Tenant Owners can grant SUPER_ADMIN permission level.');
+      }
+      if (tableName === 'tb_permission' && String(data.module_name || '').toLowerCase() === 'all') {
+        throw new BadRequestException('Delegation Restriction: Company Admins cannot grant access to ALL modules.');
+      }
     }
 
     // Validate uniqueness, phone format, GSTIN format for updates (excluding current id)

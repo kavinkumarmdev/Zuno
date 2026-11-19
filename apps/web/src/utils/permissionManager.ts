@@ -42,15 +42,10 @@ export function canUserAccessModule(user: any, moduleId: string): boolean {
     return true;
   }
 
-  // 2. Tenant Administrator (ADMIN) has full access to operational modules
-  const userRole = (user.userType || user.user_type || user.role || 'USER').toUpperCase();
-  if (userRole === 'ADMIN' || userRole.includes('ADMIN')) {
-    return true;
-  }
-
   const userEmail = (user.email || '').trim().toLowerCase();
+  const userRole = (user.userType || user.user_type || user.role || 'USER').toUpperCase();
 
-  // 3. Inspect custom permissions in tb_permission store
+  // 2. Inspect custom permissions in tb_permission store first (user or role override)
   try {
     const rawPerms = localStorage.getItem('zuno_records_tb_permission');
     if (rawPerms) {
@@ -69,7 +64,7 @@ export function canUserAccessModule(user: any, moduleId: string): boolean {
           if (val === 'YES' || val === true || userMatch.actions?.includes('VIEW') || userMatch.actions?.includes('READ')) return true;
         }
 
-        // Role-based permission
+        // Role-based permission override
         const roleMatch = perms.find(
           (p: any) =>
             p.status !== 'INACTIVE' &&
@@ -84,6 +79,13 @@ export function canUserAccessModule(user: any, moduleId: string): boolean {
       }
     }
   } catch {}
+
+  // 3. Tenant / Company Administrator (ADMIN)
+  if (userRole === 'ADMIN' || userRole.includes('ADMIN')) {
+    // SaaS Subscriptions module is exclusively reserved for Platform / Tenant Owners
+    if (moduleId === 'subscriptions') return false;
+    return true;
+  }
 
   // 4. Default Enterprise Role Scopes
   if (userRole === 'MANAGER' || userRole.includes('MANAGER')) {
@@ -120,6 +122,43 @@ export function canUserAccessModule(user: any, moduleId: string): boolean {
 
   // Regular Employee / User role
   return ['portal', 'attendance'].includes(moduleId);
+}
+
+/**
+ * Returns the exact list of ERP module IDs that the current user has access to.
+ * Used for role creation & delegation safeguards: a Company Admin can ONLY delegate
+ * menus and modules that they themselves possess!
+ */
+export function getUserAccessibleModuleIds(user: any): string[] {
+  const allModules = [
+    'company',
+    'subscriptions',
+    'admin',
+    'products',
+    'hr',
+    'crm',
+    'land-building',
+    'assets',
+    'purchase',
+    'inventory',
+    'sales',
+    'attendance',
+    'production',
+    'portal',
+    'banking',
+    'payroll',
+    'compliance',
+    'statutory',
+    'investment',
+    'reports',
+    'history'
+  ];
+
+  if (isMasterPlatformUser(user)) {
+    return allModules;
+  }
+
+  return allModules.filter((modId) => canUserAccessModule(user, modId));
 }
 
 /**

@@ -20,6 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isKavin: boolean;
+  isOwner: boolean;
   login: (data: any) => Promise<void>;
   requestLoginOtp: (credentials: { usernameOrEmail: string; password: string }) => Promise<{ success: boolean; email: string; message: string }>;
   verifyLoginOtp: (params: { usernameOrEmail: string; password: string; otp: string }) => Promise<void>;
@@ -600,6 +601,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, [session?.user]);
 
+  const isOwner = React.useMemo(() => {
+    const u: any = session?.user;
+    if (!u) return false;
+    const userType = (u.userType || u.user_type || u.role || '').toUpperCase();
+    if (userType === 'OWNER') return true;
+    return isMasterPlatformUser(u);
+  }, [session?.user]);
+
   const switchCompany = (companyId: string) => {
     if (!session) return;
     const target = session.companies?.find((c) => c.id === companyId);
@@ -617,14 +626,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const userCompanies = React.useMemo(() => {
     if (!session) return [];
-    if (session.companies && session.companies.length > 0) {
-      return session.companies;
+
+    // PLATFORM OWNER: Access to ALL companies across the tenant
+    if (isOwner) {
+      const rawStored = localStorage.getItem('zuno_records_tb_company');
+      const storedComps = rawStored ? JSON.parse(rawStored) : [];
+      const sessionComps = session.companies || [];
+      const mergedMap = new Map();
+
+      sessionComps.forEach((c: any) => mergedMap.set(c.id, c));
+      storedComps.forEach((c: any) => {
+        if (!mergedMap.has(c.id)) {
+          mergedMap.set(c.id, {
+            id: c.id,
+            companyCode: c.code || c.company_code || 'CMP',
+            companyName: c.name || c.company_name || 'Company',
+            currencyCode: c.currency_code || 'INR',
+            role: 'OWNER'
+          });
+        }
+      });
+
+      if (session.activeCompany && !mergedMap.has(session.activeCompany.id)) {
+        mergedMap.set(session.activeCompany.id, session.activeCompany);
+      }
+      return Array.from(mergedMap.values());
     }
+
+    // NON-OWNER (Company Admin & Standard Roles):
+    // Strictly restricted to their assigned company ONLY!
     if (session.activeCompany) {
       return [session.activeCompany];
     }
+    if (session.companies && session.companies.length > 0) {
+      return [session.companies[0]];
+    }
     return [];
-  }, [session]);
+  }, [session, isOwner]);
 
   const switchBranch = (branchId: string) => {
     if (!session) return;
@@ -674,6 +712,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!session?.user,
         isLoading,
         isKavin,
+        isOwner,
         login,
         requestLoginOtp,
         verifyLoginOtp,

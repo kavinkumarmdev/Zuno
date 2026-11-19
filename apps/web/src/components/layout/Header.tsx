@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, addCompany, logout, isKavin } = useAuth();
+  const { user, tenant, activeCompany, activeBranch, companies, branches, switchCompany, switchBranch, addCompany, logout, isKavin, isOwner } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -277,7 +277,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             {/* Company Selector */}
             <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs max-w-[110px] xs:max-w-[150px] sm:max-w-[210px] md:max-w-[240px]">
               <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-              {isKavin ? (
+              {isOwner ? (
                 <select
                   value={activeCompany?.id || ''}
                   onChange={(e) => {
@@ -285,7 +285,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     showToast('success', 'Active company switched successfully');
                   }}
                   className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate text-xs w-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  title="Switch Active Company (Platform Master)"
+                  title="Switch Active Company (Owner Access: All Companies Available)"
                 >
                   {companies.map((c) => (
                     <option key={c.id} value={c.id} className="dark:bg-slate-800 font-medium text-slate-900 dark:text-slate-100">
@@ -296,7 +296,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               ) : (
                 <span
                   className="font-medium text-slate-800 dark:text-slate-200 truncate text-xs select-none"
-                  title="Enterprise Isolation: You are securely restricted to your registered company details only"
+                  title="Company Isolation: You are restricted to your assigned company details only"
                 >
                   {activeCompany?.companyName || 'My Company'}
                 </span>
@@ -481,8 +481,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   </div>
 
                   <div className="py-1 text-xs space-y-0.5">
-                    {/* Switch Organization (Kavin Master Platform Owner Only) */}
-                    {isKavin && (
+                    {/* Switch Organization (Platform / Tenant Owner Only) */}
+                    {isOwner && (
                       <button
                         onClick={() => {
                           setShowProfileMenu(false);
