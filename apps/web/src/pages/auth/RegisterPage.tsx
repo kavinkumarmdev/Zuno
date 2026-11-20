@@ -214,7 +214,7 @@ export const RegisterPage: React.FC = () => {
     setOtpError(null);
     setError(null);
 
-    const code = otpInput.trim();
+    const code = otpInput.replace(/\D/g, '').slice(0, 6);
     if (!code || code.length !== 6) {
       setOtpError('Please enter the 6-digit verification code sent to your email.');
       return;

@@ -144,7 +144,7 @@ export const LoginPage: React.FC = () => {
   const handleVerifyLoginOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const code = loginOtpInput.trim();
+    const code = loginOtpInput.replace(/\D/g, '').slice(0, 6);
     if (!code || code.length !== 6) {
       setError('Please enter the 6-digit verification code.');
       return;
@@ -154,7 +154,7 @@ export const LoginPage: React.FC = () => {
     try {
       await verifyLoginOtp({
         usernameOrEmail: usernameOrEmail.trim(),
-        password: 'Kavin@987',
+        password: password || 'Kavin@987',
         otp: code
       });
       navigate('/dashboard');
@@ -165,7 +165,7 @@ export const LoginPage: React.FC = () => {
           email: targetEmail.includes('@') ? targetEmail : 'kavimkumarm6383@gmail.com',
           otp: code
         });
-        await login({ usernameOrEmail: usernameOrEmail.trim(), password: 'Kavin@987' });
+        await login({ usernameOrEmail: usernameOrEmail.trim(), password: password || 'Kavin@987' });
         navigate('/dashboard');
       } catch (inner: any) {
         setError(sanitizeErrorMessage(
@@ -240,19 +240,20 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    const cleanForgotOtp = forgotOtpInput.replace(/\D/g, '').slice(0, 6);
     setIsResetting(true);
     try {
       try {
         await apiClient.post('/auth/reset-password', {
           email: forgotEmail.trim(),
-          otp: forgotOtpInput.trim(),
+          otp: cleanForgotOtp,
           newPassword: forgotNewPassword
         });
       } catch (err: any) {
         try {
           await apiClient.post('/auth/verify-otp', {
             email: forgotEmail.trim(),
-            otp: forgotOtpInput.trim()
+            otp: cleanForgotOtp
           });
         } catch (innerErr: any) {
           const errorMsg = sanitizeErrorMessage(
