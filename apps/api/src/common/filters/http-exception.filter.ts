@@ -109,11 +109,16 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     const errCode = rawError?.code;
     const rawMsg = rawError?.message || '';
 
-    // Log the full technical error and stack trace for developer diagnosis
-    this.logger.error(
-      `[${request.method}] ${request.url} - Error: ${rawMsg}`,
-      rawError?.stack
-    );
+    // Log errors (4xx client errors logged cleanly without noisy stack trace)
+    const isClientError = (exception instanceof HttpException) && exception.getStatus() < 500;
+    if (isClientError) {
+      this.logger.debug(`[${request.method}] ${request.url} - ${exception.getStatus()}: ${rawMsg}`);
+    } else {
+      this.logger.error(
+        `[${request.method}] ${request.url} - Error: ${rawMsg}`,
+        rawError?.stack
+      );
+    }
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();

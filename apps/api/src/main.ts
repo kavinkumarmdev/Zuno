@@ -86,6 +86,22 @@ async function bootstrap() {
   server.use(express.json());
   server.use(express.urlencoded({ extended: true }));
 
+  // Root health / ping endpoint for Render, uptime monitors, and load balancers
+  server.get('/', (req: any, res: any) => {
+    return res.status(200).json({
+      status: 'ONLINE',
+      service: 'ZUNO ERP Enterprise REST API',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      api: `/${apiPrefix.replace(/^\//, '')}`,
+      docs: '/api/docs',
+    });
+  });
+
+  server.head('/', (req: any, res: any) => {
+    return res.status(200).end();
+  });
+
   server.post('/send-email', async (req: any, res: any) => {
     try {
       const { to, email, subject, message, html, text } = req.body || {};
