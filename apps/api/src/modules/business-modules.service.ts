@@ -9,7 +9,7 @@ import { NeonPrismaService } from '../database/neon-prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { PaginationParams, PaginationMeta } from '@zuno/shared-types';
 import { OperationalDataStore, StoredRecord } from './operational-store';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class BusinessModulesService implements OnModuleInit {

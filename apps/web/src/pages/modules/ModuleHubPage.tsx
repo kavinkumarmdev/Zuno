@@ -1372,11 +1372,7 @@ export const ModuleHubPage: React.FC = () => {
   });
 
   const handleSaveComprehensiveEmployee = (employeeData: Record<string, any>) => {
-    if (editingRecord?.id) {
-      updateMutation.mutate({ id: editingRecord.id, data: employeeData });
-    } else {
-      createMutation.mutate(employeeData);
-    }
+    createMutation.mutate(employeeData);
     setShowComprehensiveEmployeeModal(false);
   };
 
