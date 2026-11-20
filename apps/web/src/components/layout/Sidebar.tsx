@@ -160,8 +160,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       .map((group: any) => ({
         ...group,
         items: group.items.filter((item: any) => {
-          // Platform / Tenant Owner has full access to all menus across all modules
+          // Platform Super Owner ("me and my team") has full access to all menus
           if (isOwner) return true;
+          // SaaS & Subscriptions is strictly and exclusively reserved for Platform Super Owner
+          if (item.id === 'subscriptions') return false;
           return enabledModules.includes(item.id) && canUserAccessModule(user, item.id);
         })
       }))
@@ -173,6 +175,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     ERP_MODULES.forEach((g: any) => {
       if (g.phase && Array.isArray(g.items)) {
         g.items.forEach((item: any) => {
+          // SaaS & Subscriptions can only be configured by Platform Super Owner
+          if (item.id === 'subscriptions' && !isOwner) return;
           // Non-owners can only configure modules permitted by their company role
           if (isOwner || canUserAccessModule(user, item.id)) {
             list.push({ ...item, phase: g.phase });

@@ -37,13 +37,20 @@ export function isMasterPlatformUser(user: any): boolean {
 export function canUserAccessModule(user: any, moduleId: string): boolean {
   if (!user) return false;
 
-  // 1. Platform Master User (Kavin / OWNER) has unrestricted visibility to all modules
-  if (isMasterPlatformUser(user)) {
+  const userRole = (user.userType || user.user_type || user.role || 'USER').toUpperCase();
+
+  // 1. Platform Master User (Kavin / OWNER - "me and my team") has unrestricted visibility to all modules
+  if (isMasterPlatformUser(user) || userRole === 'OWNER') {
     return true;
   }
 
+  // 2. SaaS & Subscriptions module is strictly and exclusively reserved for Platform Super Owner
+  // Customer companies and other roles (ADMIN, MANAGER, USER, etc.) can NEVER access this module!
+  if (moduleId === 'subscriptions') {
+    return false;
+  }
+
   const userEmail = (user.email || '').trim().toLowerCase();
-  const userRole = (user.userType || user.user_type || user.role || 'USER').toUpperCase();
 
   // 2. Inspect custom permissions in tb_permission store first (user or role override)
   try {

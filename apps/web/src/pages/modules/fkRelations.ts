@@ -962,6 +962,7 @@ export interface CompanyAttendancePolicy {
   excessPermissionAction: 'HALF_DAY_LOP' | 'HOURLY_DEDUCTION' | 'NONE';
 
   // 4. Leave & Holiday Policy
+  monthlyPaidLeaveDays: number; // e.g. 1.5 days/month (18 days/year paid leave)
   casualLeavePerYear: number; // 12
   sickLeavePerYear: number;   // 12
   earnedLeavePerYear: number; // 15
@@ -1016,6 +1017,7 @@ export const DEFAULT_COMPANY_ATTENDANCE_POLICY: CompanyAttendancePolicy = {
     }
   ],
   excessPermissionAction: 'HALF_DAY_LOP',
+  monthlyPaidLeaveDays: 1.5,
   casualLeavePerYear: 12,
   sickLeavePerYear: 12,
   earnedLeavePerYear: 15,
@@ -1110,6 +1112,11 @@ export const getEmployeePermissionBalance = (
   usedThisWeek: number;
   maxAllowedWeek: number;
   remainingThisWeek: number;
+  allowedHoursPerPermission: number;
+  maxAllowedHoursMonth: number;
+  usedHoursMonth: number;
+  remainingHoursMonth: number;
+  monthlyPaidLeaveDays: number;
 } => {
   const policy = policyInput || getCompanyAttendancePolicy();
   const now = new Date();
@@ -1134,6 +1141,9 @@ export const getEmployeePermissionBalance = (
 
   const maxMonth = policy.maxPermissionsPerMonth || 2;
   const maxWeek = policy.maxPermissionsPerWeek || 1;
+  const hoursPerPerm = policy.permissionAllowedHours || 2;
+  const maxHoursMonth = maxMonth * hoursPerPerm;
+  const usedHoursMonth = usedMonth * hoursPerPerm;
 
   return {
     usedThisMonth: usedMonth,
@@ -1142,7 +1152,12 @@ export const getEmployeePermissionBalance = (
     canApply: usedMonth < maxMonth && usedWeek < maxWeek,
     usedThisWeek: usedWeek,
     maxAllowedWeek: maxWeek,
-    remainingThisWeek: Math.max(0, maxWeek - usedWeek)
+    remainingThisWeek: Math.max(0, maxWeek - usedWeek),
+    allowedHoursPerPermission: hoursPerPerm,
+    maxAllowedHoursMonth: maxHoursMonth,
+    usedHoursMonth: usedHoursMonth,
+    remainingHoursMonth: Math.max(0, maxHoursMonth - usedHoursMonth),
+    monthlyPaidLeaveDays: policy.monthlyPaidLeaveDays !== undefined ? policy.monthlyPaidLeaveDays : 1.5
   };
 };
 
@@ -1276,10 +1291,19 @@ export const calculateSalaryBreakdownFromAttendance = (
   // Excess permission penalty
   const maxPermissions = policy.maxPermissionsPerMonth || 2;
   const excessPermissions = Math.max(0, permissionsUsed - maxPermissions);
-  const excessPermissionLopDays = policy.excessPermissionAction === 'HALF_DAY_LOP' ? excessPermissions * 0.5 : 0;
+  const excessPermissionLopDays = policy.excessPermissionAction === 'HALF_DAY_LOP'
+    ? excessPermissions * 0.5
+    : (policy.excessPermissionAction === 'HOURLY_DEDUCTION'
+      ? (excessPermissions * (policy.permissionAllowedHours || 2)) / 8
+      : 0);
+
+  // Leave & Absence LOP: Monthly paid leaves (e.g. 1.5 days) are paid without salary deduction; excess leaves are LOP
+  const monthlyPaidLeaveLimit = policy.monthlyPaidLeaveDays !== undefined ? policy.monthlyPaidLeaveDays : 1.5;
+  const paidLeavesCount = Math.min(leavesTaken, monthlyPaidLeaveLimit);
+  const excessUnpaidLeaves = Math.max(0, leavesTaken - monthlyPaidLeaveLimit);
 
   // Unapproved absence LOP
-  const absentDays = Math.max(0, totalWorkingDays - actualPresentDays - leavesTaken);
+  const absentDays = Math.max(0, totalWorkingDays - actualPresentDays - paidLeavesCount) + excessUnpaidLeaves;
   const totalLopDays = absentDays + lateMarkLopDays + excessPermissionLopDays;
 
   // Payable days: Working Days + Paid Week Offs - LOP Days
@@ -1713,8 +1737,12 @@ export const getDynamicFieldOptions = (
         });
       } else if (targetTable === 'tb_user') {
         combinedRecords = combinedRecords.filter((u: any) => {
+          const uRole = String(u.user_type || u.role || '').toUpperCase();
+          if (uRole === 'OWNER') return false; // OWNER accounts never shown to non-owners
+          const uEmail = String(u.email || '').toLowerCase();
+          if (uEmail === 'kavin@zuno.com' || uEmail.includes('kavin')) return false;
           const uComp = String(u.company_id || u.company || u.company_name || '').toLowerCase();
-          return !uComp || uComp === userCompId || uComp === userCompName;
+          return uComp && (uComp === userCompId || uComp === userCompName);
         });
       } else if (targetTable === 'tb_role') {
         combinedRecords = combinedRecords.filter((r: any) => {
@@ -1768,6 +1796,10 @@ export const getDynamicFieldOptions = (
     } else if (field.key === 'permission_level') {
       // Company Admins cannot grant SUPER_ADMIN
       optionsMap.delete('SUPER_ADMIN');
+    } else if (field.key === 'user_type' || field.key === 'role') {
+      // Non-owners (Company Admins) CANNOT assign or create OWNER role!
+      // OWNER is strictly reserved for the Platform Owner team ("me and my team")
+      optionsMap.delete('OWNER');
     }
   }
 

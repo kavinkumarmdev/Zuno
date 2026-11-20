@@ -414,15 +414,33 @@ const MODULE_TABLES_MAP: Record<string, { title: string; phase: string; tables: 
 export const ModuleHubPage: React.FC = () => {
   const { moduleKey } = useParams<{ moduleKey: string }>();
   const queryClient = useQueryClient();
+  const { user, permissions, addCompany, isKavin, activeCompany, tenant } = useAuth();
 
-  const moduleInfo = MODULE_TABLES_MAP[moduleKey || 'products'] || MODULE_TABLES_MAP['products'];
+  const isOwner = Boolean(
+    isKavin ||
+    user?.userType === 'OWNER' ||
+    user?.role === 'OWNER' ||
+    isMasterPlatformUser(user)
+  );
+
+  const rawModuleInfo = MODULE_TABLES_MAP[moduleKey || 'products'] || MODULE_TABLES_MAP['products'];
+  // Role-based table filtering:
+  // - Non-owners cannot see or configure Approval Workflows (tb_approval_workflow is strictly for Platform Owner)
+  const moduleInfo = useMemo(() => {
+    if (!rawModuleInfo) return rawModuleInfo;
+    let tables = rawModuleInfo.tables;
+    if (!isOwner && moduleKey === 'admin') {
+      tables = tables.filter((t) => t.name !== 'tb_approval_workflow');
+    }
+    return { ...rawModuleInfo, tables };
+  }, [rawModuleInfo, isOwner, moduleKey]);
+
   const [selectedTable, setSelectedTable] = useState(moduleInfo.tables[0].name);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('created_time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const { user, permissions, addCompany, isKavin, activeCompany, tenant } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -501,8 +519,10 @@ export const ModuleHubPage: React.FC = () => {
 
   // Check if current user has authorization to access this module/menu
   const hasModulePermission = useMemo(() => {
+    if (isOwner) return true;
+    if (moduleKey === 'subscriptions') return false; // SaaS Subscriptions strictly restricted to Platform Owner
     return canUserAccessModule(user, moduleKey || '');
-  }, [user, moduleKey]);
+  }, [user, moduleKey, isOwner]);
 
   // Compute fine-grained action permissions (View, Create, Update, Delete, Approve)
   const actionPerms = useMemo(() => {
@@ -600,13 +620,6 @@ export const ModuleHubPage: React.FC = () => {
       });
     }
   };
-
-  const isOwner = Boolean(
-    isKavin ||
-    user?.userType === 'OWNER' ||
-    user?.role === 'OWNER' ||
-    isMasterPlatformUser(user)
-  );
 
   // Owner Permanent Hard Delete Handler: Purges record completely from DB and storage
   const handlePermanentDelete = async (record: any) => {
@@ -708,6 +721,15 @@ export const ModuleHubPage: React.FC = () => {
     const primaryCodeField = getPrimaryCodeField(currentSchema);
     if (primaryCodeField) {
       initial[primaryCodeField.key] = generateNextSequentialCode(selectedTable, allExisting);
+    }
+
+    if (selectedTable === 'tb_user') {
+      if (!initial.password) {
+        initial.password = 'Zuno@' + Math.floor(100000 + Math.random() * 900000);
+      }
+      if (!initial.user_type || initial.user_type === 'OWNER') {
+        initial.user_type = 'USER';
+      }
     }
 
     setResolvedIfscStatus(null);
@@ -1150,22 +1172,55 @@ export const ModuleHubPage: React.FC = () => {
           combined = combined.filter((b: any) => {
             const compRef = (b.company_id || b.company || b.company_code || '').toLowerCase();
             return (
-              !compRef ||
-              compRef === activeCompId ||
-              compRef === activeCompCode
+              compRef &&
+              (compRef === activeCompId || compRef === activeCompCode || compRef === activeCompName)
             );
           });
         } else if (selectedTable === 'tb_user') {
-          // Strict company user isolation: Company admin only sees users of their particular company!
+          // Strict company user isolation:
+          // 1. OWNER accounts (e.g. Kavin / Platform Super Owner) are NEVER displayed to company admins!
+          // 2. Company admin only sees users belonging strictly to their particular company!
           combined = combined.filter((u: any) => {
-            const uComp = (u.company_id || u.company || u.company_name || '').toLowerCase();
-            return !uComp || uComp === activeCompId || uComp === activeCompName || uComp === activeCompCode;
+            const uRole = (u.user_type || u.role || '').toUpperCase();
+            if (uRole === 'OWNER') return false;
+
+            const uEmail = (u.email || '').toLowerCase();
+            if (uEmail === 'kavin@zuno.com' || uEmail === 'kavinkumarm987@zuno.in' || uEmail.includes('kavin')) return false;
+
+            const uName = (u.name || u.full_name || u.username || '').toLowerCase();
+            if (uName === 'kavin') return false;
+
+            const uComp = (u.company_id || u.company || u.company_name || u.companyCode || '').toLowerCase();
+            return (
+              uComp &&
+              (uComp === activeCompId || uComp === activeCompName || uComp === activeCompCode)
+            );
+          });
+        } else if (selectedTable === 'tb_login_history') {
+          // Strict login history audit isolation:
+          // 1. Never show OWNER or super-admin login history to company admins or other roles!
+          // 2. Only show login events for users belonging to this particular company!
+          combined = combined.filter((l: any) => {
+            const lRole = (l.role || '').toUpperCase();
+            if (lRole.includes('OWNER') || lRole.includes('SUPER')) return false;
+
+            const lEmail = (l.user_email || '').toLowerCase();
+            if (lEmail === 'kavin@zuno.com' || lEmail === 'kavinkumarm987@zuno.in' || lEmail.includes('kavin')) return false;
+
+            const lName = (l.name || '').toLowerCase();
+            if (lName === 'kavin') return false;
+
+            const lComp = (l.company_id || l.company_name || l.company || '').toLowerCase();
+            return (
+              lComp &&
+              (lComp === activeCompId || lComp === activeCompName || lComp === activeCompCode)
+            );
           });
         } else if (selectedTable === 'tb_employee_master') {
           // Strict company employee isolation: Company admin only sees employees of their particular company!
           combined = combined.filter((e: any) => {
             const eComp = (e.company_id || e.company || e.company_name || '').toLowerCase();
-            return !eComp || eComp === activeCompId || eComp === activeCompName || eComp === activeCompCode;
+            return eComp && (eComp === activeCompId || eComp === activeCompName || eComp === activeCompCode);
           });
         } else if (selectedTable === 'tb_role') {
           // Company admin only sees roles belonging to their particular company (or standard system templates)
@@ -1203,6 +1258,22 @@ export const ModuleHubPage: React.FC = () => {
         if (!scopedPayload.company_id) scopedPayload.company_id = activeCompany.id;
         if (!scopedPayload.company_name && selectedTable !== 'tb_company') {
           scopedPayload.company_name = activeCompany.companyName;
+        }
+      }
+
+      // User table special handling: password auto-generation & role restriction
+      if (selectedTable === 'tb_user') {
+        // Enforce: Company users cannot be assigned or created with OWNER role!
+        if (scopedPayload.user_type === 'OWNER' || scopedPayload.role === 'OWNER') {
+          scopedPayload.user_type = 'USER';
+        }
+        // Auto-generate secure login password if empty
+        if (!scopedPayload.password || !String(scopedPayload.password).trim()) {
+          const genPass = 'Zuno@' + Math.floor(100000 + Math.random() * 900000);
+          scopedPayload.password = genPass;
+          scopedPayload.temporary_password = genPass;
+        } else {
+          scopedPayload.temporary_password = scopedPayload.password;
         }
       }
 
@@ -1279,11 +1350,18 @@ export const ModuleHubPage: React.FC = () => {
       }
       setShowCreateModal(false);
       setEditingRecord(null);
+
+      let successMsg = `${singleLabel} record successfully ${isEdit ? 'updated' : 'saved'} and synchronized with database.`;
+      if (selectedTable === 'tb_employee_master') {
+        successMsg = `Employee "${formData.name}" successfully saved! Default login credentials generated for ${formData.email} (Password: Zuno@2026).`;
+      } else if (selectedTable === 'tb_user' && !isEdit) {
+        const passToDisplay = formData.password || formData.temporary_password || 'Zuno@2026';
+        successMsg = `User "${formData.name || formData.code}" created successfully! Login Password: "${passToDisplay}" (Please share this password with the user to access the application).`;
+      }
+
       setActionAlert({
         type: 'success',
-        message: selectedTable === 'tb_employee_master'
-          ? `Employee "${formData.name}" successfully saved! Default login credentials generated for ${formData.email} (Password: Zuno@2026).`
-          : `${singleLabel} record successfully ${isEdit ? 'updated' : 'saved'} and synchronized with database.`
+        message: successMsg
       });
       refetch();
     },
@@ -1294,7 +1372,11 @@ export const ModuleHubPage: React.FC = () => {
   });
 
   const handleSaveComprehensiveEmployee = (employeeData: Record<string, any>) => {
-    createMutation.mutate(employeeData);
+    if (editingRecord?.id) {
+      updateMutation.mutate({ id: editingRecord.id, data: employeeData });
+    } else {
+      createMutation.mutate(employeeData);
+    }
     setShowComprehensiveEmployeeModal(false);
   };
 
@@ -1549,6 +1631,16 @@ export const ModuleHubPage: React.FC = () => {
         { key: 'name', header: 'User Full Name', sortable: true },
         { key: 'code', header: 'Username', sortable: true, width: '130px' },
         { key: 'email', header: 'Corporate Email' },
+        {
+          key: 'password',
+          header: 'Initial Password',
+          width: '140px',
+          render: (r: any) => (
+            <span className="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300 font-semibold">
+              {r.password || r.temporary_password || '••••••••'}
+            </span>
+          )
+        },
         { key: 'user_type', header: 'Role', align: 'center', width: '110px' },
         { key: 'status', header: 'Status', align: 'center', width: '100px' },
         { key: 'created_time', header: 'Created', sortable: true, width: '120px', render: (r) => new Date(r.created_time || Date.now()).toLocaleDateString() }

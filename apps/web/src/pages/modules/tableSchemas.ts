@@ -366,17 +366,23 @@ export const TABLE_SCHEMAS: Record<string, FormFieldConfig[]> = {
       "placeholder": "9876543210"
     },
     {
+      "key": "password",
+      "label": "Login Password / Initial Secret",
+      "type": "text",
+      "required": false,
+      "placeholder": "Enter initial login password (or leave blank to auto-generate)"
+    },
+    {
       "key": "user_type",
       "label": "Access Role",
       "type": "select",
       "options": [
-        "OWNER",
         "ADMIN",
         "MANAGER",
         "USER",
         "AUDITOR"
       ],
-      "defaultValue": "OWNER"
+      "defaultValue": "USER"
     },
     {
       "key": "status",

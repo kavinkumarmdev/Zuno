@@ -9,6 +9,7 @@ import { NeonPrismaService } from '../database/neon-prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { PaginationParams, PaginationMeta } from '@zuno/shared-types';
 import { OperationalDataStore, StoredRecord } from './operational-store';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class BusinessModulesService implements OnModuleInit {
@@ -77,7 +78,7 @@ export class BusinessModulesService implements OnModuleInit {
     try {
       const { delegate } = this.getModelDelegate(tableName);
       if (delegate && typeof delegate.findMany === 'function') {
-        const [items, total] = await Promise.all([
+        const [rawItems, total] = await Promise.all([
           delegate.findMany({
             where,
             skip,
@@ -89,13 +90,14 @@ export class BusinessModulesService implements OnModuleInit {
           delegate.count ? delegate.count({ where }) : Promise.resolve(0)
         ]);
 
-        if (Array.isArray(items) && (items.length > 0 || (typeof total === 'number' && total >= 0))) {
+        if (Array.isArray(rawItems) && (rawItems.length > 0 || (typeof total === 'number' && total >= 0))) {
+          const items = this.applyAccessFilters(tableName, rawItems, user);
           const userStoreRecords = OperationalDataStore.getRecords(tenantId, tableName, false).filter(
             (r) => r.is_user_record
           );
 
           if (userStoreRecords.length === 0) {
-            const totalCount = typeof total === 'number' && total > 0 ? total : items.length;
+            const totalCount = typeof total === 'number' && total > 0 ? items.length : items.length;
             const totalPages = Math.ceil(totalCount / limit) || 1;
             const meta: PaginationMeta = {
               page,
@@ -116,42 +118,7 @@ export class BusinessModulesService implements OnModuleInit {
     // 2. Load stored records from the persistent operational file store (fallback or hybrid)
     const storedRecords = OperationalDataStore.getRecords(tenantId, tableName, true);
 
-    let combined = [...storedRecords];
-
-    // COMPANY ISOLATION FOR NON-OWNER:
-    // Company Admins and other non-owner roles ONLY see their particular company's records!
-    const isOwner = user?.userType === 'OWNER';
-    if (!isOwner && user?.companyId) {
-      const userCompId = String(user.companyId).toLowerCase();
-
-      if (tableName === 'tb_company') {
-        combined = combined.filter((c: any) => {
-          const cId = String(c.id || '').toLowerCase();
-          const cCode = String(c.code || c.company_code || '').toLowerCase();
-          return cId === userCompId || cCode === userCompId;
-        });
-      } else if (tableName === 'tb_company_branch') {
-        combined = combined.filter((b: any) => {
-          const cId = String(b.company_id || b.company || b.company_code || '').toLowerCase();
-          return !cId || cId === userCompId;
-        });
-      } else if (tableName === 'tb_user') {
-        combined = combined.filter((u: any) => {
-          const cId = String(u.company_id || u.companyId || '').toLowerCase();
-          return !cId || cId === userCompId;
-        });
-      } else if (tableName === 'tb_employee_master') {
-        combined = combined.filter((e: any) => {
-          const cId = String(e.company_id || e.companyId || '').toLowerCase();
-          return !cId || cId === userCompId;
-        });
-      } else if (tableName === 'tb_role') {
-        combined = combined.filter((r: any) => {
-          const cId = String(r.company_id || r.companyId || '').toLowerCase();
-          return !cId || cId === userCompId || r.is_system;
-        });
-      }
-    }
+    let combined = this.applyAccessFilters(tableName, storedRecords, user);
 
     // 3. Apply Search Filter
     if (params.search && params.search.trim()) {
@@ -439,6 +406,74 @@ export class BusinessModulesService implements OnModuleInit {
   }
 
   /**
+   * Apply tenant, company isolation and role visibility filters (e.g. OWNER never visible to non-owners)
+   */
+  private applyAccessFilters(tableName: string, records: any[], user?: any): any[] {
+    const isOwner = user?.userType === 'OWNER';
+    if (isOwner) return records;
+
+    const userCompId = String(user?.companyId || '').toLowerCase();
+
+    return records.filter((rec: any) => {
+      // 1. tb_company: Only own company
+      if (tableName === 'tb_company') {
+        const cId = String(rec.id || '').toLowerCase();
+        const cCode = String(rec.code || rec.company_code || '').toLowerCase();
+        return userCompId ? (cId === userCompId || cCode === userCompId) : true;
+      }
+
+      // 2. tb_company_branch: Only own company branches
+      if (tableName === 'tb_company_branch') {
+        const cId = String(rec.company_id || rec.company || rec.company_code || '').toLowerCase();
+        return userCompId ? cId === userCompId : true;
+      }
+
+      // 3. tb_user: Exclude OWNER accounts, exclude Kavin, must match companyId
+      if (tableName === 'tb_user') {
+        const uRole = String(rec.user_type || rec.role || '').toUpperCase();
+        if (uRole === 'OWNER' || uRole.includes('OWNER')) return false;
+        const uEmail = String(rec.email || '').toLowerCase();
+        if (uEmail === 'kavin@zuno.com' || uEmail.includes('kavin')) return false;
+        const uName = String(rec.name || rec.full_name || rec.username || '').toLowerCase();
+        if (uName === 'kavin') return false;
+        const cId = String(rec.company_id || rec.companyId || '').toLowerCase();
+        return userCompId ? cId === userCompId : true;
+      }
+
+      // 4. tb_login_history: Exclude OWNER accounts, exclude Kavin, must match companyId
+      if (tableName === 'tb_login_history') {
+        const lRole = String(rec.role || '').toUpperCase();
+        if (lRole.includes('OWNER') || lRole.includes('SUPER')) return false;
+        const lEmail = String(rec.user_email || rec.email || '').toLowerCase();
+        if (lEmail === 'kavin@zuno.com' || lEmail.includes('kavin')) return false;
+        const lName = String(rec.name || rec.username || '').toLowerCase();
+        if (lName === 'kavin') return false;
+        const cId = String(rec.company_id || rec.companyId || '').toLowerCase();
+        return userCompId ? cId === userCompId : true;
+      }
+
+      // 5. tb_employee_master: Only own company employees
+      if (tableName === 'tb_employee_master') {
+        const cId = String(rec.company_id || rec.companyId || '').toLowerCase();
+        return userCompId ? cId === userCompId : true;
+      }
+
+      // 6. tb_role: Only own company roles or system roles
+      if (tableName === 'tb_role') {
+        const cId = String(rec.company_id || rec.companyId || '').toLowerCase();
+        return (userCompId ? cId === userCompId : true) || rec.is_system;
+      }
+
+      // Default: if record has company_id, require match
+      if (userCompId && rec.company_id) {
+        return String(rec.company_id).toLowerCase() === userCompId;
+      }
+
+      return true;
+    });
+  }
+
+  /**
    * Create a new record within tenant boundary with guaranteed disk & database persistence
    */
   async createRecord(tenantId: string, userId: string, tableName: string, data: any, user?: any) {
@@ -457,10 +492,24 @@ export class BusinessModulesService implements OnModuleInit {
       if (tableName === 'tb_permission' && String(data.module_name || '').toLowerCase() === 'all') {
         throw new BadRequestException('Delegation Restriction: Company Admins cannot grant access to ALL modules.');
       }
+      if (tableName === 'tb_user' && (String(data.user_type || data.role || '').toUpperCase() === 'OWNER')) {
+        throw new BadRequestException('Security Restriction: Only Platform Owners can create or assign the OWNER role.');
+      }
       // Ensure company_id is stamped if non-owner
       if (user?.companyId && !data.company_id) {
         data.company_id = user.companyId;
       }
+    }
+
+    // Password handling for tb_user
+    let passwordHash = '';
+    if (tableName === 'tb_user') {
+      const plainPassword = String(data.password || data.temporary_password || `Zuno@${Math.floor(100000 + Math.random() * 900000)}`);
+      passwordHash = await bcrypt.hash(plainPassword, 10);
+      data.password = plainPassword;
+      data.temporary_password = plainPassword;
+      data.password_hash = passwordHash;
+      if (!data.user_type) data.user_type = 'USER';
     }
 
     // Validate uniqueness, phone format, GSTIN format before saving
@@ -469,7 +518,96 @@ export class BusinessModulesService implements OnModuleInit {
     // 1. Persist directly into the Operational Data Store (guarantees data is saved immediately)
     const storedRecord = OperationalDataStore.addRecord(tenantId, userId, tableName, data);
 
-    // 2. Also attempt saving to PostgreSQL via Prisma if available
+    // 2. Cascade save for tb_employee_master sub-records
+    if (tableName === 'tb_employee_master') {
+      try {
+        // Save Nominees
+        if (Array.isArray(data.nominees) && data.nominees.length > 0) {
+          for (const nom of data.nominees) {
+            OperationalDataStore.addRecord(tenantId, userId, 'tb_employee_nominee', {
+              employee_id: storedRecord.id,
+              name: nom.name || nom.nominee_name,
+              relationship: nom.relation || nom.nominee_relation,
+              date_of_birth: nom.dob || nom.nominee_dob,
+              age: nom.age || nom.nominee_age,
+              phone: nom.phone || nom.nominee_phone,
+              share_percent: nom.share_percent || nom.nominee_share_percent || '100',
+              aadhaar_number: nom.aadhaar_or_id || '',
+              guardian_name: nom.guardian_name || '',
+              guardian_relation: nom.guardian_relation || '',
+              guardian_phone: nom.guardian_phone || '',
+              status: 'ACTIVE'
+            });
+          }
+        }
+
+        // Save Permanent Address
+        if (data.permanent_address || data.permanent_pincode) {
+          OperationalDataStore.addRecord(tenantId, userId, 'tb_employee_address', {
+            employee_id: storedRecord.id,
+            address_type: 'PERMANENT',
+            address_line: data.permanent_address,
+            pincode: data.permanent_pincode,
+            city: data.permanent_city,
+            district: data.permanent_district,
+            state: data.permanent_state,
+            country: 'India',
+            status: 'ACTIVE'
+          });
+        }
+
+        // Save Current Address
+        if (data.current_address || data.current_pincode) {
+          OperationalDataStore.addRecord(tenantId, userId, 'tb_employee_address', {
+            employee_id: storedRecord.id,
+            address_type: 'CURRENT',
+            address_line: data.same_as_permanent_address ? data.permanent_address : data.current_address,
+            pincode: data.same_as_permanent_address ? data.permanent_pincode : data.current_pincode,
+            city: data.same_as_permanent_address ? data.permanent_city : data.current_city,
+            district: data.same_as_permanent_address ? data.permanent_district : data.current_district,
+            state: data.same_as_permanent_address ? data.permanent_state : data.current_state,
+            country: 'India',
+            is_same_as_permanent: !!data.same_as_permanent_address,
+            status: 'ACTIVE'
+          });
+        }
+
+        // Save Bank Details
+        if (data.bank_account || data.ifsc) {
+          OperationalDataStore.addRecord(tenantId, userId, 'tb_employee_bank', {
+            employee_id: storedRecord.id,
+            name: `${storedRecord.name} Bank Account`,
+            bank_name: data.bank_name,
+            branch_name: data.bank_branch,
+            account_number: data.bank_account,
+            ifsc_code: data.ifsc,
+            status: 'ACTIVE'
+          });
+        }
+
+        // Save Salary Structure
+        if (data.amount) {
+          OperationalDataStore.addRecord(tenantId, userId, 'tb_employee_salary', {
+            employee_id: storedRecord.id,
+            name: `${storedRecord.name} CTC Package`,
+            amount: data.amount,
+            basic_salary: data.basic_salary,
+            hra: data.hra,
+            da: data.da,
+            special_allowance: data.special_allowance,
+            epf_employee: data.epf_employee,
+            esi_employee: data.esi_employee,
+            professional_tax: data.professional_tax,
+            net_salary: data.net_salary,
+            status: 'ACTIVE'
+          });
+        }
+      } catch (subErr: any) {
+        this.logger.debug(`Sub-records note for ${storedRecord.id}: ${subErr.message}`);
+      }
+    }
+
+    // 3. Also attempt saving to PostgreSQL via Prisma if available
     try {
       const { delegate } = this.getModelDelegate(tableName);
       if (delegate && typeof delegate.create === 'function') {
@@ -490,10 +628,31 @@ export class BusinessModulesService implements OnModuleInit {
           dbPayload.company_name = data.name;
           dbPayload.company_code = data.code;
           dbPayload.legal_name = data.description || data.name;
+        } else if (tableName === 'tb_user') {
+          dbPayload.username = data.username || data.code;
+          dbPayload.email = data.email;
+          dbPayload.full_name = data.name;
+          dbPayload.user_type = data.user_type || 'USER';
+          dbPayload.user_status = 'ACTIVE';
         }
 
         await delegate.create({ data: dbPayload });
         this.logger.log(`Inserted record ${storedRecord.id} into database table ${tableName}`);
+
+        // If tb_user, also insert credential
+        if (tableName === 'tb_user' && passwordHash) {
+          try {
+            await (this.prisma as any).tbUserCredential.create({
+              data: {
+                user_id: storedRecord.id,
+                tenant_id: tenantId,
+                password_hash: passwordHash,
+                password_changed_time: new Date(),
+                failed_attempts: 0
+              }
+            });
+          } catch {}
+        }
       }
     } catch (err: any) {
       this.logger.debug(`Database write note for ${tableName} (persisted in local operational store): ${err.message}`);

@@ -403,7 +403,7 @@ export const CompanyAttendanceConfigModal: React.FC<CompanyAttendanceConfigModal
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Max Allowed per Month
+                    Max Allowed per Month (Times/Mo)
                   </label>
                   <input
                     type="number"
@@ -418,7 +418,7 @@ export const CompanyAttendanceConfigModal: React.FC<CompanyAttendanceConfigModal
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Max Allowed per Week
+                    Max Allowed per Week (Times/Wk)
                   </label>
                   <input
                     type="number"
@@ -430,6 +430,16 @@ export const CompanyAttendanceConfigModal: React.FC<CompanyAttendanceConfigModal
                   />
                   <p className="text-[10px] text-slate-400 mt-1">E.g. 1 time per working week</p>
                 </div>
+              </div>
+
+              {/* Total Monthly Grace Hours Pill */}
+              <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/60 flex items-center justify-between text-xs">
+                <span className="text-purple-900 dark:text-purple-200 font-medium">
+                  ⏱ Total Monthly Grace Allowance:
+                </span>
+                <span className="font-bold font-mono text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-700">
+                  {(policy.maxPermissionsPerMonth || 2) * (policy.permissionAllowedHours || 2)} Hours Total ({policy.maxPermissionsPerMonth || 2} times × {policy.permissionAllowedHours || 2}h)
+                </span>
               </div>
 
               {/* Supported Multi-Option Permission Types */}
@@ -487,7 +497,23 @@ export const CompanyAttendanceConfigModal: React.FC<CompanyAttendanceConfigModal
               </div>
 
               {/* Leave Quotas */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Monthly Paid Leave (Days/Mo)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min={0}
+                    max={5}
+                    value={policy.monthlyPaidLeaveDays ?? 1.5}
+                    onChange={(e) => setPolicy({ ...policy, monthlyPaidLeaveDays: parseFloat(e.target.value) || 1.5 })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">E.g. 1.5 days/month paid leave</p>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Casual Leave (CL) / Year

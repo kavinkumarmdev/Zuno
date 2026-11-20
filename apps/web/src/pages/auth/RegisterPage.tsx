@@ -77,15 +77,16 @@ export const RegisterPage: React.FC = () => {
     gracePeriodMinutes: 15,
     halfDayCutoffHours: 4.5,
     minOvertimeHours: 9.0,
-    permissionDuration: '1_HOUR' as '1_HOUR' | '2_HOURS' | 'HALF_DAY',
+    permissionAllowedHours: 2 as 1 | 2,
     allowedPermissionsPerWeek: 1,
     allowedPermissionsPerMonth: 2,
-    excessPermissionDeduction: 'LOP_DEDUCTION',
-    weekOffPolicy: 'SUNDAY',
+    excessPermissionAction: 'HALF_DAY_LOP' as 'HALF_DAY_LOP' | 'HOURLY_DEDUCTION' | 'NONE',
+    monthlyPaidLeaveDays: 1.5,
     annualCasualLeave: 12,
     annualSickLeave: 12,
     annualEarnedLeave: 15,
-    lateMarksForHalfDayDeduction: 3
+    lateMarksForHalfDayDeduction: 3,
+    weekOffPolicy: 'SUNDAY',
   });
   const [otpInput, setOtpInput] = useState('');
   const [otpTimer, setOtpTimer] = useState(0);
@@ -186,22 +187,14 @@ export const RegisterPage: React.FC = () => {
 
     setIsSendingOtp(true);
     try {
-      let res: any;
-      try {
-        res = await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
-      } catch (postErr: any) {
-        // Fallback to general OTP endpoint if registration check fails
-        res = await apiClient.post('/auth/send-otp', {
-          email: formData.email.trim().toLowerCase(),
-          purpose: 'Tenant Registration'
-        });
-      }
+      // Strictly dispatch OTP via registration endpoint which enforces corporate email uniqueness
+      await apiClient.post('/auth/register-send-otp', { email: formData.email.trim().toLowerCase() });
       setStep('otp');
       setOtpTimer(60);
     } catch (err: any) {
       const errMsg = sanitizeErrorMessage(
         err?.response?.data?.message || err?.message,
-        'Failed to dispatch registration OTP to your Gmail. Please verify your email and network.'
+        'Failed to dispatch registration OTP to your email. If already registered, please sign in directly.'
       );
       setError(errMsg);
     } finally {
@@ -299,14 +292,17 @@ export const RegisterPage: React.FC = () => {
         graceMinutes: Number(companyConfig.gracePeriodMinutes) || 15,
         halfDayMinimumMinutes: Math.round((Number(companyConfig.halfDayCutoffHours) || 4.5) * 60),
         overtimeThresholdMinutes: Math.round((Number(companyConfig.minOvertimeHours) || 9.0) * 60),
+        permissionAllowedHours: (Number(companyConfig.permissionAllowedHours) || 2) as 1 | 2,
         maxPermissionsPerWeek: Number(companyConfig.allowedPermissionsPerWeek) || 1,
         maxPermissionsPerMonth: Number(companyConfig.allowedPermissionsPerMonth) || 2,
-        excessPermissionAction: 'HALF_DAY_LOP',
-        weekOffPolicy: companyConfig.weekOffPolicy as any,
+        maxPermissionHoursPerMonth: (Number(companyConfig.allowedPermissionsPerMonth) || 2) * (Number(companyConfig.permissionAllowedHours) || 2),
+        excessPermissionAction: companyConfig.excessPermissionAction || 'HALF_DAY_LOP',
+        monthlyPaidLeaveDays: Number(companyConfig.monthlyPaidLeaveDays) || 1.5,
         casualLeavePerYear: Number(companyConfig.annualCasualLeave) || 12,
         sickLeavePerYear: Number(companyConfig.annualSickLeave) || 12,
         earnedLeavePerYear: Number(companyConfig.annualEarnedLeave) || 15,
-        lateMarksForHalfDayLop: Number(companyConfig.lateMarksForHalfDayDeduction) || 3
+        lateMarksForHalfDayLop: Number(companyConfig.lateMarksForHalfDayDeduction) || 3,
+        weekOffPolicy: (companyConfig.weekOffPolicy as any) || 'SUNDAY'
       });
 
       // 4. Navigate directly to dashboard
@@ -983,44 +979,280 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               {/* Permissions & Leave Quotas */}
-              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-3">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <CalendarCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  Permission Rules & Week-Off Policy
-                </h4>
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-slate-50 border border-emerald-200/90 shadow-sm space-y-4">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2 border-b border-emerald-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100/90 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                      <CalendarCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                        Permission Rules, Leave Quotas &amp; Week-Off Policy
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Set once for company. Automatically applied to all employees for biometric attendance &amp; monthly salary calculation.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 self-start sm:self-auto shrink-0">
+                    Payroll Linked
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Weekly Permission Quota</label>
-                    <input
-                      type="number"
-                      value={companyConfig.allowedPermissionsPerWeek}
-                      onChange={(e) => setCompanyConfig({ ...companyConfig, allowedPermissionsPerWeek: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
-                    />
+                {/* SUBSECTION 1: PERMISSION RULES (HOURS & FREQUENCY) */}
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                      1. Permission Quotas (Hours &amp; Frequency)
+                    </span>
+                    <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60 font-mono">
+                      Total Monthly Grace: {Number(companyConfig.allowedPermissionsPerMonth || 2) * Number(companyConfig.permissionAllowedHours || 2)} Hours
+                    </span>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Monthly Permission Quota</label>
-                    <input
-                      type="number"
-                      value={companyConfig.allowedPermissionsPerMonth}
-                      onChange={(e) => setCompanyConfig({ ...companyConfig, allowedPermissionsPerMonth: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    {/* Hours per Permission */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Duration per Permission (Hours)
+                      </label>
+                      <select
+                        value={companyConfig.permissionAllowedHours}
+                        onChange={(e) => setCompanyConfig({ ...companyConfig, permissionAllowedHours: Number(e.target.value) as 1 | 2 })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium outline-none focus:ring-2 focus:ring-blue-500/20"
+                      >
+                        <option value={1}>1 Hour per Request</option>
+                        <option value={2}>2 Hours per Request</option>
+                      </select>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Allowed grace time per permission without late mark.
+                      </p>
+                    </div>
+
+                    {/* Weekly Quota */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Weekly Permission Limit (Times / Week)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          max={5}
+                          value={companyConfig.allowedPermissionsPerWeek}
+                          onChange={(e) => setCompanyConfig({ ...companyConfig, allowedPermissionsPerWeek: Math.max(1, Number(e.target.value)) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium pr-14"
+                        />
+                        <span className="absolute right-2.5 top-1.5 text-[10px] font-semibold text-slate-400">
+                          times/wk
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Max {companyConfig.allowedPermissionsPerWeek} time/week (up to {companyConfig.allowedPermissionsPerWeek * companyConfig.permissionAllowedHours}h/wk)
+                      </p>
+                    </div>
+
+                    {/* Monthly Quota */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Monthly Permission Limit (Times / Month)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={companyConfig.allowedPermissionsPerMonth}
+                          onChange={(e) => setCompanyConfig({ ...companyConfig, allowedPermissionsPerMonth: Math.max(1, Number(e.target.value)) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium pr-14"
+                        />
+                        <span className="absolute right-2.5 top-1.5 text-[10px] font-semibold text-slate-400">
+                          times/mo
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Max {companyConfig.allowedPermissionsPerMonth} times ({companyConfig.allowedPermissionsPerMonth * companyConfig.permissionAllowedHours}h total grace/month)
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Week-Off Schedule</label>
-                    <select
-                      value={companyConfig.weekOffPolicy}
-                      onChange={(e) => setCompanyConfig({ ...companyConfig, weekOffPolicy: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none"
-                    >
-                      <option value="SUNDAY">Sunday Only</option>
-                      <option value="SECOND_FOURTH_SAT_SUNDAY">2nd & 4th Saturday + Sunday</option>
-                      <option value="EVERY_SAT_SUNDAY">Saturday & Sunday</option>
-                    </select>
+                  {/* Excess Permission Penalty & Late Marks */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Penalty if Permission Exceeds Monthly Quota
+                      </label>
+                      <select
+                        value={companyConfig.excessPermissionAction}
+                        onChange={(e) => setCompanyConfig({ ...companyConfig, excessPermissionAction: e.target.value as any })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium outline-none"
+                      >
+                        <option value="HALF_DAY_LOP">Mark as Half-Day Loss of Pay (0.5 Day LOP Salary Cut)</option>
+                        <option value="HOURLY_DEDUCTION">Deduct exact hourly pay for excess hours</option>
+                        <option value="NONE">No automatic cut (Manual HR discretion)</option>
+                      </select>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Automatic payroll deduction when employee exceeds {companyConfig.allowedPermissionsPerMonth} permissions.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Late Marks Penalty for Half-Day LOP
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={companyConfig.lateMarksForHalfDayDeduction}
+                          onChange={(e) => setCompanyConfig({ ...companyConfig, lateMarksForHalfDayDeduction: Math.max(1, Number(e.target.value)) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium pr-16"
+                        />
+                        <span className="absolute right-2.5 top-1.5 text-[10px] font-semibold text-slate-400">
+                          late marks
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Every {companyConfig.lateMarksForHalfDayDeduction} late arrivals past {companyConfig.gracePeriodMinutes}m grace = 0.5 Day LOP.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SUBSECTION 2: LEAVE POLICY (DAYS PER MONTH / YEAR) */}
+                <div className="space-y-2.5 pt-2 border-t border-emerald-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <CalendarCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      2. Leave Quotas &amp; Week-Off Policy (Days / Month &amp; Year)
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-mono">
+                      Paid Leave: {companyConfig.monthlyPaidLeaveDays} Days / Month
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                    {/* Monthly Paid Leaves */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Monthly Paid Leave (Days/Mo)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.5"
+                          min={0}
+                          max={5}
+                          value={companyConfig.monthlyPaidLeaveDays}
+                          onChange={(e) => setCompanyConfig({ ...companyConfig, monthlyPaidLeaveDays: Math.max(0, Number(e.target.value)) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium pr-14"
+                        />
+                        <span className="absolute right-2.5 top-1.5 text-[10px] font-semibold text-slate-400">
+                          days/mo
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Paid leaves credited per month without salary cut ({(Number(companyConfig.monthlyPaidLeaveDays) * 12).toFixed(0)} days/yr).
+                      </p>
+                    </div>
+
+                    {/* Casual Leave per Year */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Casual Leave CL (Days/Year)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={0}
+                          max={30}
+                          value={companyConfig.annualCasualLeave}
+                          onChange={(e) => setCompanyConfig({ ...companyConfig, annualCasualLeave: Math.max(0, Number(e.target.value)) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium pr-14"
+                        />
+                        <span className="absolute right-2.5 top-1.5 text-[10px] font-semibold text-slate-400">
+                          days/yr
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Personal / urgent matters (e.g. 1 day/mo).
+                      </p>
+                    </div>
+
+                    {/* Sick Leave per Year */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Sick Leave SL (Days/Year)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={0}
+                          max={30}
+                          value={companyConfig.annualSickLeave}
+                          onChange={(e) => setCompanyConfig({ ...companyConfig, annualSickLeave: Math.max(0, Number(e.target.value)) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium pr-14"
+                        />
+                        <span className="absolute right-2.5 top-1.5 text-[10px] font-semibold text-slate-400">
+                          days/yr
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Medical and illness allowance.
+                      </p>
+                    </div>
+
+                    {/* Week-Off Schedule */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Company Week-Off Schedule
+                      </label>
+                      <select
+                        value={companyConfig.weekOffPolicy}
+                        onChange={(e) => setCompanyConfig({ ...companyConfig, weekOffPolicy: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none font-medium"
+                      >
+                        <option value="SUNDAY">Sunday Only (6 Working Days)</option>
+                        <option value="SECOND_FOURTH_SAT_SUNDAY">2nd &amp; 4th Saturday + Sunday</option>
+                        <option value="EVERY_SAT_SUNDAY">Saturday &amp; Sunday (5 Working Days)</option>
+                      </select>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Designated paid rest days for payroll.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SUBSECTION 3: LIVE CLARITY SUMMARY FOR EASY SALARY CALCULATION */}
+                <div className="p-3 rounded-xl bg-white border border-emerald-200 text-xs space-y-1.5 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800 text-[11px]">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Live Policy Summary for Automatic Payroll Calculation:</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-600">
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                      <span className="font-bold text-slate-900 block">⏱ Permission Policy:</span>
+                      <span>
+                        {companyConfig.allowedPermissionsPerMonth} times/month ({companyConfig.permissionAllowedHours}h each = {Number(companyConfig.allowedPermissionsPerMonth) * Number(companyConfig.permissionAllowedHours)}h total grace). Excess: {companyConfig.excessPermissionAction === 'HALF_DAY_LOP' ? '0.5 Day LOP' : companyConfig.excessPermissionAction === 'HOURLY_DEDUCTION' ? 'Hourly Cut' : 'Manual HR'}.
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                      <span className="font-bold text-slate-900 block">🌴 Leave Policy:</span>
+                      <span>
+                        {companyConfig.monthlyPaidLeaveDays} days paid leave/month ({companyConfig.annualCasualLeave} CL + {companyConfig.annualSickLeave} SL / year). Additional leaves = Unpaid LOP.
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                      <span className="font-bold text-slate-900 block">💰 Salary Link:</span>
+                      <span>
+                        {companyConfig.weekOffPolicy === 'SUNDAY' ? 'Sunday Off (26 Standard Days)' : companyConfig.weekOffPolicy === 'SECOND_FOURTH_SAT_SUNDAY' ? '2nd & 4th Sat + Sun (24 Days)' : 'Sat & Sun Off (22 Days)'}. {companyConfig.lateMarksForHalfDayDeduction} late-ins = 0.5 Day LOP.
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
